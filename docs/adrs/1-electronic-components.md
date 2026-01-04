@@ -26,7 +26,7 @@ I want to build my own wearable IMU (inertial measurement unit) device to measur
 
 Note: measuring velocity directly is not possible for a wearable device. It needs different techniques: encoders, drift in radio waves, lasers, gps; and: fixed references, certain environmental conditions, more power, etc.
 
-- Battery: small to medium LiPo (300-1000 mAh, 3.7V, about 8-16USD) + TP4056 (about 2 USD, safe charging, prevent fires) + either step up (3.7V to 5V) or step down (3.7V to 3.3V) voltage regulator (e.g. MT3608, XL6009, AMS1117, NOT powerbanks such as 134N3P, LPO or buck/boost, about 2-4 USD) + 2 pin switch (about 1-2 USD).
+- Battery: small to medium LiPo (300-1000 mAh, 3.7V, about 8-16USD) + TP4056 (about 2 USD, safe charging, prevent fires) + either step up (3.7V to 5V) or step down (3.7V to 3.3V) voltage regulator (e.g. MT3608, XL6009, AMS1117, NOT powerbanks such as 134N3P, LPO or buck/boost, about 2-4 USD) + 2 pin (SPDT) switch (about 1-2 USD).
 
 ## Decision
 
@@ -36,7 +36,7 @@ Buy:
 
 - MPU-6050 accelerometer: very low cost, 6 axis seems enough for velocity measurement, magnetometer may through wrong measurements due to nearby metalic objects (drift will need to be corrected).
 
-- Small-ish LiPo battery (600 mAh) + TP4056 charging circuit + step down voltage regulator (use 5V's ESP32 pin) + 2 pin switch: small size, good enough capacity, stable system operation (not guaranteed when feeding directly from battery), prevents backfeed to battery when powered from ESP32 USB.
+- Small-ish LiPo battery (600 mAh) + TP4056 charging circuit + step up voltage regulator (use 5V's ESP32 pin) + 2 pin switch: small size, good enough capacity, stable system operation (not guaranteed when feeding directly from battery), prevents backfeed to battery when powered from ESP32 USB.
 
 ## Consequences
 

@@ -1,0 +1,39 @@
+' Install PlantUML extension for VSCode to preview this diagram
+
+@startuml schematic
+' Smaller arrow labels to reduce collisions
+skinparam ArrowFontSize 8 
+
+component [600mAh 3.7V LiPo Battery] as battery
+component [TP-4056] as charger
+component [MT-3608] as voltageRegulator
+component [On/Off Switch] as switch 
+component [ESP32 C3 Super Mini] as microcontroller
+component [MPU-6050] as sensor
+
+' Power connections
+battery "(+)" --> "B+" charger 
+charger "B-" --> "(-)" battery
+charger "OUT+" --> "VIN+" voltageRegulator 
+voltageRegulator "VOUT+" --> switch
+switch --> "5V" microcontroller
+
+' IMU signal connections
+microcontroller "3V3" -left-> "VCC" sensor
+microcontroller "D4" --> "SDA" sensor
+microcontroller "D5" --> "SCL" sensor
+
+' Star grounding (NO daisy chaining to reduce noise)
+voltageRegulator "VIN-" --> "OUT-" charger
+microcontroller "GND" --> "OUT-" charger
+sensor "GND" --> "OUT-" charger
+
+' Notes
+note left of switch: Turn off when plugging USB to ESP32 \n (prevent backfeed to battery).
+note right of voltageRegulator: Adjust manually to step-up from 3.7V to 5V.
+
+' USBs
+"Charging USB C" -right-> charger
+"Flashing/Serial USB C" -right-> microcontroller
+
+@enduml

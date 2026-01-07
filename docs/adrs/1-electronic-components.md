@@ -1,8 +1,8 @@
-# ADR-id: choose electronic components for device
+# ADR-1: choose electronic components for device
 
 ## Status
 
-Accepted
+Superdeded by ADR-2
 
 ## Date
 
@@ -36,7 +36,9 @@ Buy:
 
 - MPU-6050 accelerometer: very low cost, 6 axis seems enough for velocity measurement, magnetometer may through wrong measurements due to nearby metalic objects (drift will need to be corrected).
 
-- Small-ish LiPo battery (600 mAh) + TP4056 charging circuit + step up voltage regulator (use 5V's ESP32 pin) + 2 pin switch: small size, good enough capacity, stable system operation (not guaranteed when feeding directly from battery), prevents backfeed to battery when powered from ESP32 USB.
+- Small-ish LiPo battery (600 mAh) + TP4056 charging circuit + MT3608 step up voltage regulator (use 5V's ESP32 pin) + 2 pin switch: small size, good enough capacity, stable system operation (not guaranteed when feeding directly from battery), prevents backfeed to battery when powered from ESP32 USB.
+
+The schematic is available at: [esp32-c3-supermini schematic](../schematics/esp32-c3-supermini.puml).
 
 ## Consequences
 

@@ -1,0 +1,51 @@
+' Install PlantUML extension for VSCode to preview this diagram
+
+@startuml New Schematic
+' Smaller arrow labels to reduce collisions
+skinparam ArrowFontSize 8 
+
+package "Case" {
+    package "Internal" {
+        component [600mAh 3.7V LiPo Battery] as battery
+        component [XIAO ESP32 C3] as microcontroller
+        component [MPU-6050] as sensor
+    }
+    ' package "Surface" {
+        component [On/Off Switch] as switch 
+        component [RF antenna] as antenna
+        component [Recording button] as button
+        component [Recording LED] as led
+    ' }
+}
+
+' Power
+battery "(+)" -- switch
+switch -- "BAT+" microcontroller
+battery "(-)" -- "BAT-" microcontroller
+
+note bottom of microcontroller
+  - Integrated LiPo charging circuit
+  - Integrated 3.3V regulator
+end note
+
+' Microcontroller + IMU
+microcontroller "3V3" -- "VCC" sensor
+microcontroller "D3" -- "INT" sensor
+microcontroller "D4" -- "SDA" sensor
+microcontroller "D5" -- "SCL" sensor
+microcontroller "GND" -- "GND" sensor
+"Flashing/charging USB C" --> microcontroller
+
+' Movement recording
+button "(+)"-right- "3V3" microcontroller
+button "(-)" -right- "D1" microcontroller
+led "(+)" -right- "D2" microcontroller: resistor
+led "(-)" -right- "GND" microcontroller
+
+note top of button: Set INPUT_PULLDOWN for reliable readings
+button -[hidden]- led
+
+' BLE 
+microcontroller "U.FL" -- antenna
+
+@enduml

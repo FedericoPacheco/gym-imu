@@ -14,14 +14,21 @@
 
 - <https://www.youtube.com/watch?v=PZZYTYN8hjc>
 - <https://wiki.seeedstudio.com/XIAO_ESP32C3_Getting_Started/>
+- <https://docs.platformio.org/en/latest/boards/espressif32/seeed_xiao_esp32c3.html>
 
-## Develop IMU code on VSCode
+## Develop device code on VSCode
 
 - <https://randomnerdtutorials.com/vs-code-platformio-ide-esp32-esp8266-arduino/>
+- <https://docs.platformio.org/en/latest/integration/ide/vscode.html>
+
+## Testing on PlatformIO
+
+- <https://docs.platformio.org/en/latest/advanced/unit-testing/index.html>
 
 ## MPU-6050
 
 - <https://randomnerdtutorials.com/arduino-mpu-6050-accelerometer-gyroscope/>
 
-# Button 
+# Button
+
 - <https://roboticsbackend.com/arduino-input_pullup-pinmode/>

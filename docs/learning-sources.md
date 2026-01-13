@@ -24,6 +24,7 @@
 ## Testing on PlatformIO
 
 - <https://docs.platformio.org/en/latest/advanced/unit-testing/index.html>
+- <http://youtube.com/watch?v=UOGMNRcV9-4>
 
 ## MPU-6050
 
@@ -36,3 +37,7 @@
 ## ESP-IDF
 
 - <https://docs.espressif.com/projects/esp-idf/en/stable/esp32/index.html>
+
+## Multiple workspaces on VSCode
+
+- <https://code.visualstudio.com/docs/editing/workspaces/multi-root-workspaces>

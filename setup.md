@@ -47,7 +47,6 @@
 
     ```bash
     pio platform install espressif32
-    pio platform update espressif32
     ```
 
     2.6. Grant access to the serial port:
@@ -61,6 +60,13 @@
     ```bash
     curl -fsSL https://raw.githubusercontent.com/platformio/platformio-core/develop/platformio/assets/system/99-platformio-udev.rules | sudo tee /etc/udev/rules.d/99-platformio-udev.rules
     sudo service udev restart
+    ```
+
+    2.8. Install code coverage tool, make script executable, and install VS Code "open in browser" extension to open html report:
+
+    ```bash
+    sudo apt install lcov
+    chmod +x gen-lcov-report.sh
     ```
 
 3. Install C++ tools (formatter, static analysis, make):

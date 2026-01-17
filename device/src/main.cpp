@@ -1,13 +1,12 @@
-#include "Greeter.h"
-#include "driver/gpio.h"
+#include "LED.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include <iostream>
 
 extern "C" void app_main() {
-  Greeter *greeter = new Greeter();
+  LED led;
   while (true) {
-    greeter->greet();
+    led.toggle();
     vTaskDelay(pdMS_TO_TICKS(1000));
   }
-  delete greeter;
 }

@@ -25,6 +25,7 @@
 
 - <https://docs.platformio.org/en/latest/advanced/unit-testing/index.html>
 - <http://youtube.com/watch?v=UOGMNRcV9-4>
+- <https://www.youtube.com/watch?v=z-uWt5wVVkU>
 
 ## MPU-6050
 
@@ -41,3 +42,7 @@
 ## Multiple workspaces on VSCode
 
 - <https://code.visualstudio.com/docs/editing/workspaces/multi-root-workspaces>
+
+## Multimeter
+
+- <https://www.youtube.com/watch?v=EvAq9zqRB5I>

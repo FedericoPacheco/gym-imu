@@ -46,3 +46,14 @@
 ## Multimeter
 
 - <https://www.youtube.com/watch?v=EvAq9zqRB5I>
+
+## Free RTOS
+
+- <https://www.freertos.org/Documentation/00-Overview>
+- <https://www.freertos.org/Documentation/02-Kernel/04-API-references/11-Software-timers/13-pvTimerGetTimerID>
+- <https://www.freertos.org/Documentation/02-Kernel/04-API-references/11-Software-timers/01-xTimerCreate>
+
+## Arduino vs ESP-IDF vs PlatformIO
+
+- <https://www.youtube.com/watch?v=yvWbvnj3_ss>
+- <https://www.youtube.com/watch?v=iKLJv6rvpTs>

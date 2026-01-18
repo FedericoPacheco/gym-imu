@@ -39,10 +39,14 @@ microcontroller "GND" -- "GND" sensor
 ' Movement recording
 button "(+)"-right- "3V3" microcontroller
 button "(-)" -right- "D1" microcontroller
-led "(+)" -right- "D2" microcontroller: resistor
+microcontroller "D1" -- "GND" microcontroller: 10kΩ resistor
+led "(+)" -right- "D2" microcontroller: 220Ω/1kΩ resistor
 led "(-)" -right- "GND" microcontroller
 
-note top of button: Set INPUT_PULLDOWN for reliable readings
+note top of button
+    Input pulldown + external 
+    resistor for reliable readings
+end note
 button -[hidden]- led
 
 ' BLE 

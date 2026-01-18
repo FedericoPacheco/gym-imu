@@ -17,4 +17,14 @@ bool LED::toggle() {
   return this->state;
 }
 
-bool LED::getState() { return this->state; }
+bool LED::turnOn() {
+  this->state = true;
+  gpio_set_level(this->pin, this->state);
+  return this->state;
+}
+
+bool LED::turnOff() {
+  this->state = false;
+  gpio_set_level(this->pin, this->state);
+  return this->state;
+}

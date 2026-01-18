@@ -5,7 +5,8 @@ class LED {
 public:
   LED(gpio_num_t pin = GPIO_NUM_4); // D2
   bool toggle();
-  bool getState();
+  bool turnOn();
+  bool turnOff();
 
 private:
   gpio_num_t pin;

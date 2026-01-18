@@ -52,6 +52,7 @@
 - <https://www.freertos.org/Documentation/00-Overview>
 - <https://www.freertos.org/Documentation/02-Kernel/04-API-references/11-Software-timers/13-pvTimerGetTimerID>
 - <https://www.freertos.org/Documentation/02-Kernel/04-API-references/11-Software-timers/01-xTimerCreate>
+- <https://freertos.org/Documentation/02-Kernel/04-API-references/11-Software-timers/09-xTimerStartFromISR>
 
 ## Arduino vs ESP-IDF vs PlatformIO
 

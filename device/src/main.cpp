@@ -1,3 +1,4 @@
+#include "Button.h"
 #include "LED.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -5,8 +6,18 @@
 
 extern "C" void app_main() {
   LED led;
+
+  Button button;
+  gpio_install_isr_service(0);
+  button.enableAsync();
+
   while (true) {
-    led.toggle();
+    if (button.wasPressedAsync()) {
+      std::cout << "Button pressed!" << std::endl;
+      led.turnOff();
+    } else {
+      led.turnOn();
+    }
     vTaskDelay(pdMS_TO_TICKS(1000));
   }
 }

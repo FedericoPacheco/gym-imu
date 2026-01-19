@@ -29,7 +29,11 @@
 
 ## MPU-6050
 
-- <https://randomnerdtutorials.com/arduino-mpu-6050-accelerometer-gyroscope/>
+- <https://randomnerdtutorials.com/esp32-mpu-6050-accelerometer-gyroscope-arduino/>
+- <https://github.com/ElectronicCats/mpu6050>
+- <https://github.com/natanaeljr/esp32-MPU-driver>
+- <https://github.com/rfetick/MPU6050_light>
+- <https://invensense.tdk.com/products/motion-tracking/6-axis/mpu-6050/>
 
 ## Button
 
@@ -46,6 +50,7 @@
 ## Multimeter
 
 - <https://www.youtube.com/watch?v=EvAq9zqRB5I>
+-<https://www.youtube.com/watch?v=4lAyzRxsbDc>
 
 ## Free RTOS
 
@@ -58,3 +63,7 @@
 
 - <https://www.youtube.com/watch?v=yvWbvnj3_ss>
 - <https://www.youtube.com/watch?v=iKLJv6rvpTs>
+
+## Digital inputs
+
+- <https://randomnerdtutorials.com/esp-idf-esp32-gpio-inputs/>

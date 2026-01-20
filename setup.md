@@ -70,23 +70,40 @@
     ```
 
 3. Install C++ tools (formatter, static analysis, make):
+
     3.1. Install the VSCode extensions:
-        - C/C++
-        - Clang-Format
-        - C/C++ Advanced Lint
-        - CMake Tools
-    3.2. Install clang:
+        - C/C++ Extension Pack (C/C++, Themes, CMake Tools)
+        - Clangd
+
+    3.2. Install libraries:
 
     ```bash
-    sudo apt install clang
+    sudo apt install clang clangd clang-tidy
     clang --version
+    clangd --version
+    clang-tidy --version
     ```
 
     3.3. Configure in VSCode:
     File > Preferences > Settings:
-        - Search "Editor: Default Formatter" > Select "Clang-Format".
-        - Search "Format On Save" > Check the box to enable it.
-        - Search "C_CppCode Analysis Clang Tidy: Enabled" > Check the box to enable it.
+        - Search "Editor: Default Formatter" > Select "clangd".
+        - Search "Format On Save" > Enable (check the box).
+        - Search "C_Cpp: Code Analysis Clang Tidy: Enabled" > Enable (check the box).
+        - Search "C_Cpp: Intelli Sense Engine" > Select "Disabled".
+        - Search "Platformio-ide: Auto Rebuild Autocomplete Index" > Disable (uncheck the box).
+        - Search "Clangd: Path" > Set to "/usr/bin/clangd".
+        - Search "Clangd: Arguments" > Add:
+          - `--background-index`
+          - `--clang-tidy`
+          - `--header-insertion=iwyu`
+          - `--completion-style=detailed`
+          - `--compile-commands-dir=${workspaceFolder}/.pio/build/device`
+        - Search "Clangd: Fallback Flags" > Add:
+          - "-I${workspaceFolder}/include"
+          - "-I${workspaceFolder}/lib"
+          - "-I${workspaceFolder}/components"
+
+    Note: couldn't make clangd refactors work :(
 
 4. Flash device with firmware:
     5.1. Plug the device while pressing the BOOT button.

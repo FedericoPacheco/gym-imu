@@ -1,3 +1,23 @@
 {
-  "C_Cpp.errorSquiggles": "disabled"
+  "C_Cpp.errorSquiggles": "disabled",
+  "C_Cpp.intelliSenseEngine": "disabled",
+  "platformio-ide.autoRebuildAutocompleteIndex": false,
+  "clangd.path": "/usr/bin/clangd",
+  "clangd.arguments": [
+    "--background-index",
+    "--clang-tidy",
+    "--header-insertion=iwyu",
+    "--completion-style=detailed",
+    "--compile-commands-dir=${workspaceFolder}/.pio/build/device"
+  ],
+  "clangd.fallbackFlags": [
+    "-I${workspaceFolder}/include",
+    "-I${workspaceFolder}/lib",
+    "-I${workspaceFolder}/components"
+  ],
+  "editor.defaultFormatter": "llvm-vs-code-extensions.vscode-clangd",
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.clangd": "explicit"
+  }
 }

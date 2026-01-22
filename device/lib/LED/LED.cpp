@@ -1,6 +1,5 @@
 #include "LED.h"
 #include "freertos/FreeRTOS.h"
-#include <iostream>
 
 LED::LED(gpio_num_t pin) {
   this->pin = pin;

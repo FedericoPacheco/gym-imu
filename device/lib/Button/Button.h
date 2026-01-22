@@ -8,7 +8,7 @@ detection.
 
 How it works:
 Sync: reads pin state directly.
-Async: sets up an ISR (interrupt service routine) which after, a timer expires,
+Async: sets up an ISR (interrupt service routine) which, after a timer expires,
 loads an event into the button queue. If there are elements in the queue, the
 button was indeed pressed.
 

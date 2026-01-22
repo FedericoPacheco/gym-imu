@@ -8,7 +8,7 @@ extern "C" void app_main() {
   LED led;
 
   Button button;
-  gpio_install_isr_service(0);
+  gpio_install_isr_service(ESP_INTR_FLAG_IRAM);
   button.enableAsync();
 
   while (true) {

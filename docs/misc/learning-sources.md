@@ -1,5 +1,13 @@
 # Learning sources
 
+## Essencial
+
+- PlatformIO: <https://docs.platformio.org/en/latest/>
+- ESP-IDF: <https://docs.espressif.com/projects/esp-idf/en/stable/esp32/index.html>
+- FreeRTOS: <https://www.freertos.org/Documentation/00-Overview>
+- C++ Reference: <https://en.cppreference.com/index.html>
+- Cplusplus Reference: <https://cplusplus.com/reference/>
+
 ## ESP32 variants
 
 - <https://www.youtube.com/watch?v=MEhoZ--nOgw>
@@ -39,10 +47,6 @@
 
 - <https://roboticsbackend.com/arduino-input_pullup-pinmode/>
 
-## ESP-IDF
-
-- <https://docs.espressif.com/projects/esp-idf/en/stable/esp32/index.html>
-
 ## Multiple workspaces on VSCode
 
 - <https://code.visualstudio.com/docs/editing/workspaces/multi-root-workspaces>
@@ -50,14 +54,7 @@
 ## Multimeter
 
 - <https://www.youtube.com/watch?v=EvAq9zqRB5I>
--<https://www.youtube.com/watch?v=4lAyzRxsbDc>
-
-## Free RTOS
-
-- <https://www.freertos.org/Documentation/00-Overview>
-- <https://www.freertos.org/Documentation/02-Kernel/04-API-references/11-Software-timers/13-pvTimerGetTimerID>
-- <https://www.freertos.org/Documentation/02-Kernel/04-API-references/11-Software-timers/01-xTimerCreate>
-- <https://freertos.org/Documentation/02-Kernel/04-API-references/11-Software-timers/09-xTimerStartFromISR>
+- <https://www.youtube.com/watch?v=4lAyzRxsbDc>
 
 ## Arduino vs ESP-IDF vs PlatformIO
 

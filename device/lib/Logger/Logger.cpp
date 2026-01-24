@@ -1,9 +1,12 @@
 #include "Logger.hpp"
+#include "esp_log.h"
+#include "esp_timer.h"
 #include <cstdarg>
-#include <cstdio>  // For snprintf
-#include <cstring> // For strlen
+#include <cstdio>
+#include <cstring>
 #include <stdio.h>
 #include <sys/param.h>
+#include <sys/stat.h>
 
 Logger::Logger(LogLevel level) {
   this->sequenceNumber = 0;
@@ -15,39 +18,39 @@ void Logger::log(LogLevel level, const char *formattedMessageStr,
   uint64_t incrementedSequence =
       sequenceNumber.fetch_add(1, std::memory_order_relaxed);
 
-  int64_t timestamp = esp_timer_get_time();
-  char humanReadableUpTime[16];
-  this->formatTime(timestamp, humanReadableUpTime);
+  char humanReadableUpTime[32];
+  this->getHumanReadableUpTime(humanReadableUpTime);
 
   char finalStrWithPrefix[Logger::MAX_LOG_MESSAGE_LENGTH];
-  snprintf(finalStrWithPrefix, sizeof(finalStrWithPrefix), "[%llu] [%s] %s",
-           incrementedSequence, humanReadableUpTime, formattedMessageStr);
+  snprintf(finalStrWithPrefix, sizeof(finalStrWithPrefix),
+           "[%s] [t=%s] [seq=%llu] %s\n", this->mapLevelToString(level),
+           humanReadableUpTime, incrementedSequence, formattedMessageStr);
 
   esp_log_level_t espLevel = this->mapToEspLogLevel(level);
 
   esp_log_write(espLevel, tag, finalStrWithPrefix, messageArgs);
 }
-void Logger::formatTime(int64_t upTimeInMicros, char *buffer) {
-  int64_t ONE_SECOND_IN_MICROS = 1000000;
-  int64_t ONE_MINUTE_IN_MICROS = ONE_SECOND_IN_MICROS * 60;
-  int64_t ONE_HOUR_IN_MICROS = ONE_MINUTE_IN_MICROS * 60;
+void Logger::getHumanReadableUpTime(char *timerBuffer) {
+  const uint64_t ONE_SECOND_IN_MICROS = 1000000;
+  const uint64_t ONE_MINUTE_IN_MICROS = ONE_SECOND_IN_MICROS * 60;
+  const uint64_t ONE_HOUR_IN_MICROS = ONE_MINUTE_IN_MICROS * 60;
 
-  int64_t remainder = 0;
+  uint64_t upTimeInMicros = static_cast<uint64_t>(esp_timer_get_time());
 
-  int64_t hours = upTimeInMicros / ONE_HOUR_IN_MICROS;
-  remainder = upTimeInMicros % ONE_HOUR_IN_MICROS;
+  uint64_t hours = upTimeInMicros / ONE_HOUR_IN_MICROS;
+  uint64_t remainder = upTimeInMicros % ONE_HOUR_IN_MICROS;
 
-  int64_t minutes = remainder / ONE_MINUTE_IN_MICROS;
+  uint64_t minutes = remainder / ONE_MINUTE_IN_MICROS;
   remainder = remainder % ONE_MINUTE_IN_MICROS;
 
-  int64_t seconds = remainder / ONE_SECOND_IN_MICROS;
+  uint64_t seconds = remainder / ONE_SECOND_IN_MICROS;
   remainder = remainder % ONE_SECOND_IN_MICROS;
 
-  int64_t millis = remainder / 1000;
+  uint64_t millis = remainder / 1000;
 
   // Format: HH:MM:SS.mmm e.g. "01:23:45.678"
-  snprintf(buffer, 16, "%02lld:%02lld:%02lld.%03lld", hours, minutes, seconds,
-           millis);
+  snprintf(timerBuffer, 32, "%02llu:%02llu:%02llu.%03llu", hours, minutes,
+           seconds, millis);
 }
 esp_log_level_t Logger::mapToEspLogLevel(LogLevel level) {
   switch (level) {
@@ -61,6 +64,20 @@ esp_log_level_t Logger::mapToEspLogLevel(LogLevel level) {
     return ESP_LOG_DEBUG;
   default:
     return ESP_LOG_INFO;
+  }
+}
+const char *Logger::mapLevelToString(LogLevel level) {
+  switch (level) {
+  case LogLevel::ERROR:
+    return " ERROR ";
+  case LogLevel::WARN:
+    return " WARN  ";
+  case LogLevel::INFO:
+    return " INFO  ";
+  case LogLevel::DEBUG:
+    return " DEBUG ";
+  default:
+    return " INFO  ";
   }
 }
 

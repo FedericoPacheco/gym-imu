@@ -1,7 +1,9 @@
 #pragma once
-#include "esp_log.h"
+#include "esp_log_level.h"
 #include <atomic>
+#include <cstdarg>
 #include <cstdint>
+#include <stdio.h>
 
 enum class LogLevel { ERROR, WARN, INFO, DEBUG };
 
@@ -27,6 +29,7 @@ public:
 private:
   void log(LogLevel level, const char *formattedMessageStr,
            va_list messageArgs);
-  void formatTime(int64_t upTimeInMicros, char *timeBuffer);
+  void getHumanReadableUpTime(char *timeBuffer);
   esp_log_level_t mapToEspLogLevel(LogLevel level);
+  const char *mapLevelToString(LogLevel level);
 };

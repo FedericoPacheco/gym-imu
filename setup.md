@@ -93,19 +93,59 @@
         - Search "Platformio-ide: Auto Rebuild Autocomplete Index" > Disable (uncheck the box).
         - Search "Clangd: Path" > Set to "/usr/bin/clangd".
         - Search "Clangd: Arguments" > Add:
-          - `--background-index`
-          - `--clang-tidy`
-          - `--header-insertion=iwyu`
-          - `--completion-style=detailed`
-          - `--compile-commands-dir=${workspaceFolder}/.pio/build/device`
-        - Search "Clangd: Fallback Flags" > Add:
-          - "-I${workspaceFolder}/include"
-          - "-I${workspaceFolder}/lib"
-          - "-I${workspaceFolder}/components"
+            - `--background-index`
+            - `--clang-tidy`
+            - `--header-insertion=iwyu`
+            - `--completion-style=detailed`
+            - `--compile-commands-dir=${workspaceFolder}/.pio/build/device`
+            - Search "Clangd: Fallback Flags" > Add:
+            - `"-I${workspaceFolder}/include"`
+            - `"-I${workspaceFolder}/lib"`
+            - `"-I${workspaceFolder}/components"`
 
     Note: couldn't make clangd refactors work :(
 
-4. Flash device with firmware:
+4. Install external dependencies not available in PlatformIO:
+    4.1. Create folder and download repos:
+
+    ```bash
+        cd device
+        mkdir -p components
+        git clone https://github.com/natanaeljr/esp32-MPU-driver.git MPU
+        git clone https://github.com/natanaeljr/esp32-I2Cbus.git I2Cbus
+    ```
+
+    4.2. Configure driver:
+
+    ```bash
+        pio run -t menuconfig
+    ```
+
+    Select: MPU driver:
+        - MPU chip model > MPU6050
+        - Communication Protocol > I2C
+        - Digital Motion Processor (DMP) > Enable
+    Press "S" to save config
+
+    4.3. If building error fails due to missing `i2c1` object, wrap every usage of `i2c1` with:
+
+    ```c++
+        #if SOC_I2C_NUM > 1
+        // code using i2c1
+        #endif
+    ```
+
+    Commit the changes:
+
+    ```bash
+        cd device/components/I2Cbus
+        git add .
+        git commit -m "fix(I2Cbus): resolve compatibility with esp32-c3"
+    ```
+
+    The esp32-c3 microcontroller only has one I2C bus.
+
+5. Flash device with firmware:
     5.1. Plug the device while pressing the BOOT button.
     5.2. Open PlatformIO > seeed_xiao_esp32c3 > General > Upload
     5.3. Wait for the process to finish.

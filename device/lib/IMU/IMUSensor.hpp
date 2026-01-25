@@ -15,6 +15,7 @@ struct AngularVelocitySample {
   float pitch;
   float yaw;
 };
+// us (microseconds)
 typedef int64_t Timestamp;
 struct IMUSample {
   AccelerationSample a;

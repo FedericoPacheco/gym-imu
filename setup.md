@@ -147,5 +147,6 @@
 
 5. Flash device with firmware:
     5.1. Plug the device while pressing the BOOT button.
-    5.2. Open PlatformIO > seeed_xiao_esp32c3 > General > Upload
-    5.3. Wait for the process to finish.
+    5.2. Open PlatformIO > device > General:
+     - Build
+     - Upload / Upload and Monitor

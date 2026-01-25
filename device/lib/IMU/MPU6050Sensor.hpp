@@ -1,5 +1,6 @@
 #pragma once
 #include "IMUSensor.hpp"
+#include "Logger.hpp"
 #include "MPU.hpp"
 #include "esp_attr.h"
 #include "freertos/FreeRTOS.h"
@@ -7,6 +8,7 @@
 #include "mpu/types.hpp"
 #include "soc/gpio_num.h"
 #include <atomic>
+#include <tuple>
 
 /*
   A class to interface with the MPU6050 IMU sensor, providing synchronous and
@@ -25,7 +27,7 @@
 
   How to use:
   Sync:
-    std::unique_ptr<IMUSensor> imu = std::make_unique<MPU6050Sensor>();  // RAII
+    std::unique_ptr<IMUSensor> imu = std::make_unique<MPU6050Sensor>(logger);
     while (true) {
       auto sampleOpt = imu->readSync();
       if (sampleOpt) {
@@ -33,7 +35,7 @@
       }
     }
   Async:
-    std::unique_ptr<IMUSensor> imu = std::make_unique<MPU6050Sensor>();  // RAII
+    std::unique_ptr<IMUSensor> imu = std::make_unique<MPU6050Sensor>(logger);
     imu->beginAsync();
     while (true) {
       auto sampleOpt = imu->readAsync();
@@ -46,8 +48,10 @@
 
 class MPU6050Sensor : public IMUSensor {
 private:
-  static const float ACCELEROMETER_SCALE = mpud::ACCEL_FS_2G;
-  static const float GYROSCOPE_SCALE = mpud::GYRO_FS_250DPS;
+  static constexpr mpud::types::accel_fs_t ACCELEROMETER_SCALE =
+      mpud::ACCEL_FS_2G;
+  static constexpr mpud::types::gyro_fs_t GYROSCOPE_SCALE =
+      mpud::GYRO_FS_250DPS;
   static constexpr int BUS_FREQUENCY_HZ = 400000; // 400kHz
 
   static constexpr int SAMPLE_QUEUE_SIZE = 128;
@@ -55,10 +59,12 @@ private:
   static constexpr int READ_TASK_STACK_SIZE = 4096;
   static constexpr int READ_TASK_PRIORITY = 10;
 
-  static const float G = 9.80665f; // m/s²
+  static constexpr float g = 9.80665f; // m/s²
 
   gpio_num_t INTPin, SDAPin, SCLPin;
   int samplingFrequencyHz;
+
+  Logger *logger;
 
   // Prevent races between main and read tasks
   std::atomic<bool> doRead;
@@ -81,8 +87,9 @@ private:
   IMUSample convertToSample(mpud::raw_axes_t aRaw, mpud::raw_axes_t wRaw);
 
 public:
-  MPU6050Sensor(gpio_num_t INTPin = GPIO_NUM_5, gpio_num_t SDAPin = GPIO_NUM_6,
-                gpio_num_t SCLPin = GPIO_NUM_7, int samplingFrequencyHz = 100);
+  MPU6050Sensor(Logger *logger, gpio_num_t INTPin = GPIO_NUM_5,
+                gpio_num_t SDAPin = GPIO_NUM_6, gpio_num_t SCLPin = GPIO_NUM_7,
+                int samplingFrequencyHz = 100);
   ~MPU6050Sensor() override;
 
   std::optional<IMUSample> readSync() override;

@@ -64,3 +64,10 @@
 ## Digital inputs
 
 - <https://randomnerdtutorials.com/esp-idf-esp32-gpio-inputs/>
+
+## Protoboards
+
+- <https://www.youtube.com/watch?v=5tydtZl95dE>
+- <https://www.youtube.com/watch?v=F9Krq7seV1g>
+- <https://www.youtube.com/watch?v=la5BafeXsUI>
+- <https://www.youtube.com/watch?v=a3wDEcORRR4>

@@ -23,12 +23,18 @@ I've also inspected my current tooling and materials:
 Buy or find the following items:
 
 - Solid copper wire (NOT stranded) 22-26 AWG (diameter: 0.643mm -  0.405mm)
-- JST 2.0 PH connector for LiPo battery
 - Small protoboard / perfboard
 - New pair of wires for multimeter
 - Solder 60/40 tin-lead or lead-free, with flux-core, around 1mm
 - Solder iron, with adjustable temperature if possible, 25W-40W
 - Solder sucker and desoldering braid
+- Safety lenses with lateral protection
+- N95/KF94/FFP2/P100 mask for soldering fumes
+
+Optional:
+
+- JST 2.0 PH connector for LiPo battery
+- Nitrile gloves
 
 For now solder headers to my microcontroller and MPU-6050 sensor to facilitate my work. When I finish implementing and testing everything (LED, Button, MPU6050, RF antenna), migrate to protoboard/perfboard as well as start to think about the case/enclosure.
 

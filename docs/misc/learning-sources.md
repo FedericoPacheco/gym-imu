@@ -71,3 +71,9 @@
 - <https://www.youtube.com/watch?v=F9Krq7seV1g>
 - <https://www.youtube.com/watch?v=la5BafeXsUI>
 - <https://www.youtube.com/watch?v=a3wDEcORRR4>
+
+## Soldering/Desoldering
+
+- <https://www.youtube.com/watch?v=3jAw41LRBxU>
+- <https://www.youtube.com/watch?v=VxMV6wGS3NY>
+- <https://www.youtube.com/watch?v=gGSeSk8QWsE>

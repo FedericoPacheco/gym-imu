@@ -1,6 +1,7 @@
 #include "MPU6050Sensor.hpp"
 #include "I2Cbus.hpp"
 #include "IMUSensor.hpp"
+#include "esp_err.h"
 #include "esp_timer.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/idf_additions.h"
@@ -40,10 +41,15 @@ MPU6050Sensor::create(Logger *logger, gpio_num_t INTPin, gpio_num_t SDAPin,
     return nullptr;
   if (!initializeSensor(imu.get()))
     return nullptr;
-  configureSettings(imu.get());
-  setupDMPQueue(imu.get());
-  configureInterrupts(imu.get());
-  setupAsyncComponents(imu.get());
+  if (!configureSettings(imu.get()))
+    return nullptr;
+  if (!setupDMPQueue(imu.get()))
+    return nullptr;
+  // Leave everything ready BEFORE enabling interrupts
+  if (!setupAsyncComponents(imu.get()))
+    return nullptr;
+  if (!configureInterrupts(imu.get()))
+    return nullptr;
 
   imu->logger->info("MPU6050 sensor initialized successfully");
 
@@ -52,21 +58,44 @@ MPU6050Sensor::create(Logger *logger, gpio_num_t INTPin, gpio_num_t SDAPin,
 
 bool MPU6050Sensor::initializeI2CBus(MPU6050Sensor *imu) {
   imu->logger->debug("Initializing I2C bus");
-  imu->bus.begin(imu->SDAPin, imu->SCLPin, GPIO_PULLUP_DISABLE,
-                 GPIO_PULLUP_DISABLE, MPU6050Sensor::BUS_FREQUENCY_HZ);
+
+  esp_err_t err =
+      imu->bus.begin(imu->SDAPin, imu->SCLPin, GPIO_PULLUP_DISABLE,
+                     GPIO_PULLUP_DISABLE, MPU6050Sensor::BUS_FREQUENCY_HZ);
+
+  if (err != ESP_OK) {
+    imu->logger->error("I2C bus initialization failed: %s",
+                       esp_err_to_name(err));
+    return false;
+  }
+
   imu->sensor.setBus(imu->bus);
+  if (imu->sensor.lastError() != ESP_OK) {
+    imu->logger->error("Failed to set I2C bus for sensor: %s",
+                       esp_err_to_name(imu->sensor.lastError()));
+    return false;
+  }
+
   imu->sensor.setAddr(mpud::MPU_I2CADDRESS_AD0_LOW);
+  if (imu->sensor.lastError() != ESP_OK) {
+    imu->logger->error("Failed to set I2C address for sensor: %s",
+                       esp_err_to_name(imu->sensor.lastError()));
+    return false;
+  }
+
   return true;
 }
 
 bool MPU6050Sensor::resetSensor(MPU6050Sensor *imu) {
   imu->logger->debug("Performing sensor reset");
+
   esp_err_t err = imu->sensor.reset();
   if (err != ESP_OK) {
     imu->logger->error("Reset failed: %s", esp_err_to_name(err));
     return false;
   }
   vTaskDelay(pdMS_TO_TICKS(250));
+
   return true;
 }
 
@@ -88,6 +117,7 @@ void MPU6050Sensor::performDiagnostics(MPU6050Sensor *imu) {
 
 bool MPU6050Sensor::testConnection(MPU6050Sensor *imu) {
   imu->logger->debug("Attempting I2C connection");
+
   uint8_t attempts = 0;
   uint8_t MAX_CONNECTION_ATTEMPTS = 5;
   esp_err_t err = imu->sensor.testConnection();
@@ -102,61 +132,128 @@ bool MPU6050Sensor::testConnection(MPU6050Sensor *imu) {
     imu->logger->error("I2C connection failed after %d attempts", attempts);
     return false;
   }
+
   imu->logger->debug("I2C connection successful");
   return true;
 }
 
 bool MPU6050Sensor::initializeSensor(MPU6050Sensor *imu) {
   imu->logger->debug("Initializing MPU6050 sensor");
+
   esp_err_t err = imu->sensor.initialize();
   if (err != ESP_OK) {
     imu->logger->error("MPU initialization failed: %s (%#X)",
                        esp_err_to_name(err), err);
     return false;
   }
+
   return true;
 }
 
-void MPU6050Sensor::configureSettings(MPU6050Sensor *imu) {
+bool MPU6050Sensor::configureSettings(MPU6050Sensor *imu) {
   imu->logger->debug("Configuring sensor settings");
-  imu->sensor.setSampleRate(imu->samplingFrequencyHz);
-  imu->sensor.setAccelFullScale(MPU6050Sensor::ACCELEROMETER_SCALE);
-  imu->sensor.setGyroFullScale(MPU6050Sensor::GYROSCOPE_SCALE);
+
+  esp_err_t err = imu->sensor.setSampleRate(imu->samplingFrequencyHz);
+  if (err != ESP_OK) {
+    imu->logger->error("Failed to set sample rate: %s", esp_err_to_name(err));
+    return false;
+  }
+
+  err = imu->sensor.setAccelFullScale(MPU6050Sensor::ACCELEROMETER_SCALE);
+  if (err != ESP_OK) {
+    imu->logger->error("Failed to set accelerometer scale: %s",
+                       esp_err_to_name(err));
+    return false;
+  }
+
+  err = imu->sensor.setGyroFullScale(MPU6050Sensor::GYROSCOPE_SCALE);
+  if (err != ESP_OK) {
+    imu->logger->error("Failed to set gyroscope scale: %s",
+                       esp_err_to_name(err));
+    return false;
+  }
+
+  return true;
 }
 
-void MPU6050Sensor::setupDMPQueue(MPU6050Sensor *imu) {
+bool MPU6050Sensor::setupDMPQueue(MPU6050Sensor *imu) {
   imu->logger->debug("Setting up DMP FIFO queue on sensor");
-  imu->sensor.setFIFOConfig(mpud::FIFO_CFG_ACCEL | mpud::FIFO_CFG_GYRO);
-  imu->sensor.setFIFOEnabled(true);
+
+  esp_err_t err =
+      imu->sensor.setFIFOConfig(mpud::FIFO_CFG_ACCEL | mpud::FIFO_CFG_GYRO);
+  if (err != ESP_OK) {
+    imu->logger->error("Failed to configure FIFO: %s", esp_err_to_name(err));
+    return false;
+  }
+
+  err = imu->sensor.setFIFOEnabled(true);
+  if (err != ESP_OK) {
+    imu->logger->error("Failed to enable FIFO: %s", esp_err_to_name(err));
+    return false;
+  }
+
+  return true;
 }
 
-void MPU6050Sensor::configureInterrupts(MPU6050Sensor *imu) {
+bool MPU6050Sensor::configureInterrupts(MPU6050Sensor *imu) {
   imu->logger->debug("Configuring pin and interrupts");
   const gpio_config_t pinConfig{.pin_bit_mask = (uint64_t)0x1 << imu->INTPin,
                                 .mode = GPIO_MODE_INPUT,
                                 .pull_up_en = GPIO_PULLUP_DISABLE,
                                 .pull_down_en = GPIO_PULLDOWN_ENABLE,
                                 .intr_type = GPIO_INTR_POSEDGE};
-  gpio_config(&pinConfig);
-  gpio_isr_handler_add(imu->INTPin, MPU6050Sensor::isrHandler, imu);
+  esp_err_t err = gpio_config(&pinConfig);
+  if (err != ESP_OK) {
+    imu->logger->error("GPIO config failed: %s", esp_err_to_name(err));
+    return false;
+  }
+
+  err = gpio_isr_handler_add(imu->INTPin, MPU6050Sensor::isrHandler, imu);
+  if (err != ESP_OK) {
+    imu->logger->error("ISR handler add failed: %s", esp_err_to_name(err));
+    return false;
+  }
+
   const mpud::int_config_t intConfig{.level = mpud::INT_LVL_ACTIVE_HIGH,
                                      .drive = mpud::INT_DRV_PUSHPULL,
                                      .mode = mpud::INT_MODE_PULSE50US,
                                      .clear = mpud::INT_CLEAR_STATUS_REG};
   // gpio_install_isr_service() assumed to be called from app_main()
-  imu->sensor.setInterruptConfig(intConfig);
-  imu->sensor.setInterruptEnabled(mpud::INT_EN_RAWDATA_READY);
+
+  err = imu->sensor.setInterruptConfig(intConfig);
+  if (err != ESP_OK) {
+    imu->logger->error("Interrupt config failed: %s", esp_err_to_name(err));
+    return false;
+  }
+
+  err = imu->sensor.setInterruptEnabled(mpud::INT_EN_RAWDATA_READY);
+  if (err != ESP_OK) {
+    imu->logger->error("Interrupt enable failed: %s", esp_err_to_name(err));
+    return false;
+  }
+
+  return true;
 }
 
-void MPU6050Sensor::setupAsyncComponents(MPU6050Sensor *imu) {
+bool MPU6050Sensor::setupAsyncComponents(MPU6050Sensor *imu) {
   imu->logger->debug(
       "Setting up FreeRTOS task and static queue for async reading");
   imu->setDoRead(false);
-  xTaskCreate(readTask, "readTask", MPU6050Sensor::READ_TASK_STACK_SIZE, imu,
-              MPU6050Sensor::READ_TASK_PRIORITY, &imu->readTaskHandle);
+  BaseType_t taskResult =
+      xTaskCreate(readTask, "readTask", MPU6050Sensor::READ_TASK_STACK_SIZE,
+                  imu, MPU6050Sensor::READ_TASK_PRIORITY, &imu->readTaskHandle);
+  if (taskResult != pdPASS) {
+    imu->logger->error("Failed to create read task");
+    return false;
+  }
   imu->sampleQueue =
       xQueueCreateStatic(MPU6050Sensor::SAMPLE_QUEUE_SIZE, sizeof(IMUSample),
                          imu->sampleQueueBuffer, &imu->sampleQueueControlBlock);
+  if (imu->sampleQueue == NULL) {
+    imu->logger->error("Failed to create sample queue");
+    return false;
+  }
+  return true;
 }
 
 MPU6050Sensor::~MPU6050Sensor() {
@@ -204,6 +301,9 @@ std::optional<IMUSample> MPU6050Sensor::readAsync() {
 
 void IRAM_ATTR MPU6050Sensor::isrHandler(void *arg) {
   MPU6050Sensor *self = static_cast<MPU6050Sensor *>(arg);
+
+  if (!self || !self->readTaskHandle)
+    return;
 
   // Notify the read task to process the interrupt
   BaseType_t highPriorityTaskWoken = pdFALSE;

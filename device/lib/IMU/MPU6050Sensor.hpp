@@ -110,10 +110,10 @@ private:
   static void performDiagnostics(MPU6050Sensor *imu);
   static bool testConnection(MPU6050Sensor *imu);
   static bool initializeSensor(MPU6050Sensor *imu);
-  static void configureSettings(MPU6050Sensor *imu);
-  static void setupDMPQueue(MPU6050Sensor *imu);
-  static void configureInterrupts(MPU6050Sensor *imu);
-  static void setupAsyncComponents(MPU6050Sensor *imu);
+  static bool configureSettings(MPU6050Sensor *imu);
+  static bool setupDMPQueue(MPU6050Sensor *imu);
+  static bool configureInterrupts(MPU6050Sensor *imu);
+  static bool setupAsyncComponents(MPU6050Sensor *imu);
 
 public:
   // Factory method, returns null on failure

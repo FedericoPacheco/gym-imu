@@ -104,6 +104,17 @@ private:
   parseSensorData(const uint8_t *data);
   IMUSample convertToSample(mpud::raw_axes_t aRaw, mpud::raw_axes_t wRaw);
 
+  // create() helper methods
+  static bool initializeI2CBus(MPU6050Sensor *imu);
+  static bool resetSensor(MPU6050Sensor *imu);
+  static void performDiagnostics(MPU6050Sensor *imu);
+  static bool testConnection(MPU6050Sensor *imu);
+  static bool initializeSensor(MPU6050Sensor *imu);
+  static void configureSettings(MPU6050Sensor *imu);
+  static void setupDMPQueue(MPU6050Sensor *imu);
+  static void configureInterrupts(MPU6050Sensor *imu);
+  static void setupAsyncComponents(MPU6050Sensor *imu);
+
 public:
   // Factory method, returns null on failure
   static std::unique_ptr<IMUSensor> create(Logger *logger,

@@ -10,6 +10,19 @@
 #include <cstdint>
 #include <memory>
 
+inline bool checkError(esp_err_t err, Logger *logger, const char *msg) {
+  if (err != ESP_OK) {
+    if (logger != nullptr)
+      logger->error("%s: %s", msg, esp_err_to_name(err));
+    return false;
+  }
+  return true;
+}
+// Returns false from the caller on error
+#define RETURN_ON_ERROR(func, logger, msg)                                     \
+  if (!checkError((func), (logger), (msg)))                                    \
+  return false
+
 MPU6050Sensor::MPU6050Sensor(Logger *logger, gpio_num_t INTPin,
                              gpio_num_t SDAPin, gpio_num_t SCLPin,
                              int samplingFrequencyHz)
@@ -59,29 +72,18 @@ MPU6050Sensor::create(Logger *logger, gpio_num_t INTPin, gpio_num_t SDAPin,
 bool MPU6050Sensor::initializeI2CBus(MPU6050Sensor *imu) {
   imu->logger->debug("Initializing I2C bus");
 
-  esp_err_t err =
-      imu->bus.begin(imu->SDAPin, imu->SCLPin, GPIO_PULLUP_DISABLE,
-                     GPIO_PULLUP_DISABLE, MPU6050Sensor::BUS_FREQUENCY_HZ);
-
-  if (err != ESP_OK) {
-    imu->logger->error("I2C bus initialization failed: %s",
-                       esp_err_to_name(err));
-    return false;
-  }
+  RETURN_ON_ERROR(imu->bus.begin(imu->SDAPin, imu->SCLPin, GPIO_PULLUP_DISABLE,
+                                 GPIO_PULLUP_DISABLE,
+                                 MPU6050Sensor::BUS_FREQUENCY_HZ),
+                  imu->logger, "I2C bus initialization failed");
 
   imu->sensor.setBus(imu->bus);
-  if (imu->sensor.lastError() != ESP_OK) {
-    imu->logger->error("Failed to set I2C bus for sensor: %s",
-                       esp_err_to_name(imu->sensor.lastError()));
-    return false;
-  }
+  RETURN_ON_ERROR(imu->sensor.lastError(), imu->logger,
+                  "Failed to set I2C bus for sensor");
 
   imu->sensor.setAddr(mpud::MPU_I2CADDRESS_AD0_LOW);
-  if (imu->sensor.lastError() != ESP_OK) {
-    imu->logger->error("Failed to set I2C address for sensor: %s",
-                       esp_err_to_name(imu->sensor.lastError()));
-    return false;
-  }
+  RETURN_ON_ERROR(imu->sensor.lastError(), imu->logger,
+                  "Failed to set I2C address for sensor");
 
   return true;
 }
@@ -89,11 +91,7 @@ bool MPU6050Sensor::initializeI2CBus(MPU6050Sensor *imu) {
 bool MPU6050Sensor::resetSensor(MPU6050Sensor *imu) {
   imu->logger->debug("Performing sensor reset");
 
-  esp_err_t err = imu->sensor.reset();
-  if (err != ESP_OK) {
-    imu->logger->error("Reset failed: %s", esp_err_to_name(err));
-    return false;
-  }
+  RETURN_ON_ERROR(imu->sensor.reset(), imu->logger, "Reset failed");
   vTaskDelay(pdMS_TO_TICKS(250));
 
   return true;
@@ -140,12 +138,8 @@ bool MPU6050Sensor::testConnection(MPU6050Sensor *imu) {
 bool MPU6050Sensor::initializeSensor(MPU6050Sensor *imu) {
   imu->logger->debug("Initializing MPU6050 sensor");
 
-  esp_err_t err = imu->sensor.initialize();
-  if (err != ESP_OK) {
-    imu->logger->error("MPU initialization failed: %s (%#X)",
-                       esp_err_to_name(err), err);
-    return false;
-  }
+  RETURN_ON_ERROR(imu->sensor.initialize(), imu->logger,
+                  "MPU initialization failed");
 
   return true;
 }
@@ -153,25 +147,15 @@ bool MPU6050Sensor::initializeSensor(MPU6050Sensor *imu) {
 bool MPU6050Sensor::configureSettings(MPU6050Sensor *imu) {
   imu->logger->debug("Configuring sensor settings");
 
-  esp_err_t err = imu->sensor.setSampleRate(imu->samplingFrequencyHz);
-  if (err != ESP_OK) {
-    imu->logger->error("Failed to set sample rate: %s", esp_err_to_name(err));
-    return false;
-  }
+  RETURN_ON_ERROR(imu->sensor.setSampleRate(imu->samplingFrequencyHz),
+                  imu->logger, "Failed to set sample rate");
 
-  err = imu->sensor.setAccelFullScale(MPU6050Sensor::ACCELEROMETER_SCALE);
-  if (err != ESP_OK) {
-    imu->logger->error("Failed to set accelerometer scale: %s",
-                       esp_err_to_name(err));
-    return false;
-  }
+  RETURN_ON_ERROR(
+      imu->sensor.setAccelFullScale(MPU6050Sensor::ACCELEROMETER_SCALE),
+      imu->logger, "Failed to set accelerometer scale");
 
-  err = imu->sensor.setGyroFullScale(MPU6050Sensor::GYROSCOPE_SCALE);
-  if (err != ESP_OK) {
-    imu->logger->error("Failed to set gyroscope scale: %s",
-                       esp_err_to_name(err));
-    return false;
-  }
+  RETURN_ON_ERROR(imu->sensor.setGyroFullScale(MPU6050Sensor::GYROSCOPE_SCALE),
+                  imu->logger, "Failed to set gyroscope scale");
 
   return true;
 }
@@ -179,18 +163,12 @@ bool MPU6050Sensor::configureSettings(MPU6050Sensor *imu) {
 bool MPU6050Sensor::setupDMPQueue(MPU6050Sensor *imu) {
   imu->logger->debug("Setting up DMP FIFO queue on sensor");
 
-  esp_err_t err =
-      imu->sensor.setFIFOConfig(mpud::FIFO_CFG_ACCEL | mpud::FIFO_CFG_GYRO);
-  if (err != ESP_OK) {
-    imu->logger->error("Failed to configure FIFO: %s", esp_err_to_name(err));
-    return false;
-  }
+  RETURN_ON_ERROR(
+      imu->sensor.setFIFOConfig(mpud::FIFO_CFG_ACCEL | mpud::FIFO_CFG_GYRO),
+      imu->logger, "Failed to configure FIFO");
 
-  err = imu->sensor.setFIFOEnabled(true);
-  if (err != ESP_OK) {
-    imu->logger->error("Failed to enable FIFO: %s", esp_err_to_name(err));
-    return false;
-  }
+  RETURN_ON_ERROR(imu->sensor.setFIFOEnabled(true), imu->logger,
+                  "Failed to enable FIFO");
 
   return true;
 }
@@ -202,17 +180,11 @@ bool MPU6050Sensor::configureInterrupts(MPU6050Sensor *imu) {
                                 .pull_up_en = GPIO_PULLUP_DISABLE,
                                 .pull_down_en = GPIO_PULLDOWN_ENABLE,
                                 .intr_type = GPIO_INTR_POSEDGE};
-  esp_err_t err = gpio_config(&pinConfig);
-  if (err != ESP_OK) {
-    imu->logger->error("GPIO config failed: %s", esp_err_to_name(err));
-    return false;
-  }
+  RETURN_ON_ERROR(gpio_config(&pinConfig), imu->logger, "GPIO config failed");
 
-  err = gpio_isr_handler_add(imu->INTPin, MPU6050Sensor::isrHandler, imu);
-  if (err != ESP_OK) {
-    imu->logger->error("ISR handler add failed: %s", esp_err_to_name(err));
-    return false;
-  }
+  RETURN_ON_ERROR(
+      gpio_isr_handler_add(imu->INTPin, MPU6050Sensor::isrHandler, imu),
+      imu->logger, "ISR handler add failed");
 
   const mpud::int_config_t intConfig{.level = mpud::INT_LVL_ACTIVE_HIGH,
                                      .drive = mpud::INT_DRV_PUSHPULL,
@@ -220,17 +192,11 @@ bool MPU6050Sensor::configureInterrupts(MPU6050Sensor *imu) {
                                      .clear = mpud::INT_CLEAR_STATUS_REG};
   // gpio_install_isr_service() assumed to be called from app_main()
 
-  err = imu->sensor.setInterruptConfig(intConfig);
-  if (err != ESP_OK) {
-    imu->logger->error("Interrupt config failed: %s", esp_err_to_name(err));
-    return false;
-  }
+  RETURN_ON_ERROR(imu->sensor.setInterruptConfig(intConfig), imu->logger,
+                  "Interrupt config failed");
 
-  err = imu->sensor.setInterruptEnabled(mpud::INT_EN_RAWDATA_READY);
-  if (err != ESP_OK) {
-    imu->logger->error("Interrupt enable failed: %s", esp_err_to_name(err));
-    return false;
-  }
+  RETURN_ON_ERROR(imu->sensor.setInterruptEnabled(mpud::INT_EN_RAWDATA_READY),
+                  imu->logger, "Interrupt enable failed");
 
   return true;
 }

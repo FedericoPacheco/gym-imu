@@ -7,72 +7,123 @@
 #include "freertos/task.h"
 #include "mpu/math.hpp"
 #include <cstdint>
+#include <memory>
 
 MPU6050Sensor::MPU6050Sensor(Logger *logger, gpio_num_t INTPin,
                              gpio_num_t SDAPin, gpio_num_t SCLPin,
                              int samplingFrequencyHz)
-    : logger(logger) {
+    : logger(logger), bus(I2C_NUM_0) {
+
+  this->logger->debug("Sensor parameters: INTPin=%d, SDAPin=%d, SCLPin=%d, "
+                      "samplingFrequencyHz=%d",
+                      INTPin, SDAPin, SCLPin, samplingFrequencyHz);
+
   this->INTPin = INTPin;
   this->SDAPin = SDAPin;
   this->SCLPin = SCLPin;
   this->samplingFrequencyHz = samplingFrequencyHz;
+}
 
-  this->logger->info("Configuring MPU6050 sensor");
+std::unique_ptr<IMUSensor>
+MPU6050Sensor::create(Logger *logger, gpio_num_t INTPin, gpio_num_t SDAPin,
+                      gpio_num_t SCLPin, int samplingFrequencyHz) {
 
-  this->logger->debug("Initializing I2C bus");
-  i2c0.begin(this->SDAPin, this->SCLPin, MPU6050Sensor::BUS_FREQUENCY_HZ);
-  sensor.setBus(i2c0);
-  sensor.setAddr(mpud::MPU_I2CADDRESS_AD0_LOW);
+  std::unique_ptr<MPU6050Sensor> imu(
+      new MPU6050Sensor(logger, INTPin, SDAPin, SCLPin, samplingFrequencyHz));
 
-  this->logger->debug("Attempting I2C connection");
-  esp_err_t err = sensor.testConnection();
-  while (err != ESP_OK) {
-    this->logger->error("I2C connection failed: %#X", err);
-    vTaskDelay(pdMS_TO_TICKS(1000));
-    err = sensor.testConnection();
-  }
-  this->logger->debug("I2C connection successful");
+  imu->logger->info("Initializing MPU6050 sensor");
 
-  this->logger->debug("Initializing MPU6050 sensor");
-  err = sensor.initialize();
+  imu->logger->debug("Initializing I2C bus");
+  imu->bus.begin(imu->SDAPin, imu->SCLPin, GPIO_PULLUP_DISABLE,
+                 GPIO_PULLUP_DISABLE, MPU6050Sensor::BUS_FREQUENCY_HZ);
+  imu->sensor.setBus(imu->bus);
+  imu->sensor.setAddr(mpud::MPU_I2CADDRESS_AD0_LOW);
+
+  imu->logger->debug("Performing sensor reset");
+  esp_err_t err = imu->sensor.reset();
   if (err != ESP_OK) {
-    this->logger->error("MPU initialization failed: %#X", err);
+    imu->logger->error("Reset failed: %s", esp_err_to_name(err));
+    return nullptr;
   }
-  this->logger->debug("Configuring settings");
-  sensor.setSampleRate(this->samplingFrequencyHz);
-  sensor.setAccelFullScale(MPU6050Sensor::ACCELEROMETER_SCALE);
-  sensor.setGyroFullScale(MPU6050Sensor::GYROSCOPE_SCALE);
+  vTaskDelay(pdMS_TO_TICKS(250));
 
-  this->logger->debug("Setting up FIFO queue on sensor");
-  sensor.setFIFOConfig(mpud::FIFO_CFG_ACCEL | mpud::FIFO_CFG_GYRO);
-  sensor.setFIFOEnabled(true);
+  // Diagnostic information
+  imu->logger->debug("Scanning I2C bus for MPU6050 device");
+  imu->bus.scanner();
 
-  this->logger->debug("Configuring pin and interrupts");
-  const gpio_config_t pinConfig{.pin_bit_mask = (uint64_t)0x1 << this->INTPin,
+  uint8_t wai = imu->sensor.whoAmI();
+  imu->logger->debug("Retrieved sensor's WHO_AM_I register: 0x%02X", wai);
+  imu->logger->debug("Retrieved sensor's register dump (0x00..0x1F):");
+  imu->sensor.registerDump(0x00, 0x1F);
+
+  mpud::selftest_t selfTestResult = 0;
+  esp_err_t serr = imu->sensor.selfTest(&selfTestResult);
+  imu->logger->info("selfTest result: 0x%X err=%s", selfTestResult,
+                    esp_err_to_name(serr));
+  // End diagnostic
+
+  imu->logger->debug("Attempting I2C connection");
+  uint8_t attempts = 0;
+  uint8_t MAX_CONNECTION_ATTEMPTS = 5;
+  err = imu->sensor.testConnection();
+  while (err != ESP_OK && attempts < MAX_CONNECTION_ATTEMPTS) {
+    imu->logger->error("I2C connection failed: %s (%#X)", esp_err_to_name(err),
+                       err);
+    vTaskDelay(pdMS_TO_TICKS(1000));
+    err = imu->sensor.testConnection();
+    attempts++;
+  }
+  if (attempts == MAX_CONNECTION_ATTEMPTS) {
+    imu->logger->error("I2C connection failed after %d attempts", attempts);
+    return nullptr;
+  }
+  imu->logger->debug("I2C connection successful");
+
+  imu->logger->debug("Initializing MPU6050 sensor");
+  err = imu->sensor.initialize();
+  if (err != ESP_OK) {
+    imu->logger->error("MPU initialization failed: %s (%#X)",
+                       esp_err_to_name(err), err);
+    return nullptr;
+  }
+  imu->logger->debug("Configuring settings");
+  imu->sensor.setSampleRate(imu->samplingFrequencyHz);
+  imu->sensor.setAccelFullScale(MPU6050Sensor::ACCELEROMETER_SCALE);
+  imu->sensor.setGyroFullScale(MPU6050Sensor::GYROSCOPE_SCALE);
+
+  imu->logger->debug("Setting up FIFO queue on sensor");
+  imu->sensor.setFIFOConfig(mpud::FIFO_CFG_ACCEL | mpud::FIFO_CFG_GYRO);
+  imu->sensor.setFIFOEnabled(true);
+
+  imu->logger->debug("Configuring pin and interrupts");
+  const gpio_config_t pinConfig{.pin_bit_mask = (uint64_t)0x1 << imu->INTPin,
                                 .mode = GPIO_MODE_INPUT,
                                 .pull_up_en = GPIO_PULLUP_DISABLE,
                                 .pull_down_en = GPIO_PULLDOWN_ENABLE,
                                 .intr_type = GPIO_INTR_POSEDGE};
   gpio_config(&pinConfig);
-  gpio_isr_handler_add(this->INTPin, MPU6050Sensor::isrHandler, this);
+  gpio_isr_handler_add(imu->INTPin, MPU6050Sensor::isrHandler, imu.get());
   const mpud::int_config_t intConfig{.level = mpud::INT_LVL_ACTIVE_HIGH,
                                      .drive = mpud::INT_DRV_PUSHPULL,
                                      .mode = mpud::INT_MODE_PULSE50US,
                                      .clear = mpud::INT_CLEAR_STATUS_REG};
   // gpio_install_isr_service() assumed to be called from app_main()
-  sensor.setInterruptConfig(intConfig);
-  sensor.setInterruptEnabled(mpud::INT_EN_RAWDATA_READY);
+  imu->sensor.setInterruptConfig(intConfig);
+  imu->sensor.setInterruptEnabled(mpud::INT_EN_RAWDATA_READY);
 
-  this->logger->debug(
+  imu->logger->debug(
       "Setting up FreeRTOS task and static queue for async reading");
-  this->setDoRead(false);
-  xTaskCreate(readTask, "readTask", MPU6050Sensor::READ_TASK_STACK_SIZE, this,
-              MPU6050Sensor::READ_TASK_PRIORITY, &this->readTaskHandle);
-  this->sampleQueue = xQueueCreateStatic(
-      MPU6050Sensor::SAMPLE_QUEUE_SIZE, sizeof(IMUSample),
-      this->sampleQueueBuffer, &this->sampleQueueControlBlock);
+  imu->setDoRead(false);
+  xTaskCreate(readTask, "readTask", MPU6050Sensor::READ_TASK_STACK_SIZE,
+              imu.get(), MPU6050Sensor::READ_TASK_PRIORITY,
+              &imu->readTaskHandle);
+  imu->sampleQueue =
+      xQueueCreateStatic(MPU6050Sensor::SAMPLE_QUEUE_SIZE, sizeof(IMUSample),
+                         imu->sampleQueueBuffer, &imu->sampleQueueControlBlock);
 
-  this->logger->info("MPU6050 sensor configured successfully");
+  imu->logger->info("MPU6050 sensor initialized successfully");
+
+  return imu;
 }
 
 MPU6050Sensor::~MPU6050Sensor() {

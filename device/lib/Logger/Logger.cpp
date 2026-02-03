@@ -28,7 +28,7 @@ void Logger::log(LogLevel level, const char *formattedMessageStr,
 
   esp_log_level_t espLevel = this->mapToEspLogLevel(level);
 
-  esp_log_write(espLevel, tag, finalStrWithPrefix, messageArgs);
+  esp_log_writev(espLevel, tag, finalStrWithPrefix, messageArgs);
 }
 void Logger::getHumanReadableUpTime(char *timerBuffer) {
   const uint64_t ONE_SECOND_IN_MICROS = 1000000;

@@ -1,13 +1,16 @@
 #pragma once
+#include "I2Cbus.hpp"
 #include "IMUSensor.hpp"
 #include "Logger.hpp"
 #include "MPU.hpp"
 #include "esp_attr.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/idf_additions.h"
+#include "hal/i2c_types.h"
 #include "mpu/types.hpp"
 #include "soc/gpio_num.h"
 #include <atomic>
+#include <memory>
 #include <tuple>
 
 /*
@@ -27,7 +30,8 @@
 
   How to use:
   Sync:
-    std::unique_ptr<IMUSensor> imu = std::make_unique<MPU6050Sensor>(logger);
+    Logger logger((LogLevel::DEBUG));
+    std::unique_ptr<IMUSensor> imu = MPU6050Sensor::create(&logger);
     while (true) {
       auto sampleOpt = imu->readSync();
       if (sampleOpt) {
@@ -35,7 +39,8 @@
       }
     }
   Async:
-    std::unique_ptr<IMUSensor> imu = std::make_unique<MPU6050Sensor>(logger);
+    Logger logger((LogLevel::DEBUG));
+    std::unique_ptr<IMUSensor> imu = MPU6050Sensor::create(&logger);
     imu->beginAsync();
     while (true) {
       auto sampleOpt = imu->readAsync();
@@ -44,7 +49,14 @@
       }
     }
     imu->stopAsync();
-*/
+
+  Notes:
+  Requires to edit the MPU.testConnection() method to accept other WHO_AM_I
+  values due to the sensor being fake/clone/counterfeit (see setup.md for
+  details). This may affect the quality and reliability of the sensor data, but
+  it's accepted due to the difficulty and cost of getting better hardware here
+  in Argentina.
+  */
 
 class MPU6050Sensor : public IMUSensor {
 private:
@@ -52,7 +64,9 @@ private:
       mpud::ACCEL_FS_2G;
   static constexpr mpud::types::gyro_fs_t GYROSCOPE_SCALE =
       mpud::GYRO_FS_250DPS;
-  static constexpr int BUS_FREQUENCY_HZ = 400000; // 400kHz
+  // static constexpr int BUS_FREQUENCY_HZ = 400000; // 400kHz, short wires
+  // (<10cm)
+  static constexpr int BUS_FREQUENCY_HZ = 100000; // 100kHz, long wires
 
   static constexpr int SAMPLE_QUEUE_SIZE = 128;
   static constexpr int FIFO_PACKET_SIZE = 12;
@@ -74,7 +88,8 @@ private:
   QueueHandle_t sampleQueue;
   TaskHandle_t readTaskHandle;
 
-  mpud::MPU sensor;
+  MPU_t sensor;
+  I2C_t bus;
 
   static IRAM_ATTR void isrHandler(void *arg);
   static void readTask(void *arg);
@@ -82,14 +97,20 @@ private:
   void setDoRead(bool value);
   bool getDoRead();
 
+  MPU6050Sensor(Logger *logger, gpio_num_t INTPin, gpio_num_t SDAPin,
+                gpio_num_t SCLPin, int samplingFrequencyHz);
+
   std::tuple<mpud::raw_axes_t, mpud::raw_axes_t>
   parseSensorData(const uint8_t *data);
   IMUSample convertToSample(mpud::raw_axes_t aRaw, mpud::raw_axes_t wRaw);
 
 public:
-  MPU6050Sensor(Logger *logger, gpio_num_t INTPin = GPIO_NUM_5,
-                gpio_num_t SDAPin = GPIO_NUM_6, gpio_num_t SCLPin = GPIO_NUM_7,
-                int samplingFrequencyHz = 100);
+  // Factory method, returns null on failure
+  static std::unique_ptr<IMUSensor> create(Logger *logger,
+                                           gpio_num_t INTPin = GPIO_NUM_5,
+                                           gpio_num_t SDAPin = GPIO_NUM_6,
+                                           gpio_num_t SCLPin = GPIO_NUM_7,
+                                           int samplingFrequencyHz = 100);
   ~MPU6050Sensor() override;
 
   std::optional<IMUSample> readSync() override;

@@ -145,6 +145,25 @@
 
     The esp32-c3 microcontroller only has one I2C bus.
 
+    4.4. If the sensor fails to initialize, add another valid "who am i" value to `MPU.testConnection()`:
+
+    ```c++
+      ...
+      #if defined CONFIG_MPU6000 || defined CONFIG_MPU6050 || defined CONFIG_MPU9150
+        return (wai == 0x68 || wai == ...) ? ESP_OK : ESP_ERR_NOT_FOUND;
+      ...
+    ```
+
+    Get the wai value by reviewing the logs on the serial monitor, or with `sensor.whoAmI()`.
+
+    Commit the changes:
+
+    ```bash
+        cd device/components/MPU
+        git add .
+        git commit -m "fix(MPU): add support for fake/clone/counterfeit MPU6050 device"
+    ```
+
 5. Flash device with firmware:
     5.1. Plug the device while pressing the BOOT button.
     5.2. Open PlatformIO > device > General:

@@ -77,3 +77,11 @@
 - <https://www.youtube.com/watch?v=3jAw41LRBxU>
 - <https://www.youtube.com/watch?v=VxMV6wGS3NY>
 - <https://www.youtube.com/watch?v=gGSeSk8QWsE>
+
+## Fake / clone / counterfeit MPU6050
+
+- <https://forum.pjrc.com/index.php?threads/not-initialize-mpu6050-failed-to-find-mpu6050-chip.67594/>
+- <https://forum.arduino.cc/t/mpu-6050-a-module-problems-who-am-i-reports-0x98-not-0x68-as-it-should-fake-mpu-6050/861956>
+- <https://www.eevblog.com/forum/projects/counterfeit-mpu6050-chips-from-china/>
+- <https://www.reddit.com/r/arduino/comments/1jxenjb/fake_clone_mpu6050/>
+- <https://www.reddit.com/r/arduino/comments/1jqtqk2/finally_happened_to_me_i_got_scammed/>

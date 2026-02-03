@@ -10,7 +10,7 @@ extern "C" void app_main() {
 
   vTaskDelay(pdMS_TO_TICKS(5000));
   Logger logger((LogLevel::DEBUG));
-  std::unique_ptr<IMUSensor> imu = std::make_unique<MPU6050Sensor>(&logger);
+  std::unique_ptr<IMUSensor> imu = MPU6050Sensor::create(&logger);
 
   while (true) {
     vTaskDelay(pdMS_TO_TICKS(1000));

@@ -25,9 +25,11 @@ struct IMUSample {
 
 class IMUSensor {
 protected:
-public:
   IMUSensor() = default;
+
+public:
   virtual ~IMUSensor() = default;
+
   virtual std::optional<IMUSample> readSync() = 0;
   virtual std::optional<IMUSample> readAsync() = 0;
   virtual void beginAsync() = 0;

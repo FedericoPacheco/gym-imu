@@ -64,13 +64,14 @@ private:
       mpud::ACCEL_FS_2G;
   static constexpr mpud::types::gyro_fs_t GYROSCOPE_SCALE =
       mpud::GYRO_FS_250DPS;
-  // static constexpr int BUS_FREQUENCY_HZ = 400000; // 400kHz, short wires
-  // (<10cm)
-  static constexpr int BUS_FREQUENCY_HZ = 100000; // 100kHz, long wires
+  static constexpr int BUS_FREQUENCY_HZ = 400000; // 400kHz, short wires (<10cm)
+  // static constexpr int BUS_FREQUENCY_HZ = 100000; // 100kHz, long wires
 
   static constexpr int SAMPLE_QUEUE_SIZE = 128;
   static constexpr int FIFO_PACKET_SIZE = 12;
+
   static constexpr int READ_TASK_STACK_SIZE = 4096;
+  static constexpr int READ_TASK_MAX_BATCH = 12;
   static constexpr int READ_TASK_PRIORITY = 10;
 
   static constexpr float g = 9.80665f; // m/s²
@@ -121,7 +122,7 @@ public:
                                            gpio_num_t INTPin = GPIO_NUM_5,
                                            gpio_num_t SDAPin = GPIO_NUM_6,
                                            gpio_num_t SCLPin = GPIO_NUM_7,
-                                           int samplingFrequencyHz = 100);
+                                           int samplingFrequencyHz = 64);
   ~MPU6050Sensor() override;
 
   std::optional<IMUSample> readSync() override;

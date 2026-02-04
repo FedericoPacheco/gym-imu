@@ -10,6 +10,7 @@
 #include "mpu/types.hpp"
 #include "soc/gpio_num.h"
 #include <atomic>
+#include <cstdint>
 #include <memory>
 #include <tuple>
 
@@ -101,6 +102,7 @@ private:
   MPU6050Sensor(Logger *logger, gpio_num_t INTPin, gpio_num_t SDAPin,
                 gpio_num_t SCLPin, int samplingFrequencyHz);
 
+  void batchProcessDMPQueue(uint16_t initialFifoCount);
   std::tuple<mpud::raw_axes_t, mpud::raw_axes_t>
   parseSensorData(const uint8_t *data);
   IMUSample convertToSample(mpud::raw_axes_t aRaw, mpud::raw_axes_t wRaw);

@@ -245,10 +245,10 @@ MPU6050Sensor::~MPU6050Sensor() {
   this->logger->info("MPU6050 sensor shut down successfully");
 }
 
-void MPU6050Sensor::setDoRead(bool value) {
+inline void MPU6050Sensor::setDoRead(bool value) {
   this->doRead.store(value, std::memory_order_relaxed);
 }
-bool MPU6050Sensor::getDoRead() {
+inline bool MPU6050Sensor::getDoRead() {
   return this->doRead.load(std::memory_order_relaxed);
 }
 
@@ -298,87 +298,91 @@ void MPU6050Sensor::readTask(void *arg) {
           notificationValue);
     }
 
-    uint16_t initialFifoCount = self->sensor.getFIFOCount();
     bool wasCountReadError = self->sensor.lastError() != ESP_OK;
-    bool isFifoMisaligned =
-        initialFifoCount % MPU6050Sensor::FIFO_PACKET_SIZE != 0;
-    bool areManyPacketsAvailable =
-        initialFifoCount > 2 * MPU6050Sensor::FIFO_PACKET_SIZE;
-
     if (wasCountReadError) {
       self->logger->warn("Read task: FIFO count read error");
       self->sensor.resetFIFO();
       continue;
     }
+
+    uint16_t initialFifoCount = self->sensor.getFIFOCount();
+    bool isFifoMisaligned =
+        initialFifoCount % MPU6050Sensor::FIFO_PACKET_SIZE != 0;
     if (isFifoMisaligned) {
       self->logger->warn("Read task: FIFO misaligned (count=%d)",
                          initialFifoCount);
       self->sensor.resetFIFO();
       continue;
     }
-    // Try to process the backlog first BEFORE reseting
-    if (areManyPacketsAvailable)
-      self->logger->warn("Read task: many packets available (count=%d), "
-                         "attempting to process backlog",
-                         initialFifoCount);
 
-    int packetsProcessed = 0;
-    bool wasBufferReadError = false;
-    int currentFifoCount = (int)initialFifoCount;
-    uint8_t sensorBuffer[MPU6050Sensor::FIFO_PACKET_SIZE];
-    while (currentFifoCount >= MPU6050Sensor::FIFO_PACKET_SIZE &&
-           packetsProcessed < MPU6050Sensor::READ_TASK_MAX_BATCH) {
-
-      wasBufferReadError =
-          self->sensor.readFIFO(MPU6050Sensor::FIFO_PACKET_SIZE,
-                                sensorBuffer) != ESP_OK;
-      if (wasBufferReadError) {
-        self->logger->warn(
-            "Read task: FIFO buffer read error during batch processing");
-        self->sensor.resetFIFO();
-        break; // Exit loop on error
-      }
-
-      // If queue full, drop oldest sample to make space for new one
-      if (uxQueueSpacesAvailable(self->sampleQueue) == 0) {
-        IMUSample dummy;
-        if (xQueueReceive(self->sampleQueue, &dummy, 0) == pdPASS) {
-          self->logger->debug("Read task: dropped oldest sample to make space");
-        } else {
-          self->logger->warn(
-              "Read task: failed to drop oldest sample (queue empty?)");
-          continue; // Skip enqueuing if unexpected
-        }
-      }
-
-      auto [aRaw, wRaw] = self->parseSensorData(sensorBuffer);
-      IMUSample sample = self->convertToSample(aRaw, wRaw);
-      self->logger->debug("Read task: processing packet %d: a=<%.3f, %.3f, "
-                          "%.3f> m/s2, w=<%.3f, %.3f, %.3f> deg/s, t=%lld us",
-                          packetsProcessed + 1, sample.a.x, sample.a.y,
-                          sample.a.z, sample.w.roll, sample.w.pitch,
-                          sample.w.yaw, sample.t);
-      // Enqueue with short timeout (non-blocking) to avoid stalls
-      if (xQueueSend(self->sampleQueue, &sample, pdMS_TO_TICKS(1)) != pdPASS) {
-        self->logger->warn("Read task: failed to enqueue sample (timeout)");
-        // Sample is dropped, but continue processing FIFO
-      }
-
-      currentFifoCount -= MPU6050Sensor::FIFO_PACKET_SIZE;
-      packetsProcessed++;
-    }
-
-    // If there are still many packages after processing, reset as fallback to
-    // avoid overflow
-    if (currentFifoCount > 2 * MPU6050Sensor::FIFO_PACKET_SIZE) {
-      self->logger->warn("Read task: FIFO still overloaded after processing "
-                         "(count=%d), resetting",
-                         currentFifoCount);
-      self->sensor.resetFIFO();
-    }
+    self->batchProcessDMPQueue(initialFifoCount);
   }
 
   self->logger->debug("Read task ended");
+}
+
+void MPU6050Sensor::batchProcessDMPQueue(uint16_t initialFifoCount) {
+  bool areManyPacketsAvailable =
+      initialFifoCount > 2 * MPU6050Sensor::FIFO_PACKET_SIZE;
+  if (areManyPacketsAvailable)
+    this->logger->warn("Read task: many packets available (count=%d), "
+                       "attempting to process backlog",
+                       initialFifoCount);
+
+  int packetsProcessed = 0;
+  bool wasBufferReadError = false;
+  int currentFifoCount = (int)initialFifoCount;
+  uint8_t sensorBuffer[MPU6050Sensor::FIFO_PACKET_SIZE];
+  while (currentFifoCount >= MPU6050Sensor::FIFO_PACKET_SIZE &&
+         packetsProcessed < MPU6050Sensor::READ_TASK_MAX_BATCH) {
+
+    wasBufferReadError = this->sensor.readFIFO(MPU6050Sensor::FIFO_PACKET_SIZE,
+                                               sensorBuffer) != ESP_OK;
+    if (wasBufferReadError) {
+      this->logger->warn(
+          "Read task: FIFO buffer read error during batch processing");
+      this->sensor.resetFIFO();
+      break; // Exit loop on error
+    }
+
+    // If queue full, drop oldest sample to make space for new one
+    if (uxQueueSpacesAvailable(this->sampleQueue) == 0) {
+      IMUSample dummy;
+      if (xQueueReceive(this->sampleQueue, &dummy, 0) == pdPASS) {
+        this->logger->debug("Read task: dropped oldest sample to make space");
+      } else {
+        this->logger->warn(
+            "Read task: failed to drop oldest sample (queue empty?)");
+        continue; // Skip enqueuing if unexpected
+      }
+    }
+
+    auto [aRaw, wRaw] = this->parseSensorData(sensorBuffer);
+    IMUSample sample = this->convertToSample(aRaw, wRaw);
+    this->logger->debug("Read task: processing packet %d: a=<%.3f, %.3f, "
+                        "%.3f> m/s2, w=<%.3f, %.3f, %.3f> deg/s, t=%lld us",
+                        packetsProcessed + 1, sample.a.x, sample.a.y,
+                        sample.a.z, sample.w.roll, sample.w.pitch, sample.w.yaw,
+                        sample.t);
+    // Enqueue with short timeout (non-blocking) to avoid stalls
+    if (xQueueSend(this->sampleQueue, &sample, pdMS_TO_TICKS(1)) != pdPASS) {
+      this->logger->warn("Read task: failed to enqueue sample (timeout)");
+      // Sample is dropped, but continue processing FIFO
+    }
+
+    currentFifoCount -= MPU6050Sensor::FIFO_PACKET_SIZE;
+    packetsProcessed++;
+  }
+
+  // Reset as fallback to avoid overflow
+  areManyPacketsAvailable =
+      currentFifoCount > 2 * MPU6050Sensor::FIFO_PACKET_SIZE;
+  if (areManyPacketsAvailable) {
+    this->logger->warn("Read task: FIFO still overloaded after processing "
+                       "(count=%d), resetting",
+                       currentFifoCount);
+    this->sensor.resetFIFO();
+  }
 }
 
 std::tuple<mpud::raw_axes_t, mpud::raw_axes_t>

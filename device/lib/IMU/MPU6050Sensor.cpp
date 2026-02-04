@@ -9,6 +9,7 @@
 #include "mpu/math.hpp"
 #include <cstdint>
 #include <memory>
+#include <new>
 
 inline bool checkError(esp_err_t err, Logger *logger, const char *msg) {
   if (err != ESP_OK) {
@@ -44,8 +45,16 @@ std::unique_ptr<IMUSensor>
 MPU6050Sensor::create(Logger *logger, gpio_num_t INTPin, gpio_num_t SDAPin,
                       gpio_num_t SCLPin, int samplingFrequencyHz) {
 
-  std::unique_ptr<MPU6050Sensor> imu(
-      new MPU6050Sensor(logger, INTPin, SDAPin, SCLPin, samplingFrequencyHz));
+  // nothrow: in case of failure, return nullptr instead of throwing
+  std::unique_ptr<MPU6050Sensor> imu(new (std::nothrow) MPU6050Sensor(
+      logger, INTPin, SDAPin, SCLPin, samplingFrequencyHz));
+
+  if (!imu) {
+    if (logger) {
+      logger->error("Failed to allocate MPU6050Sensor");
+    }
+    return nullptr;
+  }
 
   if (!imu->initializeI2CBus())
     return nullptr;
@@ -66,7 +75,7 @@ MPU6050Sensor::create(Logger *logger, gpio_num_t INTPin, gpio_num_t SDAPin,
   if (!imu->configureInterrupts())
     return nullptr;
 
-  imu->logger->info("MPU6050 sensor initialized successfully");
+  logger->info("MPU6050 sensor initialized successfully");
 
   return imu;
 }
@@ -392,7 +401,7 @@ bool MPU6050Sensor::dropOldestSampleIfFull() {
 
 std::tuple<mpud::raw_axes_t, mpud::raw_axes_t>
 MPU6050Sensor::parseSensorData(const uint8_t *data) {
-  mpud::raw_axes_t aRaw, wRaw;
+  mpud::raw_axes_t aRaw{}, wRaw{};
 
   // Explanation:
   // Sensor's buffer stores data in big-endian format (i.e. most significant

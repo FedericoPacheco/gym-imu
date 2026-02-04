@@ -102,10 +102,11 @@ private:
   MPU6050Sensor(Logger *logger, gpio_num_t INTPin, gpio_num_t SDAPin,
                 gpio_num_t SCLPin, int samplingFrequencyHz);
 
-  void batchProcessDMPQueue(uint16_t initialFifoCount);
+  void batchReadDMPQueue(uint16_t initialFifoCount);
+  bool dropOldestSampleIfFull();
   std::tuple<mpud::raw_axes_t, mpud::raw_axes_t>
   parseSensorData(const uint8_t *data);
-  IMUSample convertToSample(mpud::raw_axes_t aRaw, mpud::raw_axes_t wRaw);
+  IMUSample toIMUSample(mpud::raw_axes_t aRaw, mpud::raw_axes_t wRaw);
 
   // create() helper methods
   static bool initializeI2CBus(MPU6050Sensor *imu);

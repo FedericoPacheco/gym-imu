@@ -315,13 +315,13 @@ void MPU6050Sensor::readTask(void *arg) {
       continue;
     }
 
-    self->batchProcessDMPQueue(initialFifoCount);
+    self->batchReadDMPQueue(initialFifoCount);
   }
 
   self->logger->debug("Read task ended");
 }
 
-void MPU6050Sensor::batchProcessDMPQueue(uint16_t initialFifoCount) {
+void MPU6050Sensor::batchReadDMPQueue(uint16_t initialFifoCount) {
   bool areManyPacketsAvailable =
       initialFifoCount > 2 * MPU6050Sensor::FIFO_PACKET_SIZE;
   if (areManyPacketsAvailable)
@@ -345,20 +345,11 @@ void MPU6050Sensor::batchProcessDMPQueue(uint16_t initialFifoCount) {
       break; // Exit loop on error
     }
 
-    // If queue full, drop oldest sample to make space for new one
-    if (uxQueueSpacesAvailable(this->sampleQueue) == 0) {
-      IMUSample dummy;
-      if (xQueueReceive(this->sampleQueue, &dummy, 0) == pdPASS) {
-        this->logger->debug("Read task: dropped oldest sample to make space");
-      } else {
-        this->logger->warn(
-            "Read task: failed to drop oldest sample (queue empty?)");
-        continue; // Skip enqueuing if unexpected
-      }
-    }
+    if (!this->dropOldestSampleIfFull())
+      continue;
 
     auto [aRaw, wRaw] = this->parseSensorData(sensorBuffer);
-    IMUSample sample = this->convertToSample(aRaw, wRaw);
+    IMUSample sample = this->toIMUSample(aRaw, wRaw);
     this->logger->debug("Read task: processing packet %d: a=<%.3f, %.3f, "
                         "%.3f> m/s2, w=<%.3f, %.3f, %.3f> deg/s, t=%lld us",
                         packetsProcessed + 1, sample.a.x, sample.a.y,
@@ -385,6 +376,21 @@ void MPU6050Sensor::batchProcessDMPQueue(uint16_t initialFifoCount) {
   }
 }
 
+bool MPU6050Sensor::dropOldestSampleIfFull() {
+  if (uxQueueSpacesAvailable(this->sampleQueue) == 0) {
+    IMUSample dummy;
+    if (xQueueReceive(this->sampleQueue, &dummy, 0) == pdPASS) {
+      this->logger->debug("Read task: dropped oldest sample to make space");
+      return true;
+    } else {
+      this->logger->warn(
+          "Read task: failed to drop oldest sample (queue empty?)");
+      return false; // Skip enqueuing if error occurs
+    }
+  }
+  return true;
+}
+
 std::tuple<mpud::raw_axes_t, mpud::raw_axes_t>
 MPU6050Sensor::parseSensorData(const uint8_t *data) {
   mpud::raw_axes_t aRaw, wRaw;
@@ -407,8 +413,8 @@ MPU6050Sensor::parseSensorData(const uint8_t *data) {
   return {aRaw, wRaw};
 }
 
-IMUSample MPU6050Sensor::convertToSample(mpud::raw_axes_t aRaw,
-                                         mpud::raw_axes_t wRaw) {
+IMUSample MPU6050Sensor::toIMUSample(mpud::raw_axes_t aRaw,
+                                     mpud::raw_axes_t wRaw) {
   mpud::float_axes_t aGravity =
       mpud::math::accelGravity(aRaw, MPU6050Sensor::ACCELEROMETER_SCALE);
   mpud::float_axes_t w =
@@ -425,7 +431,7 @@ std::optional<IMUSample> MPU6050Sensor::readSync() {
   mpud::raw_axes_t aRaw, wRaw;
   sensor.acceleration(&aRaw);
   sensor.rotation(&wRaw);
-  IMUSample sample = this->convertToSample(aRaw, wRaw);
+  IMUSample sample = this->toIMUSample(aRaw, wRaw);
   this->logger->info("Sync read: a=<%.3f, %.3f, %.3f> m/s2, "
                      "w=<%.3f, %.3f, %.3f> deg/s, t=%lld us",
                      sample.a.x, sample.a.y, sample.a.z, sample.w.roll,

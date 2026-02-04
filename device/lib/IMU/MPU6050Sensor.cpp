@@ -23,6 +23,8 @@ inline bool checkError(esp_err_t err, Logger *logger, const char *msg) {
   if (!checkError((func), (logger), (msg)))                                    \
   return false
 
+// ------------------------------------------------------------------------------
+
 MPU6050Sensor::MPU6050Sensor(Logger *logger, gpio_num_t INTPin,
                              gpio_num_t SDAPin, gpio_num_t SCLPin,
                              int samplingFrequencyHz)
@@ -45,23 +47,23 @@ MPU6050Sensor::create(Logger *logger, gpio_num_t INTPin, gpio_num_t SDAPin,
   std::unique_ptr<MPU6050Sensor> imu(
       new MPU6050Sensor(logger, INTPin, SDAPin, SCLPin, samplingFrequencyHz));
 
-  if (!initializeI2CBus(imu.get()))
+  if (!imu->initializeI2CBus())
     return nullptr;
-  if (!resetSensor(imu.get()))
+  if (!imu->resetSensor())
     return nullptr;
-  // performDiagnostics(imu.get());
-  if (!testConnection(imu.get()))
+  // performDiagnostics();
+  if (!imu->testConnection())
     return nullptr;
-  if (!initializeSensor(imu.get()))
+  if (!imu->initializeSensor())
     return nullptr;
-  if (!configureSettings(imu.get()))
+  if (!imu->configureSettings())
     return nullptr;
-  if (!setupDMPQueue(imu.get()))
+  if (!imu->setupDMPQueue())
     return nullptr;
   // Leave everything ready BEFORE enabling interrupts
-  if (!setupAsyncComponents(imu.get()))
+  if (!imu->setupAsyncComponents())
     return nullptr;
-  if (!configureInterrupts(imu.get()))
+  if (!imu->configureInterrupts())
     return nullptr;
 
   imu->logger->info("MPU6050 sensor initialized successfully");
@@ -69,156 +71,153 @@ MPU6050Sensor::create(Logger *logger, gpio_num_t INTPin, gpio_num_t SDAPin,
   return imu;
 }
 
-bool MPU6050Sensor::initializeI2CBus(MPU6050Sensor *imu) {
-  imu->logger->debug("Initializing I2C bus");
+bool MPU6050Sensor::initializeI2CBus() {
+  this->logger->debug("Initializing I2C bus");
 
-  RETURN_ON_ERROR(imu->bus.begin(imu->SDAPin, imu->SCLPin, GPIO_PULLUP_DISABLE,
-                                 GPIO_PULLUP_DISABLE,
-                                 MPU6050Sensor::BUS_FREQUENCY_HZ),
-                  imu->logger, "I2C bus initialization failed");
+  RETURN_ON_ERROR(this->bus.begin(this->SDAPin, this->SCLPin,
+                                  GPIO_PULLUP_DISABLE, GPIO_PULLUP_DISABLE,
+                                  MPU6050Sensor::BUS_FREQUENCY_HZ),
+                  this->logger, "I2C bus initialization failed");
 
-  imu->sensor.setBus(imu->bus);
-  RETURN_ON_ERROR(imu->sensor.lastError(), imu->logger,
+  this->sensor.setBus(this->bus);
+  RETURN_ON_ERROR(this->sensor.lastError(), this->logger,
                   "Failed to set I2C bus for sensor");
 
-  imu->sensor.setAddr(mpud::MPU_I2CADDRESS_AD0_LOW);
-  RETURN_ON_ERROR(imu->sensor.lastError(), imu->logger,
+  this->sensor.setAddr(mpud::MPU_I2CADDRESS_AD0_LOW);
+  RETURN_ON_ERROR(this->sensor.lastError(), this->logger,
                   "Failed to set I2C address for sensor");
 
   return true;
 }
 
-bool MPU6050Sensor::resetSensor(MPU6050Sensor *imu) {
-  imu->logger->debug("Performing sensor reset");
+bool MPU6050Sensor::resetSensor() {
+  this->logger->debug("Performing sensor reset");
 
-  RETURN_ON_ERROR(imu->sensor.reset(), imu->logger, "Reset failed");
+  RETURN_ON_ERROR(this->sensor.reset(), this->logger, "Reset failed");
   vTaskDelay(pdMS_TO_TICKS(250));
 
   return true;
 }
 
-void MPU6050Sensor::performDiagnostics(MPU6050Sensor *imu) {
-  imu->logger->debug("Scanning I2C bus for MPU6050 device");
-  imu->bus.scanner();
+void MPU6050Sensor::performDiagnostics() {
+  this->logger->debug("Scanning I2C bus for MPU6050 device");
+  this->bus.scanner();
 
-  uint8_t wai = imu->sensor.whoAmI();
-  imu->logger->debug("Retrieved sensor's WHO_AM_I register: 0x%02X", wai);
+  uint8_t wai = this->sensor.whoAmI();
+  this->logger->debug("Retrieved sensor's WHO_AM_I register: 0x%02X", wai);
 
-  imu->logger->debug("Retrieved sensor's register dump (0x00..0x1F):");
-  imu->sensor.registerDump(0x00, 0x1F);
-
+  this->logger->debug("Retrieved sensor's register dump (0x00..0x1F):");
+  this->sensor.registerDump(0x00, 0x1F);
   mpud::selftest_t selfTestResult = 0;
-  esp_err_t serr = imu->sensor.selfTest(&selfTestResult);
-  imu->logger->info("selfTest result: 0x%X err=%s", selfTestResult,
-                    esp_err_to_name(serr));
+  esp_err_t serr = this->sensor.selfTest(&selfTestResult);
+  this->logger->info("selfTest result: 0x%X err=%s", selfTestResult,
+                     esp_err_to_name(serr));
 }
 
-bool MPU6050Sensor::testConnection(MPU6050Sensor *imu) {
-  imu->logger->debug("Attempting I2C connection");
+bool MPU6050Sensor::testConnection() {
+  this->logger->debug("Attempting I2C connection");
 
   uint8_t attempts = 0;
   uint8_t MAX_CONNECTION_ATTEMPTS = 5;
-  esp_err_t err = imu->sensor.testConnection();
+  esp_err_t err = this->sensor.testConnection();
   while (err != ESP_OK && attempts < MAX_CONNECTION_ATTEMPTS) {
-    imu->logger->error("I2C connection failed: %s (%#X)", esp_err_to_name(err),
-                       err);
+    this->logger->error("I2C connection failed: %s (%#X)", esp_err_to_name(err),
+                        err);
     vTaskDelay(pdMS_TO_TICKS(1000));
-    err = imu->sensor.testConnection();
+    err = this->sensor.testConnection();
     attempts++;
   }
   if (attempts == MAX_CONNECTION_ATTEMPTS) {
-    imu->logger->error("I2C connection failed after %d attempts", attempts);
+    this->logger->error("I2C connection failed after %d attempts", attempts);
     return false;
   }
 
-  imu->logger->debug("I2C connection successful");
+  this->logger->debug("I2C connection successful");
   return true;
 }
 
-bool MPU6050Sensor::initializeSensor(MPU6050Sensor *imu) {
-  imu->logger->debug("Initializing MPU6050 sensor");
+bool MPU6050Sensor::initializeSensor() {
+  this->logger->debug("Initializing MPU6050 sensor");
 
-  RETURN_ON_ERROR(imu->sensor.initialize(), imu->logger,
+  RETURN_ON_ERROR(this->sensor.initialize(), this->logger,
                   "MPU initialization failed");
 
   return true;
 }
 
-bool MPU6050Sensor::configureSettings(MPU6050Sensor *imu) {
-  imu->logger->debug("Configuring sensor settings");
+bool MPU6050Sensor::configureSettings() {
+  this->logger->debug("Configuring sensor settings");
 
-  RETURN_ON_ERROR(imu->sensor.setSampleRate(imu->samplingFrequencyHz),
-                  imu->logger, "Failed to set sample rate");
+  RETURN_ON_ERROR(this->sensor.setSampleRate(this->samplingFrequencyHz),
+                  this->logger, "Failed to set sample rate");
 
   RETURN_ON_ERROR(
-      imu->sensor.setAccelFullScale(MPU6050Sensor::ACCELEROMETER_SCALE),
-      imu->logger, "Failed to set accelerometer scale");
+      this->sensor.setAccelFullScale(MPU6050Sensor::ACCELEROMETER_SCALE),
+      this->logger, "Failed to set accelerometer scale");
 
-  RETURN_ON_ERROR(imu->sensor.setGyroFullScale(MPU6050Sensor::GYROSCOPE_SCALE),
-                  imu->logger, "Failed to set gyroscope scale");
+  RETURN_ON_ERROR(this->sensor.setGyroFullScale(MPU6050Sensor::GYROSCOPE_SCALE),
+                  this->logger, "Failed to set gyroscope scale");
 
   return true;
 }
 
-bool MPU6050Sensor::setupDMPQueue(MPU6050Sensor *imu) {
-  imu->logger->debug("Setting up DMP FIFO queue on sensor");
+bool MPU6050Sensor::setupDMPQueue() {
+  this->logger->debug("Setting up DMP FIFO queue on sensor");
 
   RETURN_ON_ERROR(
-      imu->sensor.setFIFOConfig(mpud::FIFO_CFG_ACCEL | mpud::FIFO_CFG_GYRO),
-      imu->logger, "Failed to configure FIFO");
+      this->sensor.setFIFOConfig(mpud::FIFO_CFG_ACCEL | mpud::FIFO_CFG_GYRO),
+      this->logger, "Failed to configure FIFO");
 
-  RETURN_ON_ERROR(imu->sensor.setFIFOEnabled(true), imu->logger,
+  RETURN_ON_ERROR(this->sensor.setFIFOEnabled(true), this->logger,
                   "Failed to enable FIFO");
 
   return true;
 }
 
-bool MPU6050Sensor::configureInterrupts(MPU6050Sensor *imu) {
-  imu->logger->debug("Configuring pin and interrupts");
-  const gpio_config_t pinConfig{.pin_bit_mask = (uint64_t)0x1 << imu->INTPin,
+bool MPU6050Sensor::setupAsyncComponents() {
+  this->logger->debug(
+      "Setting up FreeRTOS task and static queue for async reading");
+  this->setDoRead(false);
+  BaseType_t taskResult = xTaskCreate(
+      readTask, "readTask", MPU6050Sensor::READ_TASK_STACK_SIZE, this,
+      MPU6050Sensor::READ_TASK_PRIORITY, &this->readTaskHandle);
+  if (taskResult != pdPASS) {
+    this->logger->error("Failed to create read task");
+    return false;
+  }
+  this->sampleQueue = xQueueCreateStatic(
+      MPU6050Sensor::SAMPLE_QUEUE_SIZE, sizeof(IMUSample),
+      this->sampleQueueBuffer, &this->sampleQueueControlBlock);
+  if (this->sampleQueue == NULL) {
+    this->logger->error("Failed to create sample queue");
+    return false;
+  }
+  return true;
+}
+
+bool MPU6050Sensor::configureInterrupts() {
+  this->logger->debug("Configuring pin and interrupts");
+  const gpio_config_t pinConfig{.pin_bit_mask = (uint64_t)0x1 << this->INTPin,
                                 .mode = GPIO_MODE_INPUT,
                                 .pull_up_en = GPIO_PULLUP_DISABLE,
                                 .pull_down_en = GPIO_PULLDOWN_ENABLE,
                                 .intr_type = GPIO_INTR_POSEDGE};
-  RETURN_ON_ERROR(gpio_config(&pinConfig), imu->logger, "GPIO config failed");
+  RETURN_ON_ERROR(gpio_config(&pinConfig), this->logger, "GPIO config failed");
 
   RETURN_ON_ERROR(
-      gpio_isr_handler_add(imu->INTPin, MPU6050Sensor::isrHandler, imu),
-      imu->logger, "ISR handler add failed");
-
+      gpio_isr_handler_add(this->INTPin, MPU6050Sensor::isrHandler, this),
+      this->logger, "ISR handler add failed");
   const mpud::int_config_t intConfig{.level = mpud::INT_LVL_ACTIVE_HIGH,
                                      .drive = mpud::INT_DRV_PUSHPULL,
                                      .mode = mpud::INT_MODE_PULSE50US,
                                      .clear = mpud::INT_CLEAR_STATUS_REG};
   // gpio_install_isr_service() assumed to be called from app_main()
 
-  RETURN_ON_ERROR(imu->sensor.setInterruptConfig(intConfig), imu->logger,
+  RETURN_ON_ERROR(this->sensor.setInterruptConfig(intConfig), this->logger,
                   "Interrupt config failed");
 
-  RETURN_ON_ERROR(imu->sensor.setInterruptEnabled(mpud::INT_EN_RAWDATA_READY),
-                  imu->logger, "Interrupt enable failed");
-
-  return true;
-}
-
-bool MPU6050Sensor::setupAsyncComponents(MPU6050Sensor *imu) {
-  imu->logger->debug(
-      "Setting up FreeRTOS task and static queue for async reading");
-  imu->setDoRead(false);
-  BaseType_t taskResult =
-      xTaskCreate(readTask, "readTask", MPU6050Sensor::READ_TASK_STACK_SIZE,
-                  imu, MPU6050Sensor::READ_TASK_PRIORITY, &imu->readTaskHandle);
-  if (taskResult != pdPASS) {
-    imu->logger->error("Failed to create read task");
-    return false;
-  }
-  imu->sampleQueue =
-      xQueueCreateStatic(MPU6050Sensor::SAMPLE_QUEUE_SIZE, sizeof(IMUSample),
-                         imu->sampleQueueBuffer, &imu->sampleQueueControlBlock);
-  if (imu->sampleQueue == NULL) {
-    imu->logger->error("Failed to create sample queue");
-    return false;
-  }
+  RETURN_ON_ERROR(this->sensor.setInterruptEnabled(mpud::INT_EN_RAWDATA_READY),
+                  this->logger, "Interrupt enable failed");
   return true;
 }
 

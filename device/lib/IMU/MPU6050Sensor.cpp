@@ -19,8 +19,7 @@ inline bool checkError(esp_err_t err, Logger *logger, const char *msg) {
   }
   return true;
 }
-// Returns false from the caller on error
-#define RETURN_ON_ERROR(func, logger, msg)                                     \
+#define RETURN_FALSE_ON_ERROR(func, logger, msg)                               \
   if (!checkError((func), (logger), (msg)))                                    \
   return false
 
@@ -83,18 +82,18 @@ MPU6050Sensor::create(Logger *logger, gpio_num_t INTPin, gpio_num_t SDAPin,
 bool MPU6050Sensor::initializeI2CBus() {
   this->logger->debug("Initializing I2C bus");
 
-  RETURN_ON_ERROR(this->bus.begin(this->SDAPin, this->SCLPin,
-                                  GPIO_PULLUP_DISABLE, GPIO_PULLUP_DISABLE,
-                                  MPU6050Sensor::BUS_FREQUENCY_HZ),
-                  this->logger, "I2C bus initialization failed");
+  RETURN_FALSE_ON_ERROR(
+      this->bus.begin(this->SDAPin, this->SCLPin, GPIO_PULLUP_DISABLE,
+                      GPIO_PULLUP_DISABLE, MPU6050Sensor::BUS_FREQUENCY_HZ),
+      this->logger, "I2C bus initialization failed");
 
   this->sensor.setBus(this->bus);
-  RETURN_ON_ERROR(this->sensor.lastError(), this->logger,
-                  "Failed to set I2C bus for sensor");
+  RETURN_FALSE_ON_ERROR(this->sensor.lastError(), this->logger,
+                        "Failed to set I2C bus for sensor");
 
   this->sensor.setAddr(mpud::MPU_I2CADDRESS_AD0_LOW);
-  RETURN_ON_ERROR(this->sensor.lastError(), this->logger,
-                  "Failed to set I2C address for sensor");
+  RETURN_FALSE_ON_ERROR(this->sensor.lastError(), this->logger,
+                        "Failed to set I2C address for sensor");
 
   return true;
 }
@@ -102,7 +101,7 @@ bool MPU6050Sensor::initializeI2CBus() {
 bool MPU6050Sensor::resetSensor() {
   this->logger->debug("Performing sensor reset");
 
-  RETURN_ON_ERROR(this->sensor.reset(), this->logger, "Reset failed");
+  RETURN_FALSE_ON_ERROR(this->sensor.reset(), this->logger, "Reset failed");
   vTaskDelay(pdMS_TO_TICKS(250));
 
   return true;
@@ -148,8 +147,8 @@ bool MPU6050Sensor::testConnection() {
 bool MPU6050Sensor::initializeSensor() {
   this->logger->debug("Initializing MPU6050 sensor");
 
-  RETURN_ON_ERROR(this->sensor.initialize(), this->logger,
-                  "MPU initialization failed");
+  RETURN_FALSE_ON_ERROR(this->sensor.initialize(), this->logger,
+                        "MPU initialization failed");
 
   return true;
 }
@@ -157,15 +156,16 @@ bool MPU6050Sensor::initializeSensor() {
 bool MPU6050Sensor::configureSettings() {
   this->logger->debug("Configuring sensor settings");
 
-  RETURN_ON_ERROR(this->sensor.setSampleRate(this->samplingFrequencyHz),
-                  this->logger, "Failed to set sample rate");
+  RETURN_FALSE_ON_ERROR(this->sensor.setSampleRate(this->samplingFrequencyHz),
+                        this->logger, "Failed to set sample rate");
 
-  RETURN_ON_ERROR(
+  RETURN_FALSE_ON_ERROR(
       this->sensor.setAccelFullScale(MPU6050Sensor::ACCELEROMETER_SCALE),
       this->logger, "Failed to set accelerometer scale");
 
-  RETURN_ON_ERROR(this->sensor.setGyroFullScale(MPU6050Sensor::GYROSCOPE_SCALE),
-                  this->logger, "Failed to set gyroscope scale");
+  RETURN_FALSE_ON_ERROR(
+      this->sensor.setGyroFullScale(MPU6050Sensor::GYROSCOPE_SCALE),
+      this->logger, "Failed to set gyroscope scale");
 
   return true;
 }
@@ -173,12 +173,12 @@ bool MPU6050Sensor::configureSettings() {
 bool MPU6050Sensor::setupDMPQueue() {
   this->logger->debug("Setting up DMP FIFO queue on sensor");
 
-  RETURN_ON_ERROR(
+  RETURN_FALSE_ON_ERROR(
       this->sensor.setFIFOConfig(mpud::FIFO_CFG_ACCEL | mpud::FIFO_CFG_GYRO),
       this->logger, "Failed to configure FIFO");
 
-  RETURN_ON_ERROR(this->sensor.setFIFOEnabled(true), this->logger,
-                  "Failed to enable FIFO");
+  RETURN_FALSE_ON_ERROR(this->sensor.setFIFOEnabled(true), this->logger,
+                        "Failed to enable FIFO");
 
   return true;
 }
@@ -211,9 +211,10 @@ bool MPU6050Sensor::configureInterrupts() {
                                 .pull_up_en = GPIO_PULLUP_DISABLE,
                                 .pull_down_en = GPIO_PULLDOWN_ENABLE,
                                 .intr_type = GPIO_INTR_POSEDGE};
-  RETURN_ON_ERROR(gpio_config(&pinConfig), this->logger, "GPIO config failed");
+  RETURN_FALSE_ON_ERROR(gpio_config(&pinConfig), this->logger,
+                        "GPIO config failed");
 
-  RETURN_ON_ERROR(
+  RETURN_FALSE_ON_ERROR(
       gpio_isr_handler_add(this->INTPin, MPU6050Sensor::isrHandler, this),
       this->logger, "ISR handler add failed");
   const mpud::int_config_t intConfig{.level = mpud::INT_LVL_ACTIVE_HIGH,
@@ -222,11 +223,12 @@ bool MPU6050Sensor::configureInterrupts() {
                                      .clear = mpud::INT_CLEAR_STATUS_REG};
   // gpio_install_isr_service() assumed to be called from app_main()
 
-  RETURN_ON_ERROR(this->sensor.setInterruptConfig(intConfig), this->logger,
-                  "Interrupt config failed");
+  RETURN_FALSE_ON_ERROR(this->sensor.setInterruptConfig(intConfig),
+                        this->logger, "Interrupt config failed");
 
-  RETURN_ON_ERROR(this->sensor.setInterruptEnabled(mpud::INT_EN_RAWDATA_READY),
-                  this->logger, "Interrupt enable failed");
+  RETURN_FALSE_ON_ERROR(
+      this->sensor.setInterruptEnabled(mpud::INT_EN_RAWDATA_READY),
+      this->logger, "Interrupt enable failed");
   return true;
 }
 

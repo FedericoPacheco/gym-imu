@@ -40,6 +40,7 @@
       }
     }
   Async:
+    gpio_install_isr_service(0); // Install ISR service once globally
     Logger logger((LogLevel::DEBUG));
     std::unique_ptr<IMUSensor> imu = MPU6050Sensor::create(&logger);
     imu->beginAsync();

@@ -1,4 +1,5 @@
 #include "MPU6050Sensor.hpp"
+#include "ErrorMacros.hpp"
 #include "I2Cbus.hpp"
 #include "IMUSensor.hpp"
 #include "esp_err.h"
@@ -10,18 +11,6 @@
 #include <cstdint>
 #include <memory>
 #include <new>
-
-inline bool checkError(esp_err_t err, Logger *logger, const char *msg) {
-  if (err != ESP_OK) {
-    if (logger != nullptr)
-      logger->error("%s: %s", msg, esp_err_to_name(err));
-    return false;
-  }
-  return true;
-}
-#define RETURN_FALSE_ON_ERROR(func, logger, msg)                               \
-  if (!checkError((func), (logger), (msg)))                                    \
-  return false
 
 // ------------------------------------------------------------------------------
 

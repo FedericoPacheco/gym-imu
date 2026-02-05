@@ -1,20 +1,9 @@
 #include "LED.h"
+#include "ErrorMacros.hpp"
 #include "driver/gpio.h"
 #include "esp_err.h"
 #include "freertos/FreeRTOS.h"
 #include "soc/gpio_num.h"
-
-inline bool checkError(esp_err_t err, Logger *logger, const char *msg) {
-  if (err != ESP_OK) {
-    if (logger != nullptr)
-      logger->error("%s: %s", msg, esp_err_to_name(err));
-    return false;
-  }
-  return true;
-}
-#define RETURN_NULL_ON_ERROR(func, logger, msg)                                \
-  if (!checkError((func), (logger), (msg)))                                    \
-  return nullptr
 
 // -------------------------------------------------------------------------
 

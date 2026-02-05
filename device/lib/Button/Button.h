@@ -1,6 +1,8 @@
 #pragma once
+#include "Logger.hpp"
 #include "driver/gpio.h"
 #include "freertos/FreeRTOS.h"
+#include <memory>
 
 /*
 A class for handling button presses with debouncing and asynchronous event
@@ -34,15 +36,17 @@ Async:
 
 class Button {
 public:
-  Button(gpio_num_t pin = GPIO_NUM_3 /* D1 */, int asyncQueueSize = 10,
-         int debouncingDelayMs = 50);
+  std::unique_ptr<Button> static create(Logger *logger,
+                                        gpio_num_t pin = GPIO_NUM_3 /* D1 */,
+                                        int asyncQueueSize = 10,
+                                        int debouncingDelayMs = 500);
   ~Button();
 
   bool isPressedSync();
 
   // Non-blocking press detection
-  void enableAsync();
-  void disableAsync();
+  bool enableAsync();  // Returns true on success, false on failure
+  bool disableAsync(); // Idem
   bool wasPressedAsync();
 
 private:
@@ -50,6 +54,11 @@ private:
 
   QueueHandle_t eventQueue;
   TimerHandle_t debounceTimer;
+
+  Logger *logger;
+
+  Button(Logger *logger, gpio_num_t pin);
+
   static void IRAM_ATTR isrHandler(void *arg);
   static void debounceTimerCallback(TimerHandle_t xTimer);
 };

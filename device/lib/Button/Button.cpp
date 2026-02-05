@@ -1,39 +1,76 @@
 #include "Button.h"
+#include "ErrorMacros.hpp"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
-Button::Button(gpio_num_t pin, int asyncQueueSize, int debouncingDelayMs) {
+Button::Button(Logger *logger, gpio_num_t pin) : logger(logger) {
   this->pin = pin;
+}
 
-  gpio_reset_pin(this->pin);
-  gpio_set_direction(this->pin, GPIO_MODE_INPUT);
-  gpio_set_pull_mode(this->pin, GPIO_PULLDOWN_ONLY); // See schematic
+std::unique_ptr<Button> Button::create(Logger *logger, gpio_num_t pin,
+                                       int asyncQueueSize,
+                                       int debouncingDelayMs) {
 
-  this->eventQueue = xQueueCreate(asyncQueueSize, sizeof(bool));
-  this->debounceTimer =
+  std::unique_ptr<Button> button(new (std::nothrow) Button(logger, pin));
+  if (!button) {
+    if (logger)
+      logger->error("Button: Failed to create Button instance");
+    return nullptr;
+  }
+
+  RETURN_NULL_ON_ERROR(gpio_reset_pin(button->pin), logger,
+                       "GPIO reset failed");
+  RETURN_NULL_ON_ERROR(gpio_set_direction(button->pin, GPIO_MODE_INPUT), logger,
+                       "GPIO set direction failed");
+  RETURN_NULL_ON_ERROR(gpio_set_pull_mode(button->pin, GPIO_PULLDOWN_ONLY),
+                       logger,
+                       "GPIO set pull mode failed"); // See schematic
+
+  button->eventQueue = xQueueCreate(asyncQueueSize, sizeof(bool));
+  if (button->eventQueue == NULL) {
+    logger->error("Button: Failed to create event queue");
+    return nullptr;
+  }
+
+  button->debounceTimer =
       xTimerCreate("debounceTimer", pdMS_TO_TICKS(debouncingDelayMs),
-                   pdFALSE, // One-shot timer, doesn't auto-restart
-                   this,    // Timer id is pointer to this Button instance
+                   pdFALSE,      // One-shot timer, doesn't auto-restart
+                   button.get(), // Timer id is pointer to this Button instance
                    debounceTimerCallback);
+  if (button->debounceTimer == NULL) {
+    logger->error("Button: Failed to create debounce timer");
+    vQueueDelete(button->eventQueue);
+    return nullptr;
+  }
+
+  return button;
 }
 
 Button::~Button() {
   this->disableAsync();
-  vQueueDelete(eventQueue);
+  vQueueDelete(this->eventQueue);
   // portMAX_DELAY: block until timer is deleted
-  xTimerDelete(debounceTimer, portMAX_DELAY);
+  if (xTimerDelete(this->debounceTimer, portMAX_DELAY) != pdPASS) {
+    this->logger->error("Button: Failed to delete debounce timer");
+  }
 }
 
 bool Button::isPressedSync() { return gpio_get_level(this->pin) == 1; }
 
-void Button::enableAsync() {
-  gpio_isr_handler_add(this->pin, isrHandler, this);
-  gpio_set_intr_type(this->pin, GPIO_INTR_POSEDGE); // Trigger on rising edge
+bool Button::enableAsync() {
+  RETURN_FALSE_ON_ERROR(gpio_isr_handler_add(this->pin, isrHandler, this),
+                        this->logger, "Button GPIO ISR handler add failed");
+  RETURN_FALSE_ON_ERROR(
+      gpio_set_intr_type(this->pin, GPIO_INTR_POSEDGE), this->logger,
+      "Button GPIO set interrupt type failed"); // Trigger on rising edge
+  return true;
 }
+
 void IRAM_ATTR Button::isrHandler(void *arg) {
   Button *btn = (Button *)arg;
   xTimerStartFromISR(btn->debounceTimer, NULL);
 }
+
 void Button::debounceTimerCallback(TimerHandle_t xTimer) {
   Button *btn = (Button *)pvTimerGetTimerID(xTimer); // Retrieve Button instance
   bool event = true;
@@ -41,9 +78,12 @@ void Button::debounceTimerCallback(TimerHandle_t xTimer) {
              0); // Send from task context. 0: ignore higher priority tasks
 }
 
-void Button::disableAsync() {
-  gpio_isr_handler_remove(this->pin);
-  gpio_set_intr_type(this->pin, GPIO_INTR_DISABLE);
+bool Button::disableAsync() {
+  RETURN_FALSE_ON_ERROR(gpio_isr_handler_remove(this->pin), this->logger,
+                        "Button GPIO ISR handler remove failed");
+  RETURN_FALSE_ON_ERROR(gpio_set_intr_type(this->pin, GPIO_INTR_DISABLE),
+                        this->logger, "Button GPIO disable interrupt failed");
+  return true;
 }
 
 bool Button::wasPressedAsync() {

@@ -1,3 +1,4 @@
+#include "LED.h"
 #include "Logger.hpp"
 #include "MPU6050Sensor.hpp"
 #include "driver/gpio.h"
@@ -10,18 +11,24 @@ extern "C" void app_main() {
 
   vTaskDelay(pdMS_TO_TICKS(5000));
   Logger logger((LogLevel::INFO));
-  std::unique_ptr<IMUSensor> imu = MPU6050Sensor::create(&logger);
-
   logger.debug("DEBUG Sanity Check");
   logger.info("INFO Sanity Check");
   logger.warn("WARN Sanity Check");
   logger.error("ERROR Sanity Check");
 
+  std::unique_ptr<IMUSensor> imu = MPU6050Sensor::create(&logger);
+  std::unique_ptr<LED> led = LED::create(&logger);
+
   if (imu == nullptr) {
     logger.error("Failed to initialize MPU6050 sensor");
     return;
   }
+  if (led == nullptr) {
+    logger.error("Failed to initialize LED");
+    return;
+  }
 
+  led->turnOn();
   imu->beginAsync();
   while (true) {
     vTaskDelay(pdMS_TO_TICKS(5000));

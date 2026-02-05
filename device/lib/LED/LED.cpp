@@ -1,29 +1,83 @@
 #include "LED.h"
+#include "driver/gpio.h"
+#include "esp_err.h"
 #include "freertos/FreeRTOS.h"
+#include "soc/gpio_num.h"
 
-LED::LED(gpio_num_t pin) {
+inline bool checkError(esp_err_t err, Logger *logger, const char *msg) {
+  if (err != ESP_OK) {
+    if (logger != nullptr)
+      logger->error("%s: %s", msg, esp_err_to_name(err));
+    return false;
+  }
+  return true;
+}
+#define RETURN_NULL_ON_ERROR(func, logger, msg)                                \
+  if (!checkError((func), (logger), (msg)))                                    \
+  return nullptr
+
+// -------------------------------------------------------------------------
+
+LED::LED(Logger *logger, gpio_num_t pin) : logger(logger) {
   this->pin = pin;
-  this->state = false;
+  this->softwareState = false;
+}
 
-  gpio_reset_pin(this->pin);
-  gpio_set_direction(this->pin, GPIO_MODE_OUTPUT);
-  gpio_set_level(this->pin, this->state);
+std::unique_ptr<LED> LED::create(Logger *logger, gpio_num_t pin) {
+  logger->info("Initializing LED on pin %d", pin);
+
+  std::unique_ptr<LED> led(new (std::nothrow) LED(logger, pin));
+
+  if (!led) {
+    if (logger) {
+      logger->error("Failed to allocate LED");
+    }
+    return nullptr;
+  }
+
+  // Configure GPIO with output mode and disabled pulls
+  const gpio_config_t config = {
+      .pin_bit_mask = (1ULL << pin),
+      .mode = GPIO_MODE_INPUT_OUTPUT, // INPUT: allow reading for state checks
+      .pull_up_en = GPIO_PULLUP_DISABLE,
+      .pull_down_en = GPIO_PULLDOWN_DISABLE,
+      .intr_type = GPIO_INTR_DISABLE};
+
+  RETURN_NULL_ON_ERROR(gpio_config(&config), logger, "LED GPIO config failed");
+
+  RETURN_NULL_ON_ERROR(gpio_set_level(led->pin, led->softwareState), logger,
+                       "LED GPIO initial level set failed");
+
+  logger->info("LED initialized successfully");
+
+  return led;
 }
 
 bool LED::toggle() {
-  this->state = !this->state;
-  gpio_set_level(this->pin, this->state);
-  return this->state;
+  this->softwareState = !this->softwareState;
+  gpio_set_level(this->pin, this->softwareState);
+  this->checkState();
+  return this->softwareState;
 }
 
 bool LED::turnOn() {
-  this->state = true;
-  gpio_set_level(this->pin, this->state);
-  return this->state;
+  this->softwareState = true;
+  gpio_set_level(this->pin, this->softwareState);
+  this->checkState();
+  return this->softwareState;
 }
 
 bool LED::turnOff() {
-  this->state = false;
-  gpio_set_level(this->pin, this->state);
-  return this->state;
+  this->softwareState = false;
+  gpio_set_level(this->pin, this->softwareState);
+  this->checkState();
+  return this->softwareState;
+}
+
+void LED::checkState() {
+  int hardwareState = static_cast<bool>(gpio_get_level(this->pin));
+  if (hardwareState != this->softwareState) {
+    this->logger->warn("LED state mismatch: software=%d, hardware=%d",
+                       this->softwareState, hardwareState);
+  }
 }

@@ -40,7 +40,7 @@ microcontroller "GND" -- "GND" sensor
 button "(+)"-right- "3V3" microcontroller
 button "(-)" -right- "D1" microcontroller
 microcontroller "D1" -- "GND" microcontroller: 10kΩ resistor
-led "(+)" -right- "D2" microcontroller: 220Ω/1kΩ resistor
+led "(+)" -right- "D2" microcontroller: 220Ω resistor
 led "(-)" -right- "GND" microcontroller
 
 note top of button

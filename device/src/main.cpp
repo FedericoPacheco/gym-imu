@@ -11,6 +11,7 @@ extern "C" void app_main() {
   gpio_install_isr_service(ESP_INTR_FLAG_IRAM);
 
   vTaskDelay(pdMS_TO_TICKS(5000));
+
   Logger logger((LogLevel::INFO));
   logger.debug("DEBUG Sanity Check");
   logger.info("INFO Sanity Check");

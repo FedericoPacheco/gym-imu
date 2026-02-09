@@ -1,0 +1,95 @@
+#include "IMUSensor.hpp"
+#include "Logger.hpp"
+#include "freertos/FreeRTOS.h"
+#include "freertos/idf_additions.h"
+#include "nimble/ble.h"
+#include "portmacro.h"
+#include <cstddef>
+#include <cstdint>
+#include <memory>
+
+struct BLEAddress {
+  uint8_t type;
+  uint8_t value[6];
+  char readableValue[20];
+};
+
+class BLE {
+public:
+  static constexpr const char *DEVICE_NAME = "Gym-IMU";
+  static constexpr int APPEARANCE = BLE_GAP_APPEARANCE_GENERIC_WEARABLE;
+
+  // Big endian (human readable, most significant byte first):
+  // 12345678-1234-5678-1234-56789abcdef0
+  // Little endian (common in BLE): 0xf0debc9a785634127856341278563412
+  static constexpr ble_uuid_t IMU_SERVICE_UUID =
+      BLE_UUID128_INIT(0xf0, 0xde, 0xbc, 0x9a, 0x78, 0x56, 0x34, 0x12, 0x78,
+                       0x56, 0x34, 0x12, 0x78, 0x56, 0x34, 0x12);
+  // Big endian: c21c340b-f231-4da2-ab20-716f9ed67c3a
+  // Little endian: 0x3a7cd69e6f7120aba24df2310b341cc2
+  static constexpr ble_uuid_t IMU_SAMPLE_CHARACTERISTIC_UUID =
+      BLE_UUID128_INIT(0x3a, 0x7c, 0xd6, 0x9e, 0x6f, 0x71, 0x20, 0xab, 0xa2,
+                       0x4d, 0x31, 0xf2, 0x0b, 0x34, 0x1c, 0xc2);
+
+  static constexpr int BLE_TASK_PRIORITY = 4;
+  static constexpr int BLE_TASK_STACK_SIZE = 4096;
+  static constexpr int TRANSMIT_TASK_PRIORITY = 4;
+  static constexpr int TRANSMIT_TASK_STACK_SIZE = 4096;
+  static constexpr int SAMPLE_QUEUE_SIZE = 128;
+  static constexpr int PREFERRED_BATCH_SEND_SIZE = 6;
+
+  static constexpr int DEFAULT_MTU = 23;
+  // Effetive payload = MTU (maximum transmission unit) - 3 bytes for ATT header
+  static constexpr int PREFERRED_MTU =
+      MIN(sizeof(IMUSample) * BLE::PREFERRED_BATCH_SEND_SIZE + 3, 512);
+
+  static BLE *getInstance(Logger *logger);
+  void send(const IMUSample &sample);
+  ~BLE();
+
+private:
+  Logger *logger;
+
+  static std::unique_ptr<BLE> instance;
+  BLE(Logger *logger);
+  static std::unique_ptr<BLE> create(Logger *logger);
+
+  inline bool initializeFlash();
+
+  inline bool initializeControllerAndStack();
+  static void onStackReset(int reason);
+  static void onStackSync();
+  static void onGATTRegister(struct ble_gatt_register_ctxt *context, void *arg);
+
+  inline bool initializeGAP();
+  static int handleGAPEvent(ble_gap_event *event, void *arg);
+  uint16_t mtu;
+
+  inline bool initializeGATT();
+  uint16_t imuSampleCharacteristicHandle;
+  struct ble_gatt_chr_def imuSampleCharacteristic[2];
+  struct ble_gatt_svc_def imuService[2];
+  static int accessImuSampleCharacteristic(uint16_t connectionHandle,
+                                           uint16_t attributeHandle,
+                                           struct ble_gatt_access_ctxt *context,
+                                           void *arg);
+
+  inline bool initializeAdvertising();
+  BLEAddress address;
+  ble_hs_adv_fields primaryAdvertisingPacket;
+  ble_hs_adv_fields scanResponsePacket;
+  ble_gap_adv_params advertisingConfig;
+  bool startAdvertising();
+
+  inline bool initializeTasks();
+  static void bleTask(void *arg);
+  TaskHandle_t bleTaskHandle;
+  bool doTransmit;
+  uint16_t currentBatchSize;
+  static void transmitTask(void *arg);
+  TaskHandle_t transmitTaskHandle;
+  QueueHandle_t sampleQueueHandle;
+  portMUX_TYPE mux;
+  uint16_t connectionHandle;
+  bool isSubscribedToImuSampleCharacteristic;
+};

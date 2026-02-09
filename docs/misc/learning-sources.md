@@ -1,12 +1,13 @@
 # Learning sources
 
-## Essencial
+## Essential
 
 - PlatformIO: <https://docs.platformio.org/en/latest/>
 - ESP-IDF: <https://docs.espressif.com/projects/esp-idf/en/stable/esp32/index.html>
 - FreeRTOS: <https://www.freertos.org/Documentation/00-Overview>
 - C++ Reference: <https://en.cppreference.com/index.html>
 - Cplusplus Reference: <https://cplusplus.com/reference/>
+- YT series on C++: <https://www.youtube.com/playlist?list=PLlrATfBNZ98dudnM48yfGUldqGD0S4FFb>
 
 ## ESP32 variants
 
@@ -85,3 +86,12 @@
 - <https://www.eevblog.com/forum/projects/counterfeit-mpu6050-chips-from-china/>
 - <https://www.reddit.com/r/arduino/comments/1jxenjb/fake_clone_mpu6050/>
 - <https://www.reddit.com/r/arduino/comments/1jqtqk2/finally_happened_to_me_i_got_scammed/>
+
+## BLE
+
+- <https://www.youtube.com/watch?v=0Q_4q1zU6Zc>
+- <https://www.youtube.com/watch?v=0Yvd_k0hbVs>
+- <https://www.youtube.com/watch?v=EIo5aZ3c89Q>
+- <https://github.com/espressif/esp-idf/tree/master/examples/bluetooth>
+- <https://mynewt.apache.org/latest/network/>
+- <https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/ble/get-started/ble-introduction.html>

@@ -74,7 +74,7 @@ private:
 
   static constexpr int READ_TASK_STACK_SIZE = 4096;
   static constexpr int READ_TASK_MAX_BATCH = 12;
-  static constexpr int READ_TASK_PRIORITY = 10;
+  static constexpr int READ_TASK_PRIORITY = 5;
 
   static constexpr float g = 9.80665f; // m/s²
 

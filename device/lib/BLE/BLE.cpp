@@ -1,30 +1,38 @@
-#include "freertos/idf_additions.h"
-#include "freertos/projdefs.h"
-#include "host/ble_hs.h"
-#include "host/ble_uuid.h"
-#include "host/util/util.h"
-#include "nimble/nimble_port.h"
-#include "nimble/nimble_port_freertos.h"
-#include "nvs_flash.h"
-#include <cstdint>
-#include <freertos/FreeRTOS.h>
-#include <freertos/task.h>
-
-#include "ErrorMacros.hpp"
-#include "portmacro.h"
-#include <sys/param.h>
-
 #include "BLE.hpp"
 
 std::unique_ptr<BLE> BLE::instance = nullptr;
+
+const ble_uuid128_t BLE::IMU_SERVICE_UUID =
+    BLE_UUID128_INIT(0xf0, 0xde, 0xbc, 0x9a, 0x78, 0x56, 0x34, 0x12, 0x78, 0x56,
+                     0x34, 0x12, 0x78, 0x56, 0x34, 0x12);
+
+const ble_uuid128_t BLE::IMU_SAMPLE_CHARACTERISTIC_UUID =
+    BLE_UUID128_INIT(0x3a, 0x7c, 0xd6, 0x9e, 0x6f, 0x71, 0x20, 0xab, 0xa2, 0x4d,
+                     0xf2, 0x31, 0x0b, 0x34, 0x1c, 0xc2);
+
 BLE::BLE(Logger *logger)
     : logger(logger), mtu(BLE::DEFAULT_MTU), imuSampleCharacteristicHandle(0),
-      address{}, bleTaskHandle(nullptr), doTransmit(true),
-      primaryAdvertisingPacket{}, scanResponsePacket{}, advertisingConfig{},
+      address{}, primaryAdvertisingPacket{}, scanResponsePacket{},
+      advertisingConfig{}, bleTaskHandle(nullptr), doTransmit(true),
       currentBatchSize(PREFERRED_BATCH_SEND_SIZE), transmitTaskHandle(nullptr),
       sampleQueueHandle(nullptr), mux(portMUX_INITIALIZER_UNLOCKED),
       connectionHandle(BLE_HS_CONN_HANDLE_NONE),
-      isSubscribedToImuSampleCharacteristic(false) {}
+      isSubscribedToImuSampleCharacteristic(false) {
+
+  // Default initialize to 0 to avoid garbage values and the apply custom
+  // settings
+  memset(imuSampleCharacteristic, 0, sizeof(imuSampleCharacteristic));
+  imuSampleCharacteristic[0].uuid = &IMU_SAMPLE_CHARACTERISTIC_UUID.u;
+  imuSampleCharacteristic[0].access_cb = BLE::accessImuSampleCharacteristic;
+  imuSampleCharacteristic[0].arg = this;
+  imuSampleCharacteristic[0].flags = BLE_GATT_CHR_F_NOTIFY;
+  imuSampleCharacteristic[0].val_handle = &imuSampleCharacteristicHandle;
+
+  memset(imuService, 0, sizeof(imuService));
+  imuService[0].type = BLE_GATT_SVC_TYPE_PRIMARY;
+  imuService[0].uuid = &IMU_SERVICE_UUID.u;
+  imuService[0].characteristics = imuSampleCharacteristic;
+}
 
 std::unique_ptr<BLE> BLE::create(Logger *logger) {
   std::unique_ptr<BLE> ble(new (std::nothrow) BLE(logger));
@@ -82,7 +90,7 @@ bool BLE::initializeFlash() {
       error == ESP_ERR_NVS_NEW_VERSION_FOUND) {
     ESP_ERROR_CHECK(nvs_flash_erase());
     RETURN_FALSE_ON_ERROR(nvs_flash_init(), this->logger,
-                          "Failed to initialize NVS flash")
+                          "Failed to initialize NVS flash");
   }
 
   return true;
@@ -102,7 +110,7 @@ bool BLE::initializeControllerAndStack() {
 
   // Initialize both at once
   RETURN_FALSE_ON_ERROR(nimble_port_init(), this->logger,
-                        "Failed to initialize NimBLE port")
+                        "Failed to initialize NimBLE port");
 
   // Set callbacks for application logic
   ble_hs_cfg.reset_cb = BLE::onStackReset;
@@ -112,7 +120,8 @@ bool BLE::initializeControllerAndStack() {
   ble_hs_cfg.store_status_cb = ble_store_util_status_rr;
 
   // Persist the bond information and GATT database in flash
-  ble_store_config_init();
+  // Disclaimer: present in the ESP-IDF example, but it DOESN'T COMPILE
+  // ble_store_config_init();
 
   // Set larger MTU for batch sending IMU samples
   ble_att_set_preferred_mtu(BLE::PREFERRED_MTU);
@@ -157,15 +166,14 @@ void BLE::onGATTRegister(struct ble_gatt_register_ctxt *context, void *arg) {
 bool BLE::initializeGAP() {
   this->logger->debug("Initializing GAP service");
 
-  RETURN_FALSE_ON_ERROR(ble_svc_gap_init(), this->logger,
-                        "Failed to initialize GAP service")
+  ble_svc_gap_init();
 
   RETURN_FALSE_ON_ERROR(ble_svc_gap_device_name_set(BLE::DEVICE_NAME),
-                        this->logger, "Failed to set device name")
+                        this->logger, "Failed to set device name");
 
   // Set how the device advertises itself to other devices
   RETURN_FALSE_ON_ERROR(ble_svc_gap_device_appearance_set(BLE::APPEARANCE),
-                        this->logger, "Failed to set device appearance")
+                        this->logger, "Failed to set device appearance");
 
   return true;
 }
@@ -194,7 +202,7 @@ int BLE::handleGAPEvent(ble_gap_event *event, void *arg) {
       // struct ble_gap_conn_desc descriptor;
       // RETURN_FALSE_ON_ERROR(
       //     ble_gap_conn_find(self->connectionHandle, &descriptor),
-      //     self->logger, "Failed to find connection by handle")
+      //     self->logger, "Failed to find connection by handle");
 
       RETURN_FALSE_ON_ERROR(
           ble_gattc_exchange_mtu(self->connectionHandle, NULL, NULL),
@@ -264,23 +272,11 @@ bool BLE::initializeGATT() {
 
   ble_svc_gatt_init();
 
-  this->imuSampleCharacteristic = {
-      {.uuid = &BLE::IMU_SAMPLE_CHARACTERISTIC_UUID,
-       .access_cb = BLE::accessImuSampleCharacteristic,
-       .flags = BLE_GATT_CHR_F_NOTIFY,
-       .val_handle = &this->imuSampleCharacteristicHandle,
-       .arg = this},
-      {0}};
-  this->imuService = {{.type = BLE_GATT_SVC_TYPE_PRIMARY,
-                       .uuid = &BLE::IMU_SERVICE_UUID,
-                       .characteristics = &this->imuSampleCharacteristic},
-                      {0}};
+  RETURN_FALSE_ON_ERROR(ble_gatts_count_cfg(this->imuService), this->logger,
+                        "Failed to count GATT configuration");
 
-  RETURN_FALSE_ON_ERROR(ble_gatts_count_cfg(&this->imuService), this->logger,
-                        "Failed to count GATT configuration")
-
-  RETURN_FALSE_ON_ERROR(ble_gatts_add_svcs(&this->imuService), this->logger,
-                        "Failed to add GATT services")
+  RETURN_FALSE_ON_ERROR(ble_gatts_add_svcs(this->imuService), this->logger,
+                        "Failed to add GATT services");
 
   return true;
 }
@@ -289,15 +285,11 @@ int BLE::accessImuSampleCharacteristic(uint16_t connectionHandle,
                                        uint16_t attributeHandle,
                                        struct ble_gatt_access_ctxt *context,
                                        void *arg) {
-  return BLE_ATT_ERR_NOT_SUPPORTED;
+  return BLE_ATT_ERR_REQ_NOT_SUPPORTED;
 }
 
 bool BLE::initializeAdvertising() {
   this->logger->debug("Initializing advertising");
-
-  // Validate bluetooth address
-  RETURN_FALSE_ON_ERROR(ble_hs_util_ensure_addr(0), this->logger,
-                        "Device does not have a valid bt address");
 
   // Infer address type: public or random
   RETURN_FALSE_ON_ERROR(ble_hs_id_infer_auto(0, &this->address.type),
@@ -331,9 +323,10 @@ bool BLE::initializeAdvertising() {
   this->primaryAdvertisingPacket.appearance_is_present = 1;
 
   // Device role: peripheral only (not central, so it can't connect to other
-  // devices, only accept connections)
-  this->primaryAdvertisingPacket.le_role = BLE_GAP_LE_ROLE_PERIPHERAL;
-  this->primaryAdvertisingPacket.le_role_is_present = 1;
+  // devices, only accept connections).
+  // Disclaimer: present in ESP-IDF example, but it DOESN'T COMPILE
+  // this->primaryAdvertisingPacket.le_role = BLE_GAP_LE_ROLE_PERIPHERAL;
+  // this->primaryAdvertisingPacket.le_role_is_present = 1;
 
   this->scanResponsePacket.device_addr = this->address.value;
   this->scanResponsePacket.device_addr_type = this->address.type;

@@ -2,8 +2,7 @@
 #define ERROR_MACROS_HPP
 
 #include "esp_err.h"
-
-class Logger;
+#include "Logger.hpp"
 
 inline bool checkError(esp_err_t err, Logger *logger, const char *msg) {
   if (err != ESP_OK) {

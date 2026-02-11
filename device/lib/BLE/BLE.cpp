@@ -109,8 +109,8 @@ bool BLE::initializeControllerAndStack() {
   this->logger->debug("Initializing controller and NimBLE host stack");
 
   // Initialize both at once
-  RETURN_FALSE_ON_ERROR(nimble_port_init(), this->logger,
-                        "Failed to initialize NimBLE port");
+  RETURN_FALSE_ON_NIMBLE_ERROR(nimble_port_init(), this->logger,
+                               "Failed to initialize NimBLE port");
 
   // Set callbacks for application logic
   ble_hs_cfg.reset_cb = BLE::onStackReset;
@@ -168,12 +168,13 @@ bool BLE::initializeGAP() {
 
   ble_svc_gap_init();
 
-  RETURN_FALSE_ON_ERROR(ble_svc_gap_device_name_set(BLE::DEVICE_NAME),
-                        this->logger, "Failed to set device name");
+  RETURN_FALSE_ON_NIMBLE_ERROR(ble_svc_gap_device_name_set(BLE::DEVICE_NAME),
+                               this->logger, "Failed to set device name");
 
   // Set how the device advertises itself to other devices
-  RETURN_FALSE_ON_ERROR(ble_svc_gap_device_appearance_set(BLE::APPEARANCE),
-                        this->logger, "Failed to set device appearance");
+  RETURN_FALSE_ON_NIMBLE_ERROR(
+      ble_svc_gap_device_appearance_set(BLE::APPEARANCE), this->logger,
+      "Failed to set device appearance");
 
   return true;
 }
@@ -200,11 +201,11 @@ int BLE::handleGAPEvent(ble_gap_event *event, void *arg) {
       self->logger->info("Connection established");
 
       // struct ble_gap_conn_desc descriptor;
-      // RETURN_FALSE_ON_ERROR(
+      // RETURN_FALSE_ON_NIMBLE_ERROR(
       //     ble_gap_conn_find(self->connectionHandle, &descriptor),
       //     self->logger, "Failed to find connection by handle");
 
-      RETURN_FALSE_ON_ERROR(
+      RETURN_FALSE_ON_NIMBLE_ERROR(
           ble_gattc_exchange_mtu(self->connectionHandle, NULL, NULL),
           self->logger,
           "Failed to negotiate MTU with client, using default (23 bytes)");
@@ -272,11 +273,12 @@ bool BLE::initializeGATT() {
 
   ble_svc_gatt_init();
 
-  RETURN_FALSE_ON_ERROR(ble_gatts_count_cfg(this->imuService), this->logger,
-                        "Failed to count GATT configuration");
+  RETURN_FALSE_ON_NIMBLE_ERROR(ble_gatts_count_cfg(this->imuService),
+                               this->logger,
+                               "Failed to count GATT configuration");
 
-  RETURN_FALSE_ON_ERROR(ble_gatts_add_svcs(this->imuService), this->logger,
-                        "Failed to add GATT services");
+  RETURN_FALSE_ON_NIMBLE_ERROR(ble_gatts_add_svcs(this->imuService),
+                               this->logger, "Failed to add GATT services");
 
   return true;
 }
@@ -292,11 +294,12 @@ bool BLE::initializeAdvertising() {
   this->logger->debug("Initializing advertising");
 
   // Infer address type: public or random
-  RETURN_FALSE_ON_ERROR(ble_hs_id_infer_auto(0, &this->address.type),
-                        this->logger, "Failed to determine address type");
+  RETURN_FALSE_ON_NIMBLE_ERROR(ble_hs_id_infer_auto(0, &this->address.type),
+                               this->logger,
+                               "Failed to determine address type");
 
   // Copy device address to addr_val
-  RETURN_FALSE_ON_ERROR(
+  RETURN_FALSE_ON_NIMBLE_ERROR(
       ble_hs_id_copy_addr(this->address.type, this->address.value, NULL),
       this->logger, "Failed to read device address");
 
@@ -339,13 +342,13 @@ bool BLE::initializeAdvertising() {
   this->advertisingConfig.conn_mode = BLE_GAP_CONN_MODE_UND;
   this->advertisingConfig.disc_mode = BLE_GAP_DISC_MODE_GEN;
 
-  RETURN_FALSE_ON_ERROR(ble_gap_adv_set_fields(&this->primaryAdvertisingPacket),
-                        this->logger,
-                        "Failed to set primary advertising packet fields");
+  RETURN_FALSE_ON_NIMBLE_ERROR(
+      ble_gap_adv_set_fields(&this->primaryAdvertisingPacket), this->logger,
+      "Failed to set primary advertising packet fields");
 
-  RETURN_FALSE_ON_ERROR(ble_gap_adv_rsp_set_fields(&this->scanResponsePacket),
-                        this->logger,
-                        "Failed to set scan response packet fields");
+  RETURN_FALSE_ON_NIMBLE_ERROR(
+      ble_gap_adv_rsp_set_fields(&this->scanResponsePacket), this->logger,
+      "Failed to set scan response packet fields");
 
   return true;
 }
@@ -381,7 +384,7 @@ bool BLE::initializeTasks() {
 }
 
 bool BLE::startAdvertising() {
-  RETURN_FALSE_ON_ERROR(
+  RETURN_FALSE_ON_NIMBLE_ERROR(
       ble_gap_adv_start(this->address.type, NULL, BLE_HS_FOREVER,
                         &this->advertisingConfig, BLE::handleGAPEvent, this),
       this->logger, "Failed to start advertising");

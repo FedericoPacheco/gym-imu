@@ -22,6 +22,9 @@
 #include <memory>
 #include <sys/param.h>
 
+// TODO: document overall behavior
+// TODO: perform refactors when possible (sliding, extract func, etc.)
+
 struct BLEAddress {
   uint8_t type;
   uint8_t value[6];
@@ -32,7 +35,9 @@ class BLE {
 public:
   static constexpr const char *DEVICE_NAME = "Gym-IMU";
   static constexpr int APPEARANCE = 0x0340; // Generic wearable device
+  // TODO: find better fit if possible
 
+  // TODO: move uuids back here if possible
   // Big endian (human readable, most significant byte first):
   // 12345678-1234-5678-1234-56789abcdef0
   // Little endian (common in BLE): 0xf0debc9a785634127856341278563412
@@ -61,6 +66,8 @@ private:
   Logger *logger;
 
   static std::unique_ptr<BLE> instance;
+  static BLE *initializingInstance;
+
   BLE(Logger *logger);
   static std::unique_ptr<BLE> create(Logger *logger);
 

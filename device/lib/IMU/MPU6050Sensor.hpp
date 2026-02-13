@@ -14,6 +14,9 @@
 #include <memory>
 #include <tuple>
 
+// TODO: rework readAsync() to notify subscribers instead of requiring direct
+// call. Extract queue to separate Pipe interface + IMUSamplePipe class?
+
 /*
   A class to interface with the MPU6050 IMU sensor, providing synchronous and
   asynchronous sample reading capabilities.

@@ -4,19 +4,41 @@
 #include "MPU6050Sensor.hpp"
 #include "driver/gpio.h"
 #include "freertos/FreeRTOS.h"
+#include "freertos/projdefs.h"
 #include "freertos/task.h"
+#include <BLE.hpp>
 #include <memory>
+
+// TODO: address why button.wasPressedAsync() doesn't work now
+// TODO: extract control logic to separate class
+
+// extern "C" void app_main() {
+
+//   vTaskDelay(pdMS_TO_TICKS(5000));
+
+//   Logger logger((LogLevel::DEBUG));
+//   BLE *ble = BLE::getInstance(&logger);
+//   IMUSample sample = {.a = {.x = 1.0f, .y = 2.0f, .z = 3.0f},
+//                       .w = {.roll = 4.0f, .pitch = 5.0f, .yaw = 6.0f},
+//                       .t = 0};
+
+//   while (true) {
+//     ble->send(sample);
+//     sample.a.x += 1.0f;
+//     sample.a.y += 1.0f;
+//     sample.a.z += 1.0f;
+//     sample.w.roll += 1.0f;
+//     sample.w.pitch += 1.0f;
+//     sample.w.yaw += 1.0f;
+//     sample.t += 1000;
+//     vTaskDelay(pdMS_TO_TICKS(100));
+//   }
+// }
 
 extern "C" void app_main() {
   gpio_install_isr_service(ESP_INTR_FLAG_IRAM);
 
-  vTaskDelay(pdMS_TO_TICKS(5000));
-
   Logger logger((LogLevel::INFO));
-  logger.debug("DEBUG Sanity Check");
-  logger.info("INFO Sanity Check");
-  logger.warn("WARN Sanity Check");
-  logger.error("ERROR Sanity Check");
 
   std::unique_ptr<LED> led = LED::create(&logger);
   if (led == nullptr) {
@@ -36,12 +58,19 @@ extern "C" void app_main() {
     return;
   }
 
+  BLE *ble = BLE::getInstance(&logger);
+  if (ble == nullptr) {
+    logger.error("Failed to initialize BLE");
+    return;
+  }
+
   bool doSample = false;
+  std::optional<IMUSample> sample;
   button->enableAsync();
   while (true) {
     vTaskDelay(pdMS_TO_TICKS(1000));
 
-    if (button->wasPressedAsync()) {
+    if (button->isPressedSync()) {
       doSample = !doSample;
       led->toggle();
       if (doSample) {
@@ -52,8 +81,11 @@ extern "C" void app_main() {
     }
 
     if (doSample) {
-      imu->readAsync();
+      sample = imu->readAsync();
+      if (sample.has_value()) {
+        ble->send(sample.value());
+      }
     }
+    button->disableAsync();
   }
-  button->disableAsync();
 }

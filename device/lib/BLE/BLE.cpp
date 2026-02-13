@@ -1,6 +1,11 @@
 #include "BLE.hpp"
 
 std::unique_ptr<BLE> BLE::instance = nullptr;
+// Temporary pointer used while a BLE instance is being created and the static
+// `instance` unique_ptr has not yet been assigned. Some NimBLE callbacks
+// (e.g. sync) may be invoked during initialization. Use this to route those
+// early callbacks to the creating object to avoid null crashes.
+BLE *BLE::initializingInstance = nullptr;
 
 const ble_uuid128_t BLE::IMU_SERVICE_UUID =
     BLE_UUID128_INIT(0xf0, 0xde, 0xbc, 0x9a, 0x78, 0x56, 0x34, 0x12, 0x78, 0x56,
@@ -43,16 +48,33 @@ std::unique_ptr<BLE> BLE::create(Logger *logger) {
     return nullptr;
   }
 
-  if (!ble->initializeFlash())
+  // Make early callbacks target this object while we initialize the host
+  // stack. Clear on all exit paths to avoid leaving a dangling pointer.
+  BLE::initializingInstance = ble.get();
+
+  if (!ble->initializeFlash()) {
+    BLE::initializingInstance = nullptr;
     return nullptr;
-  if (!ble->initializeControllerAndStack())
+  }
+  if (!ble->initializeControllerAndStack()) {
+    BLE::initializingInstance = nullptr;
     return nullptr;
-  if (!ble->initializeGAP())
+  }
+  if (!ble->initializeGAP()) {
+    BLE::initializingInstance = nullptr;
     return nullptr;
-  if (!ble->initializeGATT())
+  }
+  if (!ble->initializeGATT()) {
+    BLE::initializingInstance = nullptr;
     return nullptr;
-  if (!ble->initializeTasks())
+  }
+  if (!ble->initializeTasks()) {
+    BLE::initializingInstance = nullptr;
     return nullptr;
+  }
+
+  // clear the temporary pointer when finished
+  BLE::initializingInstance = nullptr;
 
   return ble;
 }
@@ -130,8 +152,17 @@ void BLE::onStackReset(int reason) {
   instance->logger->info("NimBLE stack reset, reason: %d", reason);
 }
 void BLE::onStackSync() {
-  if (instance->initializeAdvertising())
-    instance->startAdvertising();
+  BLE *self = nullptr;
+  if (BLE::instance)
+    self = BLE::instance.get();
+  else if (BLE::initializingInstance)
+    self = BLE::initializingInstance;
+
+  if (self == nullptr)
+    return;
+
+  if (self->initializeAdvertising())
+    self->startAdvertising();
 }
 void BLE::onGATTRegister(struct ble_gatt_register_ctxt *context, void *arg) {
   BLE *self = static_cast<BLE *>(arg);

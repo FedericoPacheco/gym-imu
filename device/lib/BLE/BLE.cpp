@@ -51,8 +51,6 @@ std::unique_ptr<BLE> BLE::create(Logger *logger) {
     return nullptr;
   if (!ble->initializeGATT())
     return nullptr;
-  if (!ble->initializeAdvertising())
-    return nullptr;
   if (!ble->initializeTasks())
     return nullptr;
 
@@ -131,7 +129,10 @@ bool BLE::initializeControllerAndStack() {
 void BLE::onStackReset(int reason) {
   instance->logger->info("NimBLE stack reset, reason: %d", reason);
 }
-void BLE::onStackSync() { instance->startAdvertising(); }
+void BLE::onStackSync() {
+  if (instance->initializeAdvertising())
+    instance->startAdvertising();
+}
 void BLE::onGATTRegister(struct ble_gatt_register_ctxt *context, void *arg) {
   BLE *self = static_cast<BLE *>(arg);
   char buffer[128];
@@ -298,7 +299,6 @@ bool BLE::initializeAdvertising() {
                                this->logger,
                                "Failed to determine address type");
 
-  // Copy device address to addr_val
   RETURN_FALSE_ON_NIMBLE_ERROR(
       ble_hs_id_copy_addr(this->address.type, this->address.value, NULL),
       this->logger, "Failed to read device address");
@@ -327,7 +327,7 @@ bool BLE::initializeAdvertising() {
 
   // Device role: peripheral only (not central, so it can't connect to other
   // devices, only accept connections).
-  // Disclaimer: present in ESP-IDF example, but it DOESN'T COMPILE
+  // Disclaimer: present in ESP-IDF example, but it DOESN'T COMPILE.
   // this->primaryAdvertisingPacket.le_role = BLE_GAP_LE_ROLE_PERIPHERAL;
   // this->primaryAdvertisingPacket.le_role_is_present = 1;
 

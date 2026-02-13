@@ -1,6 +1,7 @@
 #include "ErrorMacros.hpp"
 #include "IMUSensor.hpp"
 #include "Logger.hpp"
+#include "esp_system.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/idf_additions.h"
 #include "freertos/projdefs.h"

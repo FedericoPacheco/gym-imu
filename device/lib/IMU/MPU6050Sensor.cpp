@@ -12,8 +12,6 @@
 #include <memory>
 #include <new>
 
-// ------------------------------------------------------------------------------
-
 MPU6050Sensor::MPU6050Sensor(Logger *logger, gpio_num_t INTPin,
                              gpio_num_t SDAPin, gpio_num_t SCLPin,
                              int samplingFrequencyHz)

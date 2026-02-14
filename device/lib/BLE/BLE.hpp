@@ -22,7 +22,56 @@
 #include <memory>
 #include <sys/param.h>
 
-// TODO: document overall behavior
+// TODO: add security
+// TODO: write retrospective ADR for library choosing
+
+/*
+Overview:
+An application layer class to manage Bluetooth Low Energy (BLE) communication,
+including initialization, advertising to other devices, and data transmission.
+
+How it works:
+The first time getInstance() is called, it creates a singleton instance that:
+1. Initializes NVS flash for storing BLE bonding information and keys.
+2. Initializes the NimBLE host stack and controller.
+3. Sets up GAP (Generic Access Profile) for advertising and connection
+management.
+4. Sets up GATT (Generic Attribute Profile) for defining services and
+characteristics. Currently there's one service and one characteristic for
+sending IMU samples.
+5. Creates FreeRTOS tasks for handling BLE events and transmitting data.
+6. Starts advertising to allow other devices to discover and connect, passing
+information such as device name, appearance, supported services (currently
+notifications, a stream of data sent from the device with no ACK from the
+client), address, connection/discovery mode, etc. Allows only one connection.
+When send() is called with an IMUSample, it adds the sample to a queue.
+The transmit task waits until there are enough samples in the queue (based on
+negotiated MTU) and then sends them as a notification to connected
+clients.
+
+How to use:
+unique_ptr<BLE> ble = BLE::getInstance(logger);
+...
+ble->send(sample);
+
+Data can be received on the phone with the app nRF Connect.
+
+Notes:
+Notifications, not allowing reads from the client, and only allowing a single
+connection were chosen to reduce radio strain, reduce latency, and maximize data
+streaming capabilities.
+
+Definitions:
+- Controller: low-level hardware that manages communication through radio
+(sending/receiving signals, packets, error handling, encoding/decoding, channel
+hopping, etc.). Runs separate from the CPU and accepts HCI (Host Controller
+Interface) commands from the host stack. Subdivided in Link Layer (LL) and
+Physical Layer (PHY).
+- Host stack: software that implements the Bluetooth protocol, built on top of
+the controller, exposing a high-level API to the application. Handles GAP, GATT,
+security, etc. Runs on the CPU and listens for events from the controller.
+
+*/
 
 class BLE {
 public:
@@ -96,7 +145,7 @@ private:
 
   inline bool initializeFlash();
 
-  inline bool initializeControllerAndStack();
+  inline bool initializeControllerAndHost();
   static void onStackReset(int reason);
   static void onStackSync();
   static void onGATTRegister(struct ble_gatt_register_ctxt *context, void *arg);

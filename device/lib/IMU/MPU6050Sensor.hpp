@@ -18,6 +18,7 @@
 // call. Extract queue to separate Pipe interface + IMUSamplePipe class?
 
 /*
+  Overview:
   A class to interface with the MPU6050 IMU sensor, providing synchronous and
   asynchronous sample reading capabilities.
 

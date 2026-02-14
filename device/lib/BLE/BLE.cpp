@@ -137,11 +137,13 @@ bool BLE::initializeControllerAndStack() {
   ble_hs_cfg.sync_cb = BLE::onStackSync;
   ble_hs_cfg.gatts_register_cb = BLE::onGATTRegister;
   ble_hs_cfg.gatts_register_arg = this;
-  ble_hs_cfg.store_status_cb = ble_store_util_status_rr;
 
-  // Persist the bond information and GATT database in flash
-  // Disclaimer: present in the ESP-IDF example, but it DOESN'T COMPILE
-  // ble_store_config_init();
+  // Persist bond information and keys in NVS flash with these callbacks
+  // Note: ble_store_config_init() doesn't compile
+  ble_hs_cfg.store_status_cb = ble_store_util_status_rr;
+  ble_hs_cfg.store_read_cb = ble_store_config_read;
+  ble_hs_cfg.store_write_cb = ble_store_config_write;
+  ble_hs_cfg.store_delete_cb = ble_store_config_delete;
 
   // Set larger MTU for batch sending IMU samples
   ble_att_set_preferred_mtu(BLE::PREFERRED_MTU);

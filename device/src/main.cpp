@@ -11,6 +11,7 @@
 
 // TODO: address why button.wasPressedAsync() doesn't work now
 // TODO: extract control logic to separate class
+// TODO: document overall architecture with C4 model
 
 // extern "C" void app_main() {
 
@@ -38,7 +39,7 @@
 extern "C" void app_main() {
   gpio_install_isr_service(ESP_INTR_FLAG_IRAM);
 
-  Logger logger((LogLevel::INFO));
+  Logger logger((LogLevel::DEBUG));
 
   std::unique_ptr<LED> led = LED::create(&logger);
   if (led == nullptr) {
@@ -68,7 +69,7 @@ extern "C" void app_main() {
   std::optional<IMUSample> sample;
   button->enableAsync();
   while (true) {
-    vTaskDelay(pdMS_TO_TICKS(1000));
+    vTaskDelay(pdMS_TO_TICKS(2500));
 
     if (button->isPressedSync()) {
       doSample = !doSample;

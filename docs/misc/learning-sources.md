@@ -94,4 +94,9 @@
 - <https://www.youtube.com/watch?v=EIo5aZ3c89Q>
 - <https://github.com/espressif/esp-idf/tree/master/examples/bluetooth>
 - <https://mynewt.apache.org/latest/network/>
+- <https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/ble/index.html>
+- <https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/ble/overview.html>
 - <https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/ble/get-started/ble-introduction.html>
+- <https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/ble/get-started/ble-device-discovery.html>
+- <https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/ble/get-started/ble-connection.html>
+- <https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/ble/get-started/ble-data-exchange.html>

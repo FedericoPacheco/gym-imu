@@ -23,13 +23,6 @@
 #include <sys/param.h>
 
 // TODO: document overall behavior
-// TODO: perform refactors when possible (sliding, extract func, etc.)
-
-struct BLEAddress {
-  uint8_t type;
-  uint8_t value[6];
-  char readableValue[20];
-};
 
 class BLE {
 public:
@@ -67,24 +60,33 @@ public:
   ~BLE();
 
 private:
-  Logger *logger;
   static std::unique_ptr<BLE> instance;
   static BLE *initializingInstance;
+  struct BLEAddress {
+    uint8_t type;
+    uint8_t value[6];
+    char readableValue[20];
+  };
 
-  ble_gatt_chr_def imuSampleCharacteristic[2];
-  uint16_t imuSampleCharacteristicHandle;
-  bool isSubscribedToImuSampleCharacteristic;
-  ble_gatt_svc_def imuService[2];
-  uint16_t connectionHandle;
+  struct BLECommunicationState {
+    portMUX_TYPE mux;
+    uint16_t connectionHandle;
+    uint16_t mtu;
+    uint16_t currentBatchSize;
+    bool isSubscribedToImuSampleCharacteristic;
+    uint16_t imuSampleCharacteristicHandle;
+    BLEAddress address;
+  } communicationState;
+
+  Logger *logger;
+
+  ble_gatt_chr_def imuCharacteristics[2];
+  ble_gatt_svc_def services[2];
 
   TaskHandle_t bleTaskHandle, transmitTaskHandle;
   bool doTransmit;
-  portMUX_TYPE mux;
-  uint16_t mtu;
-  uint16_t currentBatchSize;
   QueueHandle_t sampleQueueHandle;
 
-  BLEAddress address;
   ble_hs_adv_fields primaryAdvertisingPacket;
   ble_hs_adv_fields scanResponsePacket;
   ble_gap_adv_params advertisingConfig;

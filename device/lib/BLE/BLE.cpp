@@ -8,15 +8,18 @@ std::unique_ptr<BLE> BLE::instance = nullptr;
 BLE *BLE::initializingInstance = nullptr;
 
 BLE::BLE(Logger *logger)
-    : logger(logger), imuSampleCharacteristic{},
-      imuSampleCharacteristicHandle(0),
-      isSubscribedToImuSampleCharacteristic(false), imuService{},
-      connectionHandle(BLE_HS_CONN_HANDLE_NONE), bleTaskHandle(nullptr),
-      transmitTaskHandle(nullptr), doTransmit(true),
-      mux(portMUX_INITIALIZER_UNLOCKED), mtu(BLE::DEFAULT_MTU),
-      currentBatchSize(PREFERRED_BATCH_SEND_SIZE), sampleQueueHandle(nullptr),
-      address{}, primaryAdvertisingPacket{}, scanResponsePacket{},
-      advertisingConfig{} {}
+    : communicationState{}, logger(logger), imuCharacteristics{}, services{},
+      bleTaskHandle(nullptr), transmitTaskHandle(nullptr), doTransmit(true),
+      sampleQueueHandle(nullptr), primaryAdvertisingPacket{},
+      scanResponsePacket{}, advertisingConfig{} {
+
+  this->communicationState.mux = portMUX_INITIALIZER_UNLOCKED;
+  this->communicationState.connectionHandle = BLE_HS_CONN_HANDLE_NONE;
+  this->communicationState.mtu = BLE::PREFERRED_MTU;
+  this->communicationState.currentBatchSize = BLE::PREFERRED_BATCH_SEND_SIZE;
+  this->communicationState.isSubscribedToImuSampleCharacteristic = false;
+  this->communicationState.imuSampleCharacteristicHandle = 0;
+}
 
 std::unique_ptr<BLE> BLE::create(Logger *logger) {
   std::unique_ptr<BLE> ble(new (std::nothrow) BLE(logger));
@@ -193,10 +196,8 @@ bool BLE::initializeGAP() {
 }
 // portENTER_CRITICAL() / portEXIT_CRITICAL():
 // disable/enable interrupts to ensure atomic execution of critical sections.
-// Used here to protect access to shared variables (connectionHandle,
-// isSubscribed..., imuSampleCharacteristicHandle, batchSize) that are written
-// here and read on transmitTask() and send()
-// Reference:
+// Used here to protect access to communicationState that are written here and
+// read on transmitTask() and send() Reference:
 // https://freertos.org/Documentation/02-Kernel/04-API-references/04-RTOS-kernel-control/01-taskENTER_CRITICAL_taskEXIT_CRITICAL
 int BLE::handleGAPEvent(ble_gap_event *event, void *arg) {
   BLE *self = static_cast<BLE *>(arg);
@@ -207,13 +208,14 @@ int BLE::handleGAPEvent(ble_gap_event *event, void *arg) {
   case BLE_GAP_EVENT_CONNECT: {
     if (event->connect.status == 0) {
       // Allow only one connection at a time (e.g. phone or laptop)
-      portENTER_CRITICAL(&self->mux);
-      self->connectionHandle = event->connect.conn_handle;
-      portEXIT_CRITICAL(&self->mux);
+      portENTER_CRITICAL(&self->communicationState.mux);
+      self->communicationState.connectionHandle = event->connect.conn_handle;
+      portEXIT_CRITICAL(&self->communicationState.mux);
       self->logger->info("Connection established");
 
       RETURN_FALSE_ON_NIMBLE_ERROR(
-          ble_gattc_exchange_mtu(self->connectionHandle, NULL, NULL),
+          ble_gattc_exchange_mtu(self->communicationState.connectionHandle,
+                                 NULL, NULL),
           self->logger,
           "Failed to negotiate MTU with client, using default (23 bytes)");
 
@@ -225,16 +227,17 @@ int BLE::handleGAPEvent(ble_gap_event *event, void *arg) {
     break;
   }
   case BLE_GAP_EVENT_SUBSCRIBE: {
-    if (event->subscribe.attr_handle == self->imuSampleCharacteristicHandle) {
+    if (event->subscribe.attr_handle ==
+        self->communicationState.imuSampleCharacteristicHandle) {
       if (event->subscribe.cur_notify) {
-        portENTER_CRITICAL(&self->mux);
-        self->isSubscribedToImuSampleCharacteristic = true;
-        portEXIT_CRITICAL(&self->mux);
+        portENTER_CRITICAL(&self->communicationState.mux);
+        self->communicationState.isSubscribedToImuSampleCharacteristic = true;
+        portEXIT_CRITICAL(&self->communicationState.mux);
         self->logger->info("Client subscribed to IMU Sample Characteristic");
       } else {
-        portENTER_CRITICAL(&self->mux);
-        self->isSubscribedToImuSampleCharacteristic = false;
-        portEXIT_CRITICAL(&self->mux);
+        portENTER_CRITICAL(&self->communicationState.mux);
+        self->communicationState.isSubscribedToImuSampleCharacteristic = false;
+        portEXIT_CRITICAL(&self->communicationState.mux);
         self->logger->info(
             "Client unsubscribed from IMU Sample Characteristic");
       }
@@ -244,10 +247,10 @@ int BLE::handleGAPEvent(ble_gap_event *event, void *arg) {
   case BLE_GAP_EVENT_DISCONNECT: {
     self->logger->info("Connection terminated, reason: %d",
                        event->disconnect.reason);
-    portENTER_CRITICAL(&self->mux);
-    self->connectionHandle = BLE_HS_CONN_HANDLE_NONE;
-    self->isSubscribedToImuSampleCharacteristic = false;
-    portEXIT_CRITICAL(&self->mux);
+    portENTER_CRITICAL(&self->communicationState.mux);
+    self->communicationState.connectionHandle = BLE_HS_CONN_HANDLE_NONE;
+    self->communicationState.isSubscribedToImuSampleCharacteristic = false;
+    portEXIT_CRITICAL(&self->communicationState.mux);
     self->startAdvertising();
     break;
   }
@@ -260,13 +263,15 @@ int BLE::handleGAPEvent(ble_gap_event *event, void *arg) {
     break;
   }
   case BLE_GAP_EVENT_MTU: {
-    portENTER_CRITICAL(&self->mux);
-    self->mtu = event->mtu.value;
-    self->currentBatchSize = MIN(BLE::PREFERRED_BATCH_SEND_SIZE,
-                                 MAX(1, (self->mtu - 3) / sizeof(IMUSample)));
-    portEXIT_CRITICAL(&self->mux);
-    self->logger->info("Negotiated MTU: %d. Current batch size: %d", self->mtu,
-                       self->currentBatchSize);
+    portENTER_CRITICAL(&self->communicationState.mux);
+    self->communicationState.mtu = event->mtu.value;
+    self->communicationState.currentBatchSize =
+        MIN(BLE::PREFERRED_BATCH_SEND_SIZE,
+            MAX(1, (self->communicationState.mtu - 3) / sizeof(IMUSample)));
+    portEXIT_CRITICAL(&self->communicationState.mux);
+    self->logger->info("Negotiated MTU: %d. Current batch size: %d",
+                       self->communicationState.mtu,
+                       self->communicationState.currentBatchSize);
     break;
   }
   }
@@ -280,22 +285,23 @@ bool BLE::initializeGATT() {
 
   ble_svc_gatt_init();
 
-  imuSampleCharacteristic[0].uuid = &BLE::IMU_SAMPLE_CHARACTERISTIC_UUID.u;
-  imuSampleCharacteristic[0].access_cb = BLE::accessImuSampleCharacteristic;
-  imuSampleCharacteristic[0].arg = this;
-  imuSampleCharacteristic[0].flags = BLE_GATT_CHR_F_NOTIFY;
-  imuSampleCharacteristic[0].val_handle = &this->imuSampleCharacteristicHandle;
+  imuCharacteristics[0].uuid = &BLE::IMU_SAMPLE_CHARACTERISTIC_UUID.u;
+  imuCharacteristics[0].access_cb = BLE::accessImuSampleCharacteristic;
+  imuCharacteristics[0].arg = this;
+  imuCharacteristics[0].flags = BLE_GATT_CHR_F_NOTIFY;
+  imuCharacteristics[0].val_handle =
+      &this->communicationState.imuSampleCharacteristicHandle;
 
-  imuService[0].type = BLE_GATT_SVC_TYPE_PRIMARY;
-  imuService[0].uuid = &BLE::IMU_SERVICE_UUID.u;
-  imuService[0].characteristics = this->imuSampleCharacteristic;
+  services[0].type = BLE_GATT_SVC_TYPE_PRIMARY;
+  services[0].uuid = &BLE::IMU_SERVICE_UUID.u;
+  services[0].characteristics = this->imuCharacteristics;
 
-  RETURN_FALSE_ON_NIMBLE_ERROR(ble_gatts_count_cfg(this->imuService),
+  RETURN_FALSE_ON_NIMBLE_ERROR(ble_gatts_count_cfg(this->services),
                                this->logger,
                                "Failed to count GATT configuration");
 
-  RETURN_FALSE_ON_NIMBLE_ERROR(ble_gatts_add_svcs(this->imuService),
-                               this->logger, "Failed to add GATT services");
+  RETURN_FALSE_ON_NIMBLE_ERROR(ble_gatts_add_svcs(this->services), this->logger,
+                               "Failed to add GATT services");
 
   return true;
 }
@@ -362,12 +368,14 @@ void BLE::transmitTask(void *arg) {
     ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 
     // Sincronize access to shared variables
-    portENTER_CRITICAL(&self->mux);
-    characteristicHandle = self->imuSampleCharacteristicHandle;
-    connectionHandle = self->connectionHandle;
-    isSubscribed = self->isSubscribedToImuSampleCharacteristic;
-    currentBatchSize = self->currentBatchSize;
-    portEXIT_CRITICAL(&self->mux);
+    portENTER_CRITICAL(&self->communicationState.mux);
+    characteristicHandle =
+        self->communicationState.imuSampleCharacteristicHandle;
+    connectionHandle = self->communicationState.connectionHandle;
+    isSubscribed =
+        self->communicationState.isSubscribedToImuSampleCharacteristic;
+    currentBatchSize = self->communicationState.currentBatchSize;
+    portEXIT_CRITICAL(&self->communicationState.mux);
 
     if (characteristicHandle == 0) {
       self->logger->warn(
@@ -420,19 +428,25 @@ bool BLE::initializeAdvertising() {
   this->logger->debug("Initializing advertising");
 
   // Infer address type: public or random
-  RETURN_FALSE_ON_NIMBLE_ERROR(ble_hs_id_infer_auto(0, &this->address.type),
-                               this->logger,
-                               "Failed to determine address type");
+  RETURN_FALSE_ON_NIMBLE_ERROR(
+      ble_hs_id_infer_auto(0, &this->communicationState.address.type),
+      this->logger, "Failed to determine address type");
 
   RETURN_FALSE_ON_NIMBLE_ERROR(
-      ble_hs_id_copy_addr(this->address.type, this->address.value, NULL),
+      ble_hs_id_copy_addr(this->communicationState.address.type,
+                          this->communicationState.address.value, NULL),
       this->logger, "Failed to read device address");
 
-  sprintf(this->address.readableValue, "0x%02X:%02X:%02X:%02X:%02X:%02X",
-          this->address.value[0], this->address.value[1],
-          this->address.value[2], this->address.value[3],
-          this->address.value[4], this->address.value[5]);
-  this->logger->info("Device BLE address: %s", this->address.readableValue);
+  sprintf(this->communicationState.address.readableValue,
+          "0x%02X:%02X:%02X:%02X:%02X:%02X",
+          this->communicationState.address.value[0],
+          this->communicationState.address.value[1],
+          this->communicationState.address.value[2],
+          this->communicationState.address.value[3],
+          this->communicationState.address.value[4],
+          this->communicationState.address.value[5]);
+  this->logger->info("Device BLE address: %s",
+                     this->communicationState.address.readableValue);
 
   // Packet fields:
   // General discoverable, LE-only
@@ -456,8 +470,9 @@ bool BLE::initializeAdvertising() {
   // this->primaryAdvertisingPacket.le_role = BLE_GAP_LE_ROLE_PERIPHERAL;
   // this->primaryAdvertisingPacket.le_role_is_present = 1;
 
-  this->scanResponsePacket.device_addr = this->address.value;
-  this->scanResponsePacket.device_addr_type = this->address.type;
+  this->scanResponsePacket.device_addr = this->communicationState.address.value;
+  this->scanResponsePacket.device_addr_type =
+      this->communicationState.address.type;
   this->scanResponsePacket.device_addr_is_present = 1;
 
   // Behavior:
@@ -479,8 +494,9 @@ bool BLE::initializeAdvertising() {
 }
 bool BLE::startAdvertising() {
   RETURN_FALSE_ON_NIMBLE_ERROR(
-      ble_gap_adv_start(this->address.type, NULL, BLE_HS_FOREVER,
-                        &this->advertisingConfig, BLE::handleGAPEvent, this),
+      ble_gap_adv_start(this->communicationState.address.type, NULL,
+                        BLE_HS_FOREVER, &this->advertisingConfig,
+                        BLE::handleGAPEvent, this),
       this->logger, "Failed to start advertising");
 
   return true;
@@ -489,9 +505,9 @@ bool BLE::startAdvertising() {
 void BLE::send(const IMUSample &sample) {
 
   uint16_t currentBatchSize;
-  portENTER_CRITICAL(&this->mux);
-  currentBatchSize = this->currentBatchSize;
-  portEXIT_CRITICAL(&this->mux);
+  portENTER_CRITICAL(&this->communicationState.mux);
+  currentBatchSize = this->communicationState.currentBatchSize;
+  portEXIT_CRITICAL(&this->communicationState.mux);
 
   // Buffer samples regardless of connection/subscription status
   if (xQueueSend(this->sampleQueueHandle, &sample, 0) == pdPASS) {

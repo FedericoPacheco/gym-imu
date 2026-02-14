@@ -38,7 +38,7 @@ std::unique_ptr<BLE> BLE::create(Logger *logger) {
     BLE::initializingInstance = nullptr;
     return nullptr;
   }
-  if (!ble->initializeControllerAndStack()) {
+  if (!ble->initializeControllerAndHost()) {
     BLE::initializingInstance = nullptr;
     return nullptr;
   }
@@ -71,7 +71,7 @@ BLE::~BLE() {
   if (this->transmitTaskHandle) {
     this->doTransmit = false;
     xTaskNotifyGive(this->transmitTaskHandle);
-    vTaskDelay(pdMS_TO_TICKS(250));
+    vTaskDelay(pdMS_TO_TICKS(BLE::TRANSMIT_TASK_SHUTDOWN_DELAY_MS));
     vTaskDelete(this->transmitTaskHandle);
   }
   if (this->sampleQueueHandle)
@@ -98,16 +98,7 @@ bool BLE::initializeFlash() {
   return true;
 }
 
-/*
-- Controller: low-level hardware that manages communication through radio
-(sending/receiving signals, packets, error handling, encoding/decoding, channel
-hopping, etc.). Runs separate from the CPU and accepts HCI (Host Controller
-Interface) commands from the host stack.
-- Stack: software that implements the Bluetooth protocol, built on top of the
-controller, exposing a high-level API to the application. Handles GAP, GATT,
-security, etc. Runs on the CPU and listens for events from the controller.
-*/
-bool BLE::initializeControllerAndStack() {
+bool BLE::initializeControllerAndHost() {
   this->logger->debug("Initializing controller and NimBLE host stack");
 
   // Initialize both at once
@@ -178,7 +169,6 @@ void BLE::onGATTRegister(struct ble_gatt_register_ctxt *context, void *arg) {
   }
 }
 
-// GAP: Generic Access Profile
 bool BLE::initializeGAP() {
   this->logger->debug("Initializing GAP service");
 
@@ -218,6 +208,30 @@ int BLE::handleGAPEvent(ble_gap_event *event, void *arg) {
                                  NULL, NULL),
           self->logger,
           "Failed to negotiate MTU with client, using default (23 bytes)");
+
+      struct ble_gap_upd_params connectionParameters = {
+          .itvl_min = BLE::CONNECTION_INTERVAL_MIN_MS,
+          .itvl_max = BLE::CONNECTION_INTERVAL_MAX_MS,
+          .latency = BLE::CONNECTION_PERIPHERAL_LATENCY,
+          .supervision_timeout = BLE::CONNECTION_SUPERVISION_TIMEOUT_MS,
+          //  Duration of connection events
+          .min_ce_len = BLE_GAP_INITIAL_CONN_MIN_CE_LEN,
+          .max_ce_len = BLE_GAP_INITIAL_CONN_MAX_CE_LEN};
+
+      self->logger->debug(
+          "Requesting connection parameters update: itvl_min=%u, itvl_max=%u, "
+          "latency=%u, supervision_timeout=%u",
+          connectionParameters.itvl_min, connectionParameters.itvl_max,
+          connectionParameters.latency,
+          connectionParameters.supervision_timeout);
+
+      int connectionParametersError = ble_gap_update_params(
+          self->communicationState.connectionHandle, &connectionParameters);
+      if (connectionParametersError != 0) {
+        self->logger->warn(
+            "Failed to request connection parameters update, status: %d",
+            connectionParametersError);
+      }
 
     } else {
       self->logger->error("Connection failed with error code: %d",
@@ -427,7 +441,7 @@ void BLE::transmitTask(void *arg) {
 bool BLE::initializeAdvertising() {
   this->logger->debug("Initializing advertising");
 
-  // Infer address type: public or random
+  // Infer address type: public/private, static/random
   RETURN_FALSE_ON_NIMBLE_ERROR(
       ble_hs_id_infer_auto(0, &this->communicationState.address.type),
       this->logger, "Failed to determine address type");
@@ -461,6 +475,7 @@ bool BLE::initializeAdvertising() {
   this->primaryAdvertisingPacket.tx_pwr_lvl = BLE_HS_ADV_TX_PWR_LVL_AUTO;
   this->primaryAdvertisingPacket.tx_pwr_lvl_is_present = 1;
 
+  // Appearance
   this->primaryAdvertisingPacket.appearance = BLE::APPEARANCE;
   this->primaryAdvertisingPacket.appearance_is_present = 1;
 
@@ -470,10 +485,20 @@ bool BLE::initializeAdvertising() {
   // this->primaryAdvertisingPacket.le_role = BLE_GAP_LE_ROLE_PERIPHERAL;
   // this->primaryAdvertisingPacket.le_role_is_present = 1;
 
+  // Address
   this->scanResponsePacket.device_addr = this->communicationState.address.value;
   this->scanResponsePacket.device_addr_type =
       this->communicationState.address.type;
   this->scanResponsePacket.device_addr_is_present = 1;
+
+  // Advertising interval
+  this->scanResponsePacket.adv_itvl =
+      BLE_GAP_ADV_ITVL_MS(BLE::ADVERTISING_INTERVAL_MS);
+  this->scanResponsePacket.adv_itvl_is_present = 1;
+  this->advertisingConfig.itvl_min =
+      BLE_GAP_ADV_ITVL_MS(BLE::ADVERTISING_INTERVAL_MS);
+  this->advertisingConfig.itvl_max =
+      BLE_GAP_ADV_ITVL_MS(BLE::ADVERTISING_INTERVAL_MS);
 
   // Behavior:
   // Connection mode: undirected connectable (accept connections from any

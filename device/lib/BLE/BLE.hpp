@@ -80,6 +80,25 @@ public:
   // https://www.bluetooth.com/specifications/assigned-numbers/
   static constexpr int APPEARANCE = 0x0541;
 
+  static constexpr int SAMPLE_QUEUE_SIZE = 128;
+  static constexpr int PREFERRED_BATCH_SEND_SIZE = 6;
+
+  // MTU: maximum transmission unit, the largest payload size that can be sent
+  // in a single BLE packet
+  static constexpr int DEFAULT_MTU = 23;
+  // Effetive payload = MTU (maximum transmission unit) - 3 bytes for ATT header
+  static constexpr int PREFERRED_MTU =
+      MIN(sizeof(IMUSample) * PREFERRED_BATCH_SEND_SIZE + 3, 512);
+  static constexpr int TRANSMIT_TASK_SHUTDOWN_DELAY_MS = 250;
+  // Time between data exchanges when connected
+  static constexpr int CONNECTION_INTERVAL_MIN_MS = 15;
+  static constexpr int CONNECTION_INTERVAL_MAX_MS = 30;
+  // Amount of connection events that can be skipped to save power
+  static constexpr int CONNECTION_PERIPHERAL_LATENCY = 0;
+  // Time after which the connection is considered lost if no
+  // packets are received
+  static constexpr int CONNECTION_SUPERVISION_TIMEOUT_MS = 5000;
+
   // Big endian (human readable, most significant byte first):
   // 12345678-1234-5678-1234-56789abcdef0
   // Little endian (common in BLE): 0xf0debc9a785634127856341278563412
@@ -96,13 +115,9 @@ public:
   static constexpr int BLE_TASK_STACK_SIZE = 4096;
   static constexpr int TRANSMIT_TASK_PRIORITY = 4;
   static constexpr int TRANSMIT_TASK_STACK_SIZE = 4096;
-  static constexpr int SAMPLE_QUEUE_SIZE = 128;
-  static constexpr int PREFERRED_BATCH_SEND_SIZE = 1; // 6;
 
-  static constexpr int DEFAULT_MTU = 23;
-  // Effetive payload = MTU (maximum transmission unit) - 3 bytes for ATT header
-  static constexpr int PREFERRED_MTU =
-      MIN(sizeof(IMUSample) * BLE::PREFERRED_BATCH_SEND_SIZE + 3, 512);
+  // Time between advertising packets when not connected
+  static constexpr int ADVERTISING_INTERVAL_MS = 100;
 
   static BLE *getInstance(Logger *logger);
   void send(const IMUSample &sample);

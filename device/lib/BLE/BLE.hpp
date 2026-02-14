@@ -34,8 +34,9 @@ struct BLEAddress {
 class BLE {
 public:
   static constexpr const char *DEVICE_NAME = "Gym-IMU";
-  static constexpr int APPEARANCE = 0x0340; // Generic wearable device
-  // TODO: find better fit if possible
+  // Motion sensor. See BLE specification .pdf, section 2.6.3.:
+  // https://www.bluetooth.com/specifications/assigned-numbers/
+  static constexpr int APPEARANCE = 0x0541;
 
   // TODO: move uuids back here if possible
   // Big endian (human readable, most significant byte first):

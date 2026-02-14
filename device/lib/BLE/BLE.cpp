@@ -7,14 +7,6 @@ std::unique_ptr<BLE> BLE::instance = nullptr;
 // early callbacks to the creating object to avoid null crashes.
 BLE *BLE::initializingInstance = nullptr;
 
-const ble_uuid128_t BLE::IMU_SERVICE_UUID =
-    BLE_UUID128_INIT(0xf0, 0xde, 0xbc, 0x9a, 0x78, 0x56, 0x34, 0x12, 0x78, 0x56,
-                     0x34, 0x12, 0x78, 0x56, 0x34, 0x12);
-
-const ble_uuid128_t BLE::IMU_SAMPLE_CHARACTERISTIC_UUID =
-    BLE_UUID128_INIT(0x3a, 0x7c, 0xd6, 0x9e, 0x6f, 0x71, 0x20, 0xab, 0xa2, 0x4d,
-                     0xf2, 0x31, 0x0b, 0x34, 0x1c, 0xc2);
-
 BLE::BLE(Logger *logger)
     : logger(logger), mtu(BLE::DEFAULT_MTU), imuSampleCharacteristicHandle(0),
       address{}, primaryAdvertisingPacket{}, scanResponsePacket{},

@@ -38,14 +38,17 @@ public:
   // https://www.bluetooth.com/specifications/assigned-numbers/
   static constexpr int APPEARANCE = 0x0541;
 
-  // TODO: move uuids back here if possible
   // Big endian (human readable, most significant byte first):
   // 12345678-1234-5678-1234-56789abcdef0
   // Little endian (common in BLE): 0xf0debc9a785634127856341278563412
-  static const ble_uuid128_t IMU_SERVICE_UUID;
+  static constexpr ble_uuid128_t IMU_SERVICE_UUID =
+      BLE_UUID128_INIT(0xf0, 0xde, 0xbc, 0x9a, 0x78, 0x56, 0x34, 0x12, 0x78,
+                       0x56, 0x34, 0x12, 0x78, 0x56, 0x34, 0x12);
   // Big endian: c21c340b-f231-4da2-ab20-716f9ed67c3a
   // Little endian: 0x3a7cd69e6f7120aba24df2310b341cc2
-  static const ble_uuid128_t IMU_SAMPLE_CHARACTERISTIC_UUID;
+  static constexpr ble_uuid128_t IMU_SAMPLE_CHARACTERISTIC_UUID =
+      BLE_UUID128_INIT(0x3a, 0x7c, 0xd6, 0x9e, 0x6f, 0x71, 0x20, 0xab, 0xa2,
+                       0x4d, 0xf2, 0x31, 0x0b, 0x34, 0x1c, 0xc2);
 
   static constexpr int BLE_TASK_PRIORITY = 4;
   static constexpr int BLE_TASK_STACK_SIZE = 4096;

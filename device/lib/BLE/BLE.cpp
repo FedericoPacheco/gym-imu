@@ -8,29 +8,15 @@ std::unique_ptr<BLE> BLE::instance = nullptr;
 BLE *BLE::initializingInstance = nullptr;
 
 BLE::BLE(Logger *logger)
-    : logger(logger), imuSampleCharacteristicHandle(0),
-      isSubscribedToImuSampleCharacteristic(false),
+    : logger(logger), imuSampleCharacteristic{},
+      imuSampleCharacteristicHandle(0),
+      isSubscribedToImuSampleCharacteristic(false), imuService{},
       connectionHandle(BLE_HS_CONN_HANDLE_NONE), bleTaskHandle(nullptr),
       transmitTaskHandle(nullptr), doTransmit(true),
       mux(portMUX_INITIALIZER_UNLOCKED), mtu(BLE::DEFAULT_MTU),
       currentBatchSize(PREFERRED_BATCH_SEND_SIZE), sampleQueueHandle(nullptr),
       address{}, primaryAdvertisingPacket{}, scanResponsePacket{},
-      advertisingConfig{} {
-
-  // Default initialize to 0 to avoid garbage values, and then apply custom
-  // settings
-  memset(imuSampleCharacteristic, 0, sizeof(this->imuSampleCharacteristic));
-  imuSampleCharacteristic[0].uuid = &BLE::IMU_SAMPLE_CHARACTERISTIC_UUID.u;
-  imuSampleCharacteristic[0].access_cb = BLE::accessImuSampleCharacteristic;
-  imuSampleCharacteristic[0].arg = this;
-  imuSampleCharacteristic[0].flags = BLE_GATT_CHR_F_NOTIFY;
-  imuSampleCharacteristic[0].val_handle = &this->imuSampleCharacteristicHandle;
-
-  memset(imuService, 0, sizeof(this->imuService));
-  imuService[0].type = BLE_GATT_SVC_TYPE_PRIMARY;
-  imuService[0].uuid = &BLE::IMU_SERVICE_UUID.u;
-  imuService[0].characteristics = this->imuSampleCharacteristic;
-}
+      advertisingConfig{} {}
 
 std::unique_ptr<BLE> BLE::create(Logger *logger) {
   std::unique_ptr<BLE> ble(new (std::nothrow) BLE(logger));
@@ -293,6 +279,16 @@ bool BLE::initializeGATT() {
   this->logger->debug("Initializing GATT service");
 
   ble_svc_gatt_init();
+
+  imuSampleCharacteristic[0].uuid = &BLE::IMU_SAMPLE_CHARACTERISTIC_UUID.u;
+  imuSampleCharacteristic[0].access_cb = BLE::accessImuSampleCharacteristic;
+  imuSampleCharacteristic[0].arg = this;
+  imuSampleCharacteristic[0].flags = BLE_GATT_CHR_F_NOTIFY;
+  imuSampleCharacteristic[0].val_handle = &this->imuSampleCharacteristicHandle;
+
+  imuService[0].type = BLE_GATT_SVC_TYPE_PRIMARY;
+  imuService[0].uuid = &BLE::IMU_SERVICE_UUID.u;
+  imuService[0].characteristics = this->imuSampleCharacteristic;
 
   RETURN_FALSE_ON_NIMBLE_ERROR(ble_gatts_count_cfg(this->imuService),
                                this->logger,

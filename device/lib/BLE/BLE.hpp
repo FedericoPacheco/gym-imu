@@ -71,10 +71,10 @@ private:
   static std::unique_ptr<BLE> instance;
   static BLE *initializingInstance;
 
-  uint16_t imuSampleCharacteristicHandle;
   ble_gatt_chr_def imuSampleCharacteristic[2];
-  ble_gatt_svc_def imuService[2];
+  uint16_t imuSampleCharacteristicHandle;
   bool isSubscribedToImuSampleCharacteristic;
+  ble_gatt_svc_def imuService[2];
   uint16_t connectionHandle;
 
   TaskHandle_t bleTaskHandle, transmitTaskHandle;

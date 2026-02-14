@@ -305,6 +305,7 @@ bool BLE::initializeGATT() {
   imuCharacteristics[0].flags = BLE_GATT_CHR_F_NOTIFY;
   imuCharacteristics[0].val_handle =
       &this->communicationState.imuSampleCharacteristicHandle;
+  imuCharacteristics[0].min_key_size = 0; // No encryption required
 
   services[0].type = BLE_GATT_SVC_TYPE_PRIMARY;
   services[0].uuid = &BLE::IMU_SERVICE_UUID.u;
@@ -462,7 +463,9 @@ bool BLE::initializeAdvertising() {
   this->logger->info("Device BLE address: %s",
                      this->communicationState.address.readableValue);
 
-  // Packet fields:
+  // Primary advertising packet (31 bytes max):
+  // Flags (3) + Name (10) + 128-bit UUID (18) = 31 bytes exactly
+
   // General discoverable, LE-only
   this->primaryAdvertisingPacket.flags =
       BLE_HS_ADV_F_DISC_GEN | BLE_HS_ADV_F_BREDR_UNSUP;
@@ -471,19 +474,21 @@ bool BLE::initializeAdvertising() {
   this->primaryAdvertisingPacket.name_len = strlen(BLE::DEVICE_NAME);
   this->primaryAdvertisingPacket.name_is_complete = 1;
 
+  // Advertise the IMU service UUID so apps can filter/discover by service
+  this->primaryAdvertisingPacket.uuids128 = &BLE::IMU_SERVICE_UUID;
+  this->primaryAdvertisingPacket.num_uuids128 = 1;
+  this->primaryAdvertisingPacket.uuids128_is_complete = 1;
+
+  // Scan response packet (31 bytes max):
+  // TX power (3) + Appearance (4) + Address (8) + Adv interval (4) = 19 bytes
+
   // Antenna transmission power
-  this->primaryAdvertisingPacket.tx_pwr_lvl = BLE_HS_ADV_TX_PWR_LVL_AUTO;
-  this->primaryAdvertisingPacket.tx_pwr_lvl_is_present = 1;
+  this->scanResponsePacket.tx_pwr_lvl = BLE_HS_ADV_TX_PWR_LVL_AUTO;
+  this->scanResponsePacket.tx_pwr_lvl_is_present = 1;
 
   // Appearance
-  this->primaryAdvertisingPacket.appearance = BLE::APPEARANCE;
-  this->primaryAdvertisingPacket.appearance_is_present = 1;
-
-  // Device role: peripheral only (not central, so it can't connect to other
-  // devices, only accept connections).
-  // Disclaimer: present in ESP-IDF example, but it DOESN'T COMPILE.
-  // this->primaryAdvertisingPacket.le_role = BLE_GAP_LE_ROLE_PERIPHERAL;
-  // this->primaryAdvertisingPacket.le_role_is_present = 1;
+  this->scanResponsePacket.appearance = BLE::APPEARANCE;
+  this->scanResponsePacket.appearance_is_present = 1;
 
   // Address
   this->scanResponsePacket.device_addr = this->communicationState.address.value;

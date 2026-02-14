@@ -68,9 +68,26 @@ public:
 
 private:
   Logger *logger;
-
   static std::unique_ptr<BLE> instance;
   static BLE *initializingInstance;
+
+  uint16_t imuSampleCharacteristicHandle;
+  ble_gatt_chr_def imuSampleCharacteristic[2];
+  ble_gatt_svc_def imuService[2];
+  bool isSubscribedToImuSampleCharacteristic;
+  uint16_t connectionHandle;
+
+  TaskHandle_t bleTaskHandle, transmitTaskHandle;
+  bool doTransmit;
+  portMUX_TYPE mux;
+  uint16_t mtu;
+  uint16_t currentBatchSize;
+  QueueHandle_t sampleQueueHandle;
+
+  BLEAddress address;
+  ble_hs_adv_fields primaryAdvertisingPacket;
+  ble_hs_adv_fields scanResponsePacket;
+  ble_gap_adv_params advertisingConfig;
 
   BLE(Logger *logger);
   static std::unique_ptr<BLE> create(Logger *logger);
@@ -84,33 +101,17 @@ private:
 
   inline bool initializeGAP();
   static int handleGAPEvent(ble_gap_event *event, void *arg);
-  uint16_t mtu;
 
   inline bool initializeGATT();
-  uint16_t imuSampleCharacteristicHandle;
-  ble_gatt_chr_def imuSampleCharacteristic[2];
-  ble_gatt_svc_def imuService[2];
   static int accessImuSampleCharacteristic(uint16_t connectionHandle,
                                            uint16_t attributeHandle,
                                            struct ble_gatt_access_ctxt *context,
                                            void *arg);
 
-  inline bool initializeAdvertising();
-  BLEAddress address;
-  ble_hs_adv_fields primaryAdvertisingPacket;
-  ble_hs_adv_fields scanResponsePacket;
-  ble_gap_adv_params advertisingConfig;
-  bool startAdvertising();
-
   inline bool initializeTasks();
   static void bleTask(void *arg);
-  TaskHandle_t bleTaskHandle;
-  bool doTransmit;
-  uint16_t currentBatchSize;
   static void transmitTask(void *arg);
-  TaskHandle_t transmitTaskHandle;
-  QueueHandle_t sampleQueueHandle;
-  portMUX_TYPE mux;
-  uint16_t connectionHandle;
-  bool isSubscribedToImuSampleCharacteristic;
+
+  inline bool initializeAdvertising();
+  bool startAdvertising();
 };

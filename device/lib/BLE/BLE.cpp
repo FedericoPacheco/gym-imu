@@ -8,27 +8,28 @@ std::unique_ptr<BLE> BLE::instance = nullptr;
 BLE *BLE::initializingInstance = nullptr;
 
 BLE::BLE(Logger *logger)
-    : logger(logger), mtu(BLE::DEFAULT_MTU), imuSampleCharacteristicHandle(0),
+    : logger(logger), imuSampleCharacteristicHandle(0),
+      isSubscribedToImuSampleCharacteristic(false),
+      connectionHandle(BLE_HS_CONN_HANDLE_NONE), bleTaskHandle(nullptr),
+      transmitTaskHandle(nullptr), doTransmit(true),
+      mux(portMUX_INITIALIZER_UNLOCKED), mtu(BLE::DEFAULT_MTU),
+      currentBatchSize(PREFERRED_BATCH_SEND_SIZE), sampleQueueHandle(nullptr),
       address{}, primaryAdvertisingPacket{}, scanResponsePacket{},
-      advertisingConfig{}, bleTaskHandle(nullptr), doTransmit(true),
-      currentBatchSize(PREFERRED_BATCH_SEND_SIZE), transmitTaskHandle(nullptr),
-      sampleQueueHandle(nullptr), mux(portMUX_INITIALIZER_UNLOCKED),
-      connectionHandle(BLE_HS_CONN_HANDLE_NONE),
-      isSubscribedToImuSampleCharacteristic(false) {
+      advertisingConfig{} {
 
-  // Default initialize to 0 to avoid garbage values and the apply custom
+  // Default initialize to 0 to avoid garbage values, and then apply custom
   // settings
-  memset(imuSampleCharacteristic, 0, sizeof(imuSampleCharacteristic));
-  imuSampleCharacteristic[0].uuid = &IMU_SAMPLE_CHARACTERISTIC_UUID.u;
+  memset(imuSampleCharacteristic, 0, sizeof(this->imuSampleCharacteristic));
+  imuSampleCharacteristic[0].uuid = &BLE::IMU_SAMPLE_CHARACTERISTIC_UUID.u;
   imuSampleCharacteristic[0].access_cb = BLE::accessImuSampleCharacteristic;
   imuSampleCharacteristic[0].arg = this;
   imuSampleCharacteristic[0].flags = BLE_GATT_CHR_F_NOTIFY;
-  imuSampleCharacteristic[0].val_handle = &imuSampleCharacteristicHandle;
+  imuSampleCharacteristic[0].val_handle = &this->imuSampleCharacteristicHandle;
 
-  memset(imuService, 0, sizeof(imuService));
+  memset(imuService, 0, sizeof(this->imuService));
   imuService[0].type = BLE_GATT_SVC_TYPE_PRIMARY;
-  imuService[0].uuid = &IMU_SERVICE_UUID.u;
-  imuService[0].characteristics = imuSampleCharacteristic;
+  imuService[0].uuid = &BLE::IMU_SERVICE_UUID.u;
+  imuService[0].characteristics = this->imuSampleCharacteristic;
 }
 
 std::unique_ptr<BLE> BLE::create(Logger *logger) {
@@ -204,14 +205,13 @@ bool BLE::initializeGAP() {
 
   return true;
 }
-
 // portENTER_CRITICAL() / portEXIT_CRITICAL():
 // disable/enable interrupts to ensure atomic execution of critical sections.
-// Reference:
-// https://freertos.org/Documentation/02-Kernel/04-API-references/04-RTOS-kernel-control/01-taskENTER_CRITICAL_taskEXIT_CRITICAL
 // Used here to protect access to shared variables (connectionHandle,
 // isSubscribed..., imuSampleCharacteristicHandle, batchSize) that are written
 // here and read on transmitTask() and send()
+// Reference:
+// https://freertos.org/Documentation/02-Kernel/04-API-references/04-RTOS-kernel-control/01-taskENTER_CRITICAL_taskEXIT_CRITICAL
 int BLE::handleGAPEvent(ble_gap_event *event, void *arg) {
   BLE *self = static_cast<BLE *>(arg);
 
@@ -225,11 +225,6 @@ int BLE::handleGAPEvent(ble_gap_event *event, void *arg) {
       self->connectionHandle = event->connect.conn_handle;
       portEXIT_CRITICAL(&self->mux);
       self->logger->info("Connection established");
-
-      // struct ble_gap_conn_desc descriptor;
-      // RETURN_FALSE_ON_NIMBLE_ERROR(
-      //     ble_gap_conn_find(self->connectionHandle, &descriptor),
-      //     self->logger, "Failed to find connection by handle");
 
       RETURN_FALSE_ON_NIMBLE_ERROR(
           ble_gattc_exchange_mtu(self->connectionHandle, NULL, NULL),
@@ -316,68 +311,6 @@ int BLE::accessImuSampleCharacteristic(uint16_t connectionHandle,
   return BLE_ATT_ERR_REQ_NOT_SUPPORTED;
 }
 
-bool BLE::initializeAdvertising() {
-  this->logger->debug("Initializing advertising");
-
-  // Infer address type: public or random
-  RETURN_FALSE_ON_NIMBLE_ERROR(ble_hs_id_infer_auto(0, &this->address.type),
-                               this->logger,
-                               "Failed to determine address type");
-
-  RETURN_FALSE_ON_NIMBLE_ERROR(
-      ble_hs_id_copy_addr(this->address.type, this->address.value, NULL),
-      this->logger, "Failed to read device address");
-
-  sprintf(this->address.readableValue, "0x%02X:%02X:%02X:%02X:%02X:%02X",
-          this->address.value[0], this->address.value[1],
-          this->address.value[2], this->address.value[3],
-          this->address.value[4], this->address.value[5]);
-  this->logger->info("Device BLE address: %s", this->address.readableValue);
-
-  // Packet fields:
-  // General discoverable, LE-only
-  this->primaryAdvertisingPacket.flags =
-      BLE_HS_ADV_F_DISC_GEN | BLE_HS_ADV_F_BREDR_UNSUP;
-
-  this->primaryAdvertisingPacket.name = (uint8_t *)BLE::DEVICE_NAME;
-  this->primaryAdvertisingPacket.name_len = strlen(BLE::DEVICE_NAME);
-  this->primaryAdvertisingPacket.name_is_complete = 1;
-
-  // Antenna transmission power
-  this->primaryAdvertisingPacket.tx_pwr_lvl = BLE_HS_ADV_TX_PWR_LVL_AUTO;
-  this->primaryAdvertisingPacket.tx_pwr_lvl_is_present = 1;
-
-  this->primaryAdvertisingPacket.appearance = BLE::APPEARANCE;
-  this->primaryAdvertisingPacket.appearance_is_present = 1;
-
-  // Device role: peripheral only (not central, so it can't connect to other
-  // devices, only accept connections).
-  // Disclaimer: present in ESP-IDF example, but it DOESN'T COMPILE.
-  // this->primaryAdvertisingPacket.le_role = BLE_GAP_LE_ROLE_PERIPHERAL;
-  // this->primaryAdvertisingPacket.le_role_is_present = 1;
-
-  this->scanResponsePacket.device_addr = this->address.value;
-  this->scanResponsePacket.device_addr_type = this->address.type;
-  this->scanResponsePacket.device_addr_is_present = 1;
-
-  // Behavior:
-  // Connection mode: undirected connectable (accept connections from any
-  // device)
-  // Discovery mode: general discoverable
-  this->advertisingConfig.conn_mode = BLE_GAP_CONN_MODE_UND;
-  this->advertisingConfig.disc_mode = BLE_GAP_DISC_MODE_GEN;
-
-  RETURN_FALSE_ON_NIMBLE_ERROR(
-      ble_gap_adv_set_fields(&this->primaryAdvertisingPacket), this->logger,
-      "Failed to set primary advertising packet fields");
-
-  RETURN_FALSE_ON_NIMBLE_ERROR(
-      ble_gap_adv_rsp_set_fields(&this->scanResponsePacket), this->logger,
-      "Failed to set scan response packet fields");
-
-  return true;
-}
-
 bool BLE::initializeTasks() {
   this->sampleQueueHandle =
       xQueueCreate(BLE::SAMPLE_QUEUE_SIZE, sizeof(IMUSample));
@@ -408,45 +341,12 @@ bool BLE::initializeTasks() {
   return true;
 }
 
-bool BLE::startAdvertising() {
-  RETURN_FALSE_ON_NIMBLE_ERROR(
-      ble_gap_adv_start(this->address.type, NULL, BLE_HS_FOREVER,
-                        &this->advertisingConfig, BLE::handleGAPEvent, this),
-      this->logger, "Failed to start advertising");
-
-  return true;
-}
-
 void BLE::bleTask(void *arg) {
   BLE *self = static_cast<BLE *>(arg);
 
   self->logger->debug("BLE task started");
 
   nimble_port_run();
-}
-
-void BLE::send(const IMUSample &sample) {
-
-  uint16_t currentBatchSize;
-  portENTER_CRITICAL(&this->mux);
-  currentBatchSize = this->currentBatchSize;
-  portEXIT_CRITICAL(&this->mux);
-
-  // Buffer samples regardless of connection/subscription status
-  if (xQueueSend(this->sampleQueueHandle, &sample, 0) == pdPASS) {
-    UBaseType_t queueSize = uxQueueMessagesWaiting(this->sampleQueueHandle);
-    if (queueSize >= currentBatchSize) {
-      xTaskNotifyGive(this->transmitTaskHandle);
-    }
-  } else {
-    this->logger->warn("BLE sample queue is full, dropping oldest sample to "
-                       "make room for new one");
-    if (xQueueReceive(this->sampleQueueHandle, NULL, 0) != pdPASS) {
-      this->logger->error("Failed to remove oldest sample from queue");
-      return;
-    }
-    xQueueSend(this->sampleQueueHandle, &sample, 0);
-  }
 }
 
 void BLE::transmitTask(void *arg) {
@@ -517,5 +417,99 @@ void BLE::transmitTask(void *arg) {
 
       currentQueueSize = uxQueueMessagesWaiting(self->sampleQueueHandle);
     }
+  }
+}
+
+bool BLE::initializeAdvertising() {
+  this->logger->debug("Initializing advertising");
+
+  // Infer address type: public or random
+  RETURN_FALSE_ON_NIMBLE_ERROR(ble_hs_id_infer_auto(0, &this->address.type),
+                               this->logger,
+                               "Failed to determine address type");
+
+  RETURN_FALSE_ON_NIMBLE_ERROR(
+      ble_hs_id_copy_addr(this->address.type, this->address.value, NULL),
+      this->logger, "Failed to read device address");
+
+  sprintf(this->address.readableValue, "0x%02X:%02X:%02X:%02X:%02X:%02X",
+          this->address.value[0], this->address.value[1],
+          this->address.value[2], this->address.value[3],
+          this->address.value[4], this->address.value[5]);
+  this->logger->info("Device BLE address: %s", this->address.readableValue);
+
+  // Packet fields:
+  // General discoverable, LE-only
+  this->primaryAdvertisingPacket.flags =
+      BLE_HS_ADV_F_DISC_GEN | BLE_HS_ADV_F_BREDR_UNSUP;
+
+  this->primaryAdvertisingPacket.name = (uint8_t *)BLE::DEVICE_NAME;
+  this->primaryAdvertisingPacket.name_len = strlen(BLE::DEVICE_NAME);
+  this->primaryAdvertisingPacket.name_is_complete = 1;
+
+  // Antenna transmission power
+  this->primaryAdvertisingPacket.tx_pwr_lvl = BLE_HS_ADV_TX_PWR_LVL_AUTO;
+  this->primaryAdvertisingPacket.tx_pwr_lvl_is_present = 1;
+
+  this->primaryAdvertisingPacket.appearance = BLE::APPEARANCE;
+  this->primaryAdvertisingPacket.appearance_is_present = 1;
+
+  // Device role: peripheral only (not central, so it can't connect to other
+  // devices, only accept connections).
+  // Disclaimer: present in ESP-IDF example, but it DOESN'T COMPILE.
+  // this->primaryAdvertisingPacket.le_role = BLE_GAP_LE_ROLE_PERIPHERAL;
+  // this->primaryAdvertisingPacket.le_role_is_present = 1;
+
+  this->scanResponsePacket.device_addr = this->address.value;
+  this->scanResponsePacket.device_addr_type = this->address.type;
+  this->scanResponsePacket.device_addr_is_present = 1;
+
+  // Behavior:
+  // Connection mode: undirected connectable (accept connections from any
+  // device)
+  // Discovery mode: general discoverable
+  this->advertisingConfig.conn_mode = BLE_GAP_CONN_MODE_UND;
+  this->advertisingConfig.disc_mode = BLE_GAP_DISC_MODE_GEN;
+
+  RETURN_FALSE_ON_NIMBLE_ERROR(
+      ble_gap_adv_set_fields(&this->primaryAdvertisingPacket), this->logger,
+      "Failed to set primary advertising packet fields");
+
+  RETURN_FALSE_ON_NIMBLE_ERROR(
+      ble_gap_adv_rsp_set_fields(&this->scanResponsePacket), this->logger,
+      "Failed to set scan response packet fields");
+
+  return true;
+}
+bool BLE::startAdvertising() {
+  RETURN_FALSE_ON_NIMBLE_ERROR(
+      ble_gap_adv_start(this->address.type, NULL, BLE_HS_FOREVER,
+                        &this->advertisingConfig, BLE::handleGAPEvent, this),
+      this->logger, "Failed to start advertising");
+
+  return true;
+}
+
+void BLE::send(const IMUSample &sample) {
+
+  uint16_t currentBatchSize;
+  portENTER_CRITICAL(&this->mux);
+  currentBatchSize = this->currentBatchSize;
+  portEXIT_CRITICAL(&this->mux);
+
+  // Buffer samples regardless of connection/subscription status
+  if (xQueueSend(this->sampleQueueHandle, &sample, 0) == pdPASS) {
+    UBaseType_t queueSize = uxQueueMessagesWaiting(this->sampleQueueHandle);
+    if (queueSize >= currentBatchSize) {
+      xTaskNotifyGive(this->transmitTaskHandle);
+    }
+  } else {
+    this->logger->warn("BLE sample queue is full, dropping oldest sample to "
+                       "make room for new one");
+    if (xQueueReceive(this->sampleQueueHandle, NULL, 0) != pdPASS) {
+      this->logger->error("Failed to remove oldest sample from queue");
+      return;
+    }
+    xQueueSend(this->sampleQueueHandle, &sample, 0);
   }
 }

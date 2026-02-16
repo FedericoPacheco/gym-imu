@@ -16,6 +16,7 @@
 
 // TODO: rework readAsync() to notify subscribers instead of requiring direct
 // call. Extract queue to separate Pipe interface + IMUSamplePipe class?
+// TODO: apply singleton pattern like in BLE class
 
 /*
   Overview:

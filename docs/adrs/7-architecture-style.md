@@ -1,4 +1,4 @@
-# ADR-id: choose Pipes and Filters architecture style with 3 components and tasks
+# ADR-7: choose Pipes and Filters architecture style with 3 components and tasks
 
 ## Status
 

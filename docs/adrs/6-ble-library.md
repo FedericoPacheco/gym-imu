@@ -1,4 +1,4 @@
-# ADR-id: choose NimBLE library for wireless communication
+# ADR-6: choose NimBLE library for wireless communication
 
 ## Status
 

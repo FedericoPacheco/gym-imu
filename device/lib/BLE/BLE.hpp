@@ -70,7 +70,6 @@ Physical Layer (PHY).
 - Host stack: software that implements the Bluetooth protocol, built on top of
 the controller, exposing a high-level API to the application. Handles GAP, GATT,
 security, etc. Runs on the CPU and listens for events from the controller.
-
 */
 
 class BLE {

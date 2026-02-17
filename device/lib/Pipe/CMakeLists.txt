@@ -1,0 +1,1 @@
+idf_component_register(SRCS "QueuePipe.hpp" INCLUDE_DIRS ".")

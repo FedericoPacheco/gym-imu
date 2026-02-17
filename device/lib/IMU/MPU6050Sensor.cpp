@@ -12,10 +12,11 @@
 #include <memory>
 #include <new>
 
-MPU6050Sensor::MPU6050Sensor(Logger *logger, gpio_num_t INTPin,
-                             gpio_num_t SDAPin, gpio_num_t SCLPin,
-                             int samplingFrequencyHz)
-    : logger(logger), bus(I2C_NUM_0) {
+MPU6050Sensor::MPU6050Sensor(
+    Logger *logger, std::shared_ptr<Pipe<IMUSample, SAMPLING_PIPE_SIZE>> pipe,
+    gpio_num_t INTPin, gpio_num_t SDAPin, gpio_num_t SCLPin,
+    int samplingFrequencyHz)
+    : logger(logger), pipe(pipe), bus(I2C_NUM_0) {
 
   this->logger->debug("Sensor parameters: INTPin=%d, SDAPin=%d, SCLPin=%d, "
                       "samplingFrequencyHz=%d",
@@ -28,16 +29,25 @@ MPU6050Sensor::MPU6050Sensor(Logger *logger, gpio_num_t INTPin,
 }
 
 std::unique_ptr<IMUSensor>
-MPU6050Sensor::create(Logger *logger, gpio_num_t INTPin, gpio_num_t SDAPin,
-                      gpio_num_t SCLPin, int samplingFrequencyHz) {
+MPU6050Sensor::create(Logger *logger,
+                      std::shared_ptr<Pipe<IMUSample, SAMPLING_PIPE_SIZE>> pipe,
+                      gpio_num_t INTPin, gpio_num_t SDAPin, gpio_num_t SCLPin,
+                      int samplingFrequencyHz) {
 
   // nothrow: in case of failure, return nullptr instead of throwing
   std::unique_ptr<MPU6050Sensor> imu(new (std::nothrow) MPU6050Sensor(
-      logger, INTPin, SDAPin, SCLPin, samplingFrequencyHz));
+      logger, pipe, INTPin, SDAPin, SCLPin, samplingFrequencyHz));
 
   if (!imu) {
     if (logger) {
       logger->error("Failed to allocate MPU6050Sensor");
+    }
+    return nullptr;
+  }
+
+  if (!pipe) {
+    if (logger) {
+      logger->error("Pipe pointer is null");
     }
     return nullptr;
   }
@@ -56,7 +66,7 @@ MPU6050Sensor::create(Logger *logger, gpio_num_t INTPin, gpio_num_t SDAPin,
   if (!imu->setupDMPQueue())
     return nullptr;
   // Leave everything ready BEFORE enabling interrupts
-  if (!imu->setupAsyncComponents())
+  if (!imu->setupTask())
     return nullptr;
   if (!imu->configureInterrupts())
     return nullptr;
@@ -170,9 +180,9 @@ bool MPU6050Sensor::setupDMPQueue() {
   return true;
 }
 
-bool MPU6050Sensor::setupAsyncComponents() {
-  this->logger->debug(
-      "Setting up FreeRTOS task and static queue for async reading");
+bool MPU6050Sensor::setupTask() {
+  this->logger->debug("Setting up FreeRTOS task for async reading");
+
   this->setDoRead(false);
   BaseType_t taskResult = xTaskCreate(
       readTask, "readTask", MPU6050Sensor::READ_TASK_STACK_SIZE, this,
@@ -181,13 +191,7 @@ bool MPU6050Sensor::setupAsyncComponents() {
     this->logger->error("Failed to create read task");
     return false;
   }
-  this->sampleQueue = xQueueCreateStatic(
-      MPU6050Sensor::SAMPLE_QUEUE_SIZE, sizeof(IMUSample),
-      this->sampleQueueBuffer, &this->sampleQueueControlBlock);
-  if (this->sampleQueue == NULL) {
-    this->logger->error("Failed to create sample queue");
-    return false;
-  }
+
   return true;
 }
 
@@ -234,11 +238,6 @@ MPU6050Sensor::~MPU6050Sensor() {
   this->logger->debug("Removing ISR handler");
   gpio_isr_handler_remove(this->INTPin);
 
-  this->logger->debug("Deleting sample queue");
-  if (this->sampleQueue) {
-    vQueueDelete(this->sampleQueue);
-  }
-
   this->logger->info("MPU6050 sensor shut down successfully");
 }
 
@@ -250,12 +249,12 @@ inline bool MPU6050Sensor::getDoRead() {
 }
 
 std::optional<IMUSample> MPU6050Sensor::readAsync() {
-  IMUSample sample;
-  if (xQueueReceive(this->sampleQueue, &sample, portMAX_DELAY) == pdPASS) {
+  std::optional<IMUSample> sample = this->pipe->pop();
+  if (sample) {
     this->logger->info("Async read: a=<%.3f, %.3f, %.3f> m/s2, "
                        "w=<%.3f, %.3f, %.3f> deg/s, t=%lld us",
-                       sample.a.x, sample.a.y, sample.a.z, sample.w.roll,
-                       sample.w.pitch, sample.w.yaw, sample.t);
+                       sample->a.x, sample->a.y, sample->a.z, sample->w.roll,
+                       sample->w.pitch, sample->w.yaw, sample->t);
     return sample;
   }
   this->logger->warn("Async read: failed");
@@ -342,9 +341,6 @@ void MPU6050Sensor::batchReadDMPQueue(uint16_t initialFifoCount) {
       break; // Exit loop on error
     }
 
-    if (!this->dropOldestSampleIfFull())
-      continue;
-
     auto [aRaw, wRaw] = this->parseSensorData(sensorBuffer);
     IMUSample sample = this->toIMUSample(aRaw, wRaw);
     this->logger->debug("Read task: processing packet %d: a=<%.3f, %.3f, "
@@ -352,9 +348,9 @@ void MPU6050Sensor::batchReadDMPQueue(uint16_t initialFifoCount) {
                         packetsProcessed + 1, sample.a.x, sample.a.y,
                         sample.a.z, sample.w.roll, sample.w.pitch, sample.w.yaw,
                         sample.t);
-    // Enqueue with short timeout (non-blocking) to avoid stalls
-    if (xQueueSend(this->sampleQueue, &sample, pdMS_TO_TICKS(1)) != pdPASS) {
-      this->logger->warn("Read task: failed to enqueue sample (timeout)");
+
+    if (!this->pipe->push(sample)) {
+      this->logger->warn("Read task: failed to push sample");
       // Sample is dropped, but continue processing FIFO
     }
 
@@ -371,21 +367,6 @@ void MPU6050Sensor::batchReadDMPQueue(uint16_t initialFifoCount) {
                        currentFifoCount);
     this->sensor.resetFIFO();
   }
-}
-
-bool MPU6050Sensor::dropOldestSampleIfFull() {
-  if (uxQueueSpacesAvailable(this->sampleQueue) == 0) {
-    IMUSample dummy;
-    if (xQueueReceive(this->sampleQueue, &dummy, 0) == pdPASS) {
-      this->logger->debug("Read task: dropped oldest sample to make space");
-      return true;
-    } else {
-      this->logger->warn(
-          "Read task: failed to drop oldest sample (queue empty?)");
-      return false; // Skip enqueuing if error occurs
-    }
-  }
-  return true;
 }
 
 std::tuple<mpud::raw_axes_t, mpud::raw_axes_t>
@@ -439,9 +420,8 @@ std::optional<IMUSample> MPU6050Sensor::readSync() {
 void MPU6050Sensor::beginAsync() {
   this->logger->info("Starting async reading");
   sensor.resetFIFO();
-  IMUSample sample;
-  while (xQueueReceive(this->sampleQueue, &sample, 0) == pdPASS) {
-    // Empty queue if any samples are left WITHOUT blocking (pdPASS)
+  while (this->pipe->pop(false)) {
+    // Empty pipe if any samples are left WITHOUT blocking
   }
   this->setDoRead(true);
 }

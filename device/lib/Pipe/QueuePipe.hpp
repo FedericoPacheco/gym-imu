@@ -10,8 +10,8 @@
 
 template <typename T, uint32_t N> class QueuePipe : public Pipe<T, N> {
 public:
-  static std::unique_ptr<QueuePipe<T, N>> create(Logger *logger) {
-    std::unique_ptr<QueuePipe<T, N>> queuePipe(new (std::nothrow)
+  static std::shared_ptr<QueuePipe<T, N>> create(Logger *logger) {
+    std::shared_ptr<QueuePipe<T, N>> queuePipe(new (std::nothrow)
                                                    QueuePipe<T, N>(logger));
 
     if (!queuePipe) {

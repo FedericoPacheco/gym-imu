@@ -9,13 +9,15 @@
 #include "hal/i2c_types.h"
 #include "mpu/types.hpp"
 #include "soc/gpio_num.h"
+#include <Constants.hpp>
+#include <Pipe.hpp>
 #include <atomic>
 #include <cstdint>
 #include <memory>
 #include <tuple>
 
 // TODO: rework readAsync() to notify subscribers instead of requiring direct
-// call. Extract queue to separate Pipe interface + IMUSamplePipe class?
+// call.
 // TODO: apply singleton pattern like in BLE class
 
 /*
@@ -28,11 +30,11 @@
   buffer and interrupt configuration.
   - On syncronous read, it fetches the latest accelerometer and gyroscope data
   from the sensor and converts them into physical units.
-  - On asynchronous read, it leverages FreeRTOS tasks, notifications and queues
-  to handle data reading in the background. An interrupt service routine (ISR)
-  is triggered when new data is available, notifying the read task to fetch and
-  process the data, which is then stored in a queue for later retrieval. This
-  process can be turned on and off with a dedicated flag.
+  - On asynchronous read, it leverages FreeRTOS tasks, notifications and a pipe
+  (queue under the hood) to handle data reading in the background. An interrupt
+  service routine (ISR) is triggered when new data is available, notifying the
+  read task to fetch and process the data, which is then stored in a pipe for
+  later retrieval. This process can be turned on and off with a dedicated flag.
 
   How to use:
   Sync:
@@ -74,7 +76,6 @@ private:
   static constexpr int BUS_FREQUENCY_HZ = 400000; // 400kHz, short wires (<10cm)
   // static constexpr int BUS_FREQUENCY_HZ = 100000; // 100kHz, long wires
 
-  static constexpr int SAMPLE_QUEUE_SIZE = 128;
   static constexpr int FIFO_PACKET_SIZE = 12;
 
   static constexpr int READ_TASK_STACK_SIZE = 4096;
@@ -87,13 +88,11 @@ private:
   int samplingFrequencyHz;
 
   Logger *logger;
+  std::shared_ptr<Pipe<IMUSample, SAMPLING_PIPE_SIZE>> pipe;
 
   // Prevent races between main and read tasks
   std::atomic<bool> doRead;
 
-  uint8_t sampleQueueBuffer[SAMPLE_QUEUE_SIZE * sizeof(IMUSample)];
-  StaticQueue_t sampleQueueControlBlock;
-  QueueHandle_t sampleQueue;
   TaskHandle_t readTaskHandle;
 
   MPU_t sensor;
@@ -105,11 +104,12 @@ private:
   void setDoRead(bool value);
   bool getDoRead();
 
-  MPU6050Sensor(Logger *logger, gpio_num_t INTPin, gpio_num_t SDAPin,
-                gpio_num_t SCLPin, int samplingFrequencyHz);
+  MPU6050Sensor(Logger *logger,
+                std::shared_ptr<Pipe<IMUSample, SAMPLING_PIPE_SIZE>> pipe,
+                gpio_num_t INTPin, gpio_num_t SDAPin, gpio_num_t SCLPin,
+                int samplingFrequencyHz);
 
   void batchReadDMPQueue(uint16_t initialFifoCount);
-  bool dropOldestSampleIfFull();
   std::tuple<mpud::raw_axes_t, mpud::raw_axes_t>
   parseSensorData(const uint8_t *data);
   IMUSample toIMUSample(mpud::raw_axes_t aRaw, mpud::raw_axes_t wRaw);
@@ -123,15 +123,15 @@ private:
   bool configureSettings();
   bool setupDMPQueue();
   bool configureInterrupts();
-  bool setupAsyncComponents();
+  bool setupTask();
 
 public:
   // Factory method, returns null on failure
-  static std::unique_ptr<IMUSensor> create(Logger *logger,
-                                           gpio_num_t INTPin = GPIO_NUM_5,
-                                           gpio_num_t SDAPin = GPIO_NUM_6,
-                                           gpio_num_t SCLPin = GPIO_NUM_7,
-                                           int samplingFrequencyHz = 64);
+  static std::unique_ptr<IMUSensor>
+  create(Logger *logger,
+         std::shared_ptr<Pipe<IMUSample, SAMPLING_PIPE_SIZE>> pipe,
+         gpio_num_t INTPin = GPIO_NUM_5, gpio_num_t SDAPin = GPIO_NUM_6,
+         gpio_num_t SCLPin = GPIO_NUM_7, int samplingFrequencyHz = 60);
   ~MPU6050Sensor() override;
 
   std::optional<IMUSample> readSync() override;

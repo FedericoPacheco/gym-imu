@@ -7,6 +7,8 @@
 #include "freertos/projdefs.h"
 #include "freertos/task.h"
 #include <BLE.hpp>
+#include <Constants.hpp>
+#include <QueuePipe.hpp>
 #include <memory>
 
 // TODO: address why button.wasPressedAsync() doesn't work now
@@ -41,6 +43,13 @@ extern "C" void app_main() {
 
   Logger logger((LogLevel::DEBUG));
 
+  std::shared_ptr<Pipe<IMUSample, SAMPLING_PIPE_SIZE>> samplingPipe =
+      QueuePipe<IMUSample, SAMPLING_PIPE_SIZE>::create(&logger);
+  if (!samplingPipe) {
+    logger.error("Failed to create pipe");
+    return;
+  }
+
   std::unique_ptr<LED> led = LED::create(&logger);
   if (led == nullptr) {
     logger.error("Failed to initialize LED");
@@ -53,13 +62,13 @@ extern "C" void app_main() {
     return;
   }
 
-  std::unique_ptr<IMUSensor> imu = MPU6050Sensor::create(&logger);
+  std::unique_ptr<IMUSensor> imu = MPU6050Sensor::create(&logger, samplingPipe);
   if (imu == nullptr) {
     logger.error("Failed to initialize MPU6050 sensor");
     return;
   }
 
-  BLE *ble = BLE::getInstance(&logger);
+  BLE *ble = BLE::getInstance(&logger /* , &samplingPipe */);
   if (ble == nullptr) {
     logger.error("Failed to initialize BLE");
     return;

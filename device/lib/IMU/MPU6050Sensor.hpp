@@ -1,8 +1,5 @@
 #pragma once
 #include "I2Cbus.hpp"
-#include "IMUSensor.hpp"
-#include "Logger.hpp"
-#include "MPU.hpp"
 #include "esp_attr.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/idf_additions.h"
@@ -10,6 +7,9 @@
 #include "mpu/types.hpp"
 #include "soc/gpio_num.h"
 #include <Constants.hpp>
+#include <IMUSensor.hpp>
+#include <Logger.hpp>
+#include <MPU.hpp>
 #include <Pipe.hpp>
 #include <atomic>
 #include <cstdint>

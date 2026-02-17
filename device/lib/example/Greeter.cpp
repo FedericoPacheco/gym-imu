@@ -1,4 +1,4 @@
-#include "Greeter.h"
+#include <Greeter.hpp>
 #include <iostream>
 
 void Greeter::greet() {

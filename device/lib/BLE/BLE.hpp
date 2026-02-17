@@ -1,6 +1,4 @@
-#include "ErrorMacros.hpp"
-#include "IMUSensor.hpp"
-#include "Logger.hpp"
+#pragma once
 #include "esp_system.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/idf_additions.h"
@@ -16,6 +14,9 @@
 #include "services/gap/ble_svc_gap.h"
 #include "services/gatt/ble_svc_gatt.h"
 #include "store/config/ble_store_config.h"
+#include <ErrorMacros.hpp>
+#include <IMUSensor.hpp>
+#include <Logger.hpp>
 #include <cstddef>
 #include <cstdint>
 #include <freertos/task.h>

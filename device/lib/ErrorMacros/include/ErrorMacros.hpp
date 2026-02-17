@@ -1,9 +1,7 @@
-#ifndef ERROR_MACROS_HPP
-#define ERROR_MACROS_HPP
-
-#include "Logger.hpp"
+#pragma once
 #include "esp_err.h"
 #include "host/ble_hs.h"
+#include <Logger.hpp>
 #include <cstdio>
 
 #define RETURN_NULL_ON_ERROR(result, logger, msg)                              \
@@ -128,5 +126,3 @@ inline const char *nimble_err_to_name(int errorCode) {
   }
   }
 }
-
-#endif

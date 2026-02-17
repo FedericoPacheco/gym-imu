@@ -1,7 +1,7 @@
-#include "Button.h"
-#include "ErrorMacros.hpp"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include <Button.hpp>
+#include <ErrorMacros.hpp>
 
 Button::Button(Logger *logger, gpio_num_t pin) : logger(logger) {
   this->pin = pin;

@@ -1,5 +1,3 @@
-#include "MPU6050Sensor.hpp"
-#include "ErrorMacros.hpp"
 #include "I2Cbus.hpp"
 #include "IMUSensor.hpp"
 #include "esp_err.h"
@@ -8,6 +6,8 @@
 #include "freertos/idf_additions.h"
 #include "freertos/task.h"
 #include "mpu/math.hpp"
+#include <ErrorMacros.hpp>
+#include <MPU6050Sensor.hpp>
 #include <cstdint>
 #include <memory>
 #include <new>

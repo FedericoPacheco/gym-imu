@@ -1,4 +1,4 @@
-#include "BLE.hpp"
+#include <BLE.hpp>
 
 std::unique_ptr<BLE> BLE::instance = nullptr;
 // Temporary pointer used while a BLE instance is being created and the static

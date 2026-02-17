@@ -1,8 +1,8 @@
 #pragma once
-#include "Logger.hpp"
-#include "Pipe.hpp"
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
+#include <Logger.hpp>
+#include <Pipe.hpp>
 #include <atomic>
 #include <cstdint>
 #include <memory>

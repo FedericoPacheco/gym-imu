@@ -1,16 +1,4 @@
-#include "I2Cbus.hpp"
-#include "IMUSensor.hpp"
-#include "esp_err.h"
-#include "esp_timer.h"
-#include "freertos/FreeRTOS.h"
-#include "freertos/idf_additions.h"
-#include "freertos/task.h"
-#include "mpu/math.hpp"
-#include <ErrorMacros.hpp>
 #include <MPU6050Sensor.hpp>
-#include <cstdint>
-#include <memory>
-#include <new>
 
 MPU6050Sensor::MPU6050Sensor(
     Logger *logger, std::shared_ptr<Pipe<IMUSample, SAMPLING_PIPE_SIZE>> pipe,

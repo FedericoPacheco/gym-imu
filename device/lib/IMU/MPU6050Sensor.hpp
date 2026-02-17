@@ -1,12 +1,16 @@
 #pragma once
 #include "I2Cbus.hpp"
 #include "esp_attr.h"
+#include "esp_err.h"
+#include "esp_timer.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/idf_additions.h"
+#include "freertos/task.h"
 #include "hal/i2c_types.h"
+#include "mpu/math.hpp"
 #include "mpu/types.hpp"
-#include "soc/gpio_num.h"
 #include <Constants.hpp>
+#include <ErrorMacros.hpp>
 #include <IMUSensor.hpp>
 #include <Logger.hpp>
 #include <MPU.hpp>
@@ -14,6 +18,7 @@
 #include <atomic>
 #include <cstdint>
 #include <memory>
+#include <new>
 #include <tuple>
 
 // TODO: rework readAsync() to notify subscribers instead of requiring direct

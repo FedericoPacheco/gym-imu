@@ -1,5 +1,9 @@
 #pragma once
 #include "driver/gpio.h"
+#include "esp_err.h"
+#include "freertos/FreeRTOS.h"
+#include "soc/gpio_num.h"
+#include <ErrorMacros.hpp>
 #include <Logger.hpp>
 #include <memory>
 

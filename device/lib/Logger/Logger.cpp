@@ -1,12 +1,4 @@
-#include "esp_log.h"
-#include "esp_timer.h"
 #include <Logger.hpp>
-#include <cstdarg>
-#include <cstdio>
-#include <cstring>
-#include <stdio.h>
-#include <sys/param.h>
-#include <sys/stat.h>
 
 Logger::Logger(LogLevel level) {
   this->sequenceNumber = 0;

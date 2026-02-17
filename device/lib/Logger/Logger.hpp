@@ -1,9 +1,14 @@
 #pragma once
+#include "esp_log.h"
 #include "esp_log_level.h"
+#include "esp_timer.h"
 #include <atomic>
 #include <cstdarg>
 #include <cstdint>
-#include <stdio.h>
+#include <cstdio>
+#include <cstring>
+#include <sys/param.h>
+#include <sys/stat.h>
 
 // TODO: remove sequence number to improve performance and allow easy creation
 // of multiple loggers. Create Logger interface, inherit from here and rename

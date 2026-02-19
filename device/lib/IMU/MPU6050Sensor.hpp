@@ -21,8 +21,6 @@
 #include <new>
 #include <tuple>
 
-// TODO: rework readAsync() to notify subscribers instead of requiring direct
-// call.
 // TODO: apply singleton pattern like in BLE class
 
 /*

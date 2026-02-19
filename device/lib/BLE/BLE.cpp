@@ -1,4 +1,5 @@
 #include <BLE.hpp>
+#include <cstdint>
 
 std::unique_ptr<BLE> BLE::instance = nullptr;
 // Temporary pointer used while a BLE instance is being created and the static
@@ -7,11 +8,12 @@ std::unique_ptr<BLE> BLE::instance = nullptr;
 // early callbacks to the creating object to avoid null crashes.
 BLE *BLE::initializingInstance = nullptr;
 
-BLE::BLE(Logger *logger)
+BLE::BLE(Logger *logger,
+         std::shared_ptr<Pipe<IMUSample, TRANSMISSION_PIPE_SIZE>> pipe)
     : communicationState{}, logger(logger), imuCharacteristics{}, services{},
       bleTaskHandle(nullptr), transmitTaskHandle(nullptr), doTransmit(true),
-      sampleQueueHandle(nullptr), primaryAdvertisingPacket{},
-      scanResponsePacket{}, advertisingConfig{} {
+      pipe(pipe), primaryAdvertisingPacket{}, scanResponsePacket{},
+      advertisingConfig{} {
 
   this->communicationState.mux = portMUX_INITIALIZER_UNLOCKED;
   this->communicationState.connectionHandle = BLE_HS_CONN_HANDLE_NONE;
@@ -21,12 +23,20 @@ BLE::BLE(Logger *logger)
   this->communicationState.imuSampleCharacteristicHandle = 0;
 }
 
-std::unique_ptr<BLE> BLE::create(Logger *logger) {
-  std::unique_ptr<BLE> ble(new (std::nothrow) BLE(logger));
+std::unique_ptr<BLE>
+BLE::create(Logger *logger,
+            std::shared_ptr<Pipe<IMUSample, TRANSMISSION_PIPE_SIZE>> pipe) {
+  std::unique_ptr<BLE> ble(new (std::nothrow) BLE(logger, pipe));
 
   if (!ble) {
     if (logger)
       logger->error("BLE", "Failed to allocate memory for BLE instance");
+    return nullptr;
+  }
+
+  if (!pipe) {
+    if (logger)
+      logger->error("BLE", "Invalid pipe provided to BLE instance");
     return nullptr;
   }
 
@@ -60,9 +70,11 @@ std::unique_ptr<BLE> BLE::create(Logger *logger) {
 
   return ble;
 }
-BLE *BLE::getInstance(Logger *logger) {
+BLE *BLE::getInstance(
+    Logger *logger,
+    std::shared_ptr<Pipe<IMUSample, TRANSMISSION_PIPE_SIZE>> pipe) {
   if (!BLE::instance)
-    BLE::instance = BLE::create(logger);
+    BLE::instance = BLE::create(logger, pipe);
   return BLE::instance.get();
 }
 
@@ -74,8 +86,6 @@ BLE::~BLE() {
     vTaskDelay(pdMS_TO_TICKS(BLE::TRANSMIT_TASK_SHUTDOWN_DELAY_MS));
     vTaskDelete(this->transmitTaskHandle);
   }
-  if (this->sampleQueueHandle)
-    vQueueDelete(this->sampleQueueHandle);
 
   nimble_port_stop();
 
@@ -329,19 +339,11 @@ int BLE::accessImuSampleCharacteristic(uint16_t connectionHandle,
 }
 
 bool BLE::initializeTasks() {
-  this->sampleQueueHandle =
-      xQueueCreate(BLE::SAMPLE_QUEUE_SIZE, sizeof(IMUSample));
-  if (this->sampleQueueHandle == NULL) {
-    this->logger->error("Failed to create sample queue");
-    return false;
-  }
-
   BaseType_t transmitTaskResult = xTaskCreate(
       BLE::transmitTask, "transmitTask", BLE::TRANSMIT_TASK_STACK_SIZE, this,
       BLE::TRANSMIT_TASK_PRIORITY, &this->transmitTaskHandle);
   if (transmitTaskResult != pdPASS) {
     this->logger->error("Failed to create transmit task");
-    vQueueDelete(this->sampleQueueHandle);
     return false;
   }
 
@@ -350,7 +352,6 @@ bool BLE::initializeTasks() {
                   BLE::BLE_TASK_PRIORITY, &this->bleTaskHandle);
   if (bleTaskResult != pdPASS) {
     this->logger->error("Failed to create BLE task");
-    vQueueDelete(this->sampleQueueHandle);
     vTaskDelete(this->transmitTaskHandle);
     return false;
   }
@@ -372,14 +373,14 @@ void BLE::transmitTask(void *arg) {
   self->logger->debug("Transmit task started");
 
   IMUSample batchSamples[BLE::PREFERRED_BATCH_SEND_SIZE];
-  UBaseType_t currentQueueSize;
+  std::optional<IMUSample> optionalBatchSample;
   uint8_t batchCount;
 
   uint16_t characteristicHandle, connectionHandle, currentBatchSize;
   bool isSubscribed;
 
   while (self->doTransmit) {
-    // Block until enough samples are available in the queue to send
+    // Block until enough samples are available in the pipe to send
     ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 
     // Sincronize access to shared variables
@@ -407,14 +408,15 @@ void BLE::transmitTask(void *arg) {
       continue;
     }
 
-    currentQueueSize = uxQueueMessagesWaiting(self->sampleQueueHandle);
-    while (currentQueueSize >= currentBatchSize) {
-
+    while (self->pipe->itemsFilled() >= currentBatchSize) {
       batchCount = 0;
+      optionalBatchSample = self->pipe->pop(false);
       while (batchCount < currentBatchSize &&
-             xQueueReceive(self->sampleQueueHandle, &batchSamples[batchCount],
-                           0) == pdPASS)
+             (optionalBatchSample != std::nullopt)) {
+        batchSamples[batchCount] = optionalBatchSample.value();
+        optionalBatchSample = self->pipe->pop(false);
         batchCount++;
+      }
 
       struct os_mbuf *nimbleBuffer =
           ble_hs_mbuf_from_flat(batchSamples, batchCount * sizeof(IMUSample));
@@ -433,8 +435,6 @@ void BLE::transmitTask(void *arg) {
                                   nimbleBuffer) != 0) {
         self->logger->error("Failed to send IMU samples notification");
       }
-
-      currentQueueSize = uxQueueMessagesWaiting(self->sampleQueueHandle);
     }
   }
 }
@@ -532,26 +532,16 @@ bool BLE::startAdvertising() {
   return true;
 }
 
+// TODO: use pipe class methods
 void BLE::send(const IMUSample &sample) {
-
   uint16_t currentBatchSize;
   portENTER_CRITICAL(&this->communicationState.mux);
   currentBatchSize = this->communicationState.currentBatchSize;
   portEXIT_CRITICAL(&this->communicationState.mux);
 
   // Buffer samples regardless of connection/subscription status
-  if (xQueueSend(this->sampleQueueHandle, &sample, 0) == pdPASS) {
-    UBaseType_t queueSize = uxQueueMessagesWaiting(this->sampleQueueHandle);
-    if (queueSize >= currentBatchSize) {
-      xTaskNotifyGive(this->transmitTaskHandle);
-    }
-  } else {
-    this->logger->warn("BLE sample queue is full, dropping oldest sample to "
-                       "make room for new one");
-    if (xQueueReceive(this->sampleQueueHandle, NULL, 0) != pdPASS) {
-      this->logger->error("Failed to remove oldest sample from queue");
-      return;
-    }
-    xQueueSend(this->sampleQueueHandle, &sample, 0);
+  this->pipe->push(sample);
+  if (this->pipe->itemsFilled() >= currentBatchSize) {
+    xTaskNotifyGive(this->transmitTaskHandle);
   }
 }

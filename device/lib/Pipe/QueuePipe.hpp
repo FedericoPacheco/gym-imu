@@ -45,19 +45,18 @@ public:
     if (xQueueReceive(this->handle, &droppedItem, 0) != pdPASS) {
       if (this->logger)
         this->logger->warn(
-            "QueuePipe: enqueue failed and oldest item could not be dropped");
+            "Enqueue failed and oldest item could not be dropped");
       return false;
     }
     this->decrementCurrentDepth();
     this->incrementDrops();
     if (this->logger)
-      this->logger->debug("QueuePipe: dropped oldest sample to make space");
+      this->logger->debug("Dropped oldest sample to make space");
 
     if (xQueueSend(this->handle, &item, 0) != pdPASS) {
       this->incrementDrops();
       if (this->logger)
-        this->logger->warn(
-            "QueuePipe: enqueue retry failed after dropping oldest sample");
+        this->logger->warn("Enqueue retry failed after dropping oldest sample");
       return false;
     }
     this->incrementCurrentDepth();

@@ -68,7 +68,7 @@ extern "C" void app_main() {
     return;
   }
 
-  BLE *ble = BLE::getInstance(&logger /* , &samplingPipe */);
+  BLE *ble = BLE::getInstance(&logger, samplingPipe);
   if (ble == nullptr) {
     logger.error("Failed to initialize BLE");
     return;

@@ -14,17 +14,19 @@
 #include "services/gap/ble_svc_gap.h"
 #include "services/gatt/ble_svc_gatt.h"
 #include "store/config/ble_store_config.h"
+#include <Constants.hpp>
 #include <ErrorMacros.hpp>
 #include <IMUSensor.hpp>
 #include <Logger.hpp>
+#include <Pipe.hpp>
 #include <cstddef>
 #include <cstdint>
 #include <freertos/task.h>
 #include <memory>
+#include <optional>
 #include <sys/param.h>
 
 // TODO: add security
-// TODO: write retrospective ADR for library choosing
 
 /*
 Overview:
@@ -45,13 +47,13 @@ sending IMU samples.
 information such as device name, appearance, supported services (currently
 notifications, a stream of data sent from the device with no ACK from the
 client), address, connection/discovery mode, etc. Allows only one connection.
-When send() is called with an IMUSample, it adds the sample to a queue.
-The transmit task waits until there are enough samples in the queue (based on
+When send() is called with an IMUSample, it adds the sample to a pipe.
+The transmit task waits until there are enough samples in the pipe (based on
 negotiated MTU) and then sends them as a notification to connected
 clients.
 
 How to use:
-unique_ptr<BLE> ble = BLE::getInstance(logger);
+unique_ptr<BLE> ble = BLE::getInstance(logger, pipe);
 ...
 ble->send(sample);
 
@@ -80,7 +82,6 @@ public:
   // https://www.bluetooth.com/specifications/assigned-numbers/
   static constexpr int APPEARANCE = 0x0541;
 
-  static constexpr int SAMPLE_QUEUE_SIZE = 128;
   static constexpr int PREFERRED_BATCH_SEND_SIZE = 6;
 
   // MTU: maximum transmission unit, the largest payload size that can be sent
@@ -119,7 +120,9 @@ public:
   // Time between advertising packets when not connected
   static constexpr int ADVERTISING_INTERVAL_MS = 100;
 
-  static BLE *getInstance(Logger *logger);
+  static BLE *
+  getInstance(Logger *logger,
+              std::shared_ptr<Pipe<IMUSample, TRANSMISSION_PIPE_SIZE>> pipe);
   void send(const IMUSample &sample);
   ~BLE();
 
@@ -149,14 +152,17 @@ private:
 
   TaskHandle_t bleTaskHandle, transmitTaskHandle;
   bool doTransmit;
-  QueueHandle_t sampleQueueHandle;
+  std::shared_ptr<Pipe<IMUSample, TRANSMISSION_PIPE_SIZE>> pipe;
 
   ble_hs_adv_fields primaryAdvertisingPacket;
   ble_hs_adv_fields scanResponsePacket;
   ble_gap_adv_params advertisingConfig;
 
-  BLE(Logger *logger);
-  static std::unique_ptr<BLE> create(Logger *logger);
+  BLE(Logger *logger,
+      std::shared_ptr<Pipe<IMUSample, TRANSMISSION_PIPE_SIZE>> pipe);
+  static std::unique_ptr<BLE>
+  create(Logger *logger,
+         std::shared_ptr<Pipe<IMUSample, TRANSMISSION_PIPE_SIZE>> pipe);
 
   inline bool initializeFlash();
 

@@ -11,7 +11,6 @@
 #include <QueuePipe.hpp>
 #include <memory>
 
-// TODO: address why button.wasPressedAsync() doesn't work now
 // TODO: extract control logic to separate class
 // TODO: document overall architecture with C4 model
 
@@ -75,27 +74,21 @@ extern "C" void app_main() {
   }
 
   bool doSample = false;
-  std::optional<IMUSample> sample;
   button->enableAsync();
   while (true) {
-    vTaskDelay(pdMS_TO_TICKS(2500));
+    vTaskDelay(pdMS_TO_TICKS(1000));
 
-    if (button->isPressedSync()) {
+    if (button->wasPressedAsync() && ble->isConnected()) {
       doSample = !doSample;
       led->toggle();
       if (doSample) {
         imu->beginAsync();
+        ble->beginTransmission();
       } else {
         imu->stopAsync();
+        ble->stopTransmission();
       }
     }
-
-    if (doSample) {
-      sample = imu->readAsync();
-      if (sample.has_value()) {
-        ble->send(sample.value());
-      }
-    }
-    button->disableAsync();
   }
+  button->disableAsync();
 }

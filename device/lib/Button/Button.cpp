@@ -63,6 +63,7 @@ bool Button::enableAsync() {
   return true;
 }
 
+// TODO: review whhether i should allow higher priority tasks to run
 void IRAM_ATTR Button::isrHandler(void *arg) {
   Button *btn = (Button *)arg;
   xTimerStartFromISR(btn->debounceTimer, NULL);

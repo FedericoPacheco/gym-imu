@@ -301,8 +301,6 @@ void MPU6050Sensor::readTask(void *arg) {
 
     self->batchReadDMPQueue(initialFifoCount);
   }
-
-  self->logger->debug("Read task ended");
 }
 
 void MPU6050Sensor::batchReadDMPQueue(uint16_t initialFifoCount) {
@@ -408,7 +406,7 @@ std::optional<IMUSample> MPU6050Sensor::readSync() {
 void MPU6050Sensor::beginAsync() {
   this->logger->info("Starting async reading");
   sensor.resetFIFO();
-  while (this->pipe->pop(false)) {
+  while (this->pipe->pop(false) != std::nullopt) {
     // Empty pipe if any samples are left WITHOUT blocking
   }
   this->setDoRead(true);

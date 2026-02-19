@@ -1,5 +1,4 @@
 #include <BLE.hpp>
-#include <cstdint>
 
 std::unique_ptr<BLE> BLE::instance = nullptr;
 // Temporary pointer used while a BLE instance is being created and the static
@@ -11,9 +10,10 @@ BLE *BLE::initializingInstance = nullptr;
 BLE::BLE(Logger *logger,
          std::shared_ptr<Pipe<IMUSample, TRANSMISSION_PIPE_SIZE>> pipe)
     : communicationState{}, logger(logger), imuCharacteristics{}, services{},
-      bleTaskHandle(nullptr), transmitTaskHandle(nullptr), doTransmit(true),
-      pipe(pipe), primaryAdvertisingPacket{}, scanResponsePacket{},
-      advertisingConfig{} {
+      bleTaskHandle(nullptr), transmitTaskHandle(nullptr), pipe(pipe),
+      primaryAdvertisingPacket{}, scanResponsePacket{}, advertisingConfig{} {
+
+  this->setDoTransmit(false);
 
   this->communicationState.mux = portMUX_INITIALIZER_UNLOCKED;
   this->communicationState.connectionHandle = BLE_HS_CONN_HANDLE_NONE;
@@ -81,8 +81,7 @@ BLE *BLE::getInstance(
 BLE::~BLE() {
   // Transmit remaining samples before shutting down
   if (this->transmitTaskHandle) {
-    this->doTransmit = false;
-    xTaskNotifyGive(this->transmitTaskHandle);
+    this->setDoTransmit(false);
     vTaskDelay(pdMS_TO_TICKS(BLE::TRANSMIT_TASK_SHUTDOWN_DELAY_MS));
     vTaskDelete(this->transmitTaskHandle);
   }
@@ -211,7 +210,8 @@ int BLE::handleGAPEvent(ble_gap_event *event, void *arg) {
       portENTER_CRITICAL(&self->communicationState.mux);
       self->communicationState.connectionHandle = event->connect.conn_handle;
       portEXIT_CRITICAL(&self->communicationState.mux);
-      self->logger->info("Connection established");
+      self->logger->info("Connection established with handle: %d",
+                         self->communicationState.connectionHandle);
 
       RETURN_FALSE_ON_NIMBLE_ERROR(
           ble_gattc_exchange_mtu(self->communicationState.connectionHandle,
@@ -220,10 +220,12 @@ int BLE::handleGAPEvent(ble_gap_event *event, void *arg) {
           "Failed to negotiate MTU with client, using default (23 bytes)");
 
       struct ble_gap_upd_params connectionParameters = {
-          .itvl_min = BLE::CONNECTION_INTERVAL_MIN_MS,
-          .itvl_max = BLE::CONNECTION_INTERVAL_MAX_MS,
+          .itvl_min =
+              static_cast<uint16_t>(BLE::CONNECTION_INTERVAL_MIN_MS / 1.25),
+          .itvl_max =
+              static_cast<uint16_t>(BLE::CONNECTION_INTERVAL_MAX_MS / 1.25),
           .latency = BLE::CONNECTION_PERIPHERAL_LATENCY,
-          .supervision_timeout = BLE::CONNECTION_SUPERVISION_TIMEOUT_MS,
+          .supervision_timeout = BLE::CONNECTION_SUPERVISION_TIMEOUT_MS / 10,
           //  Duration of connection events
           .min_ce_len = BLE_GAP_INITIAL_CONN_MIN_CE_LEN,
           .max_ce_len = BLE_GAP_INITIAL_CONN_MAX_CE_LEN};
@@ -293,9 +295,10 @@ int BLE::handleGAPEvent(ble_gap_event *event, void *arg) {
         MIN(BLE::PREFERRED_BATCH_SEND_SIZE,
             MAX(1, (self->communicationState.mtu - 3) / sizeof(IMUSample)));
     portEXIT_CRITICAL(&self->communicationState.mux);
-    self->logger->info("Negotiated MTU: %d. Current batch size: %d",
-                       self->communicationState.mtu,
-                       self->communicationState.currentBatchSize);
+    self->logger->info(
+        "Negotiated MTU: %d bytes. Current batch size: %d packets",
+        self->communicationState.mtu,
+        self->communicationState.currentBatchSize);
     break;
   }
   }
@@ -339,6 +342,9 @@ int BLE::accessImuSampleCharacteristic(uint16_t connectionHandle,
 }
 
 bool BLE::initializeTasks() {
+
+  this->logger->debug("Initializing BLE tasks");
+
   BaseType_t transmitTaskResult = xTaskCreate(
       BLE::transmitTask, "transmitTask", BLE::TRANSMIT_TASK_STACK_SIZE, this,
       BLE::TRANSMIT_TASK_PRIORITY, &this->transmitTaskHandle);
@@ -376,12 +382,19 @@ void BLE::transmitTask(void *arg) {
   std::optional<IMUSample> optionalBatchSample;
   uint8_t batchCount;
 
+  // Avoid watchdog's false positives: when the connection is not ready or the
+  // transmission enabled, the loop runs without blocking indefinitely. Block
+  // with a delay to allow other tasks to be scheduled
+  constexpr TickType_t idleDelayTicks = pdMS_TO_TICKS(100);
+
   uint16_t characteristicHandle, connectionHandle, currentBatchSize;
   bool isSubscribed;
 
-  while (self->doTransmit) {
-    // Block until enough samples are available in the pipe to send
-    ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+  while (true) {
+    if (!self->getDoTransmit()) {
+      vTaskDelay(idleDelayTicks);
+      continue;
+    }
 
     // Sincronize access to shared variables
     portENTER_CRITICAL(&self->communicationState.mux);
@@ -396,15 +409,23 @@ void BLE::transmitTask(void *arg) {
     if (characteristicHandle == 0) {
       self->logger->warn(
           "Can't send data: IMU Sample Characteristic handle is invalid");
+      vTaskDelay(idleDelayTicks);
       continue;
     }
     if (connectionHandle == BLE_HS_CONN_HANDLE_NONE) {
       self->logger->warn("Can't send data: no connected client");
+      vTaskDelay(idleDelayTicks);
       continue;
     }
     if (!isSubscribed) {
       self->logger->warn("Can't send data: client not subscribed to IMU "
                          "sample Characteristic");
+      vTaskDelay(idleDelayTicks);
+      continue;
+    }
+
+    if (self->pipe->itemsFilled() < currentBatchSize) {
+      vTaskDelay(idleDelayTicks);
       continue;
     }
 
@@ -422,9 +443,10 @@ void BLE::transmitTask(void *arg) {
           ble_hs_mbuf_from_flat(batchSamples, batchCount * sizeof(IMUSample));
 
       if (nimbleBuffer == NULL) {
-        self->logger->error(
-            "Can't send data: no memory available for nimble buffer");
-        break;
+        self->logger->error("Can't send data: no memory available for nimble "
+                            "buffer");
+        vTaskDelay(idleDelayTicks);
+        continue;
       }
       // Broadcast notification with data to all connected clients. The
       // buffer's memory is freed by nimble (no os_mbuf_free_chain() needed).
@@ -434,6 +456,10 @@ void BLE::transmitTask(void *arg) {
       if (ble_gatts_notify_custom(connectionHandle, characteristicHandle,
                                   nimbleBuffer) != 0) {
         self->logger->error("Failed to send IMU samples notification");
+        vTaskDelay(idleDelayTicks);
+      } else {
+        self->logger->debug("Sent notification with %d IMU samples",
+                            batchCount);
       }
     }
   }
@@ -532,16 +558,20 @@ bool BLE::startAdvertising() {
   return true;
 }
 
-// TODO: use pipe class methods
-void BLE::send(const IMUSample &sample) {
-  uint16_t currentBatchSize;
+bool BLE::isConnected() {
+  uint16_t connectionHandle;
   portENTER_CRITICAL(&this->communicationState.mux);
-  currentBatchSize = this->communicationState.currentBatchSize;
+  connectionHandle = this->communicationState.connectionHandle;
   portEXIT_CRITICAL(&this->communicationState.mux);
+  return connectionHandle != BLE_HS_CONN_HANDLE_NONE;
+}
 
-  // Buffer samples regardless of connection/subscription status
-  this->pipe->push(sample);
-  if (this->pipe->itemsFilled() >= currentBatchSize) {
-    xTaskNotifyGive(this->transmitTaskHandle);
-  }
+void BLE::beginTransmission() { this->setDoTransmit(true); }
+void BLE::stopTransmission() { this->setDoTransmit(false); }
+
+void BLE::setDoTransmit(bool value) {
+  this->doTransmit.store(value, std::memory_order_relaxed);
+}
+bool BLE::getDoTransmit() {
+  return this->doTransmit.load(std::memory_order_relaxed);
 }

@@ -19,6 +19,7 @@
 #include <IMUSensor.hpp>
 #include <Logger.hpp>
 #include <Pipe.hpp>
+#include <atomic>
 #include <cstddef>
 #include <cstdint>
 #include <freertos/task.h>
@@ -53,9 +54,17 @@ negotiated MTU) and then sends them as a notification to connected
 clients.
 
 How to use:
+Logger logger((LogLevel::DEBUG));
+std::shared_ptr<Pipe<IMUSample, TRANSMISSION_PIPE_SIZE>> pipe =
+    QueuePipe<IMUSample, TRANSMISSION_PIPE_SIZE>::create(&logger);
 unique_ptr<BLE> ble = BLE::getInstance(logger, pipe);
 ...
-ble->send(sample);
+if (ble->isConnected()) {
+  ble->beginTransmission(); // receives samples from the pipe and sends them to
+the client
+}
+...
+ble->stopTransmission();
 
 Data can be received on the phone with the app nRF Connect.
 
@@ -91,7 +100,7 @@ public:
   static constexpr int PREFERRED_MTU =
       MIN(sizeof(IMUSample) * PREFERRED_BATCH_SEND_SIZE + 3, 512);
   static constexpr int TRANSMIT_TASK_SHUTDOWN_DELAY_MS = 250;
-  // Time between data exchanges when connected
+  // Time between data exchanges when connected, between 7.5ms and 4s
   static constexpr int CONNECTION_INTERVAL_MIN_MS = 15;
   static constexpr int CONNECTION_INTERVAL_MAX_MS = 30;
   // Amount of connection events that can be skipped to save power
@@ -123,8 +132,10 @@ public:
   static BLE *
   getInstance(Logger *logger,
               std::shared_ptr<Pipe<IMUSample, TRANSMISSION_PIPE_SIZE>> pipe);
-  void send(const IMUSample &sample);
   ~BLE();
+  bool isConnected();
+  void beginTransmission();
+  void stopTransmission();
 
 private:
   static std::unique_ptr<BLE> instance;
@@ -151,7 +162,7 @@ private:
   ble_gatt_svc_def services[2];
 
   TaskHandle_t bleTaskHandle, transmitTaskHandle;
-  bool doTransmit;
+  std::atomic<bool> doTransmit;
   std::shared_ptr<Pipe<IMUSample, TRANSMISSION_PIPE_SIZE>> pipe;
 
   ble_hs_adv_fields primaryAdvertisingPacket;
@@ -183,6 +194,8 @@ private:
   inline bool initializeTasks();
   static void bleTask(void *arg);
   static void transmitTask(void *arg);
+  inline void setDoTransmit(bool value);
+  inline bool getDoTransmit();
 
   inline bool initializeAdvertising();
   bool startAdvertising();

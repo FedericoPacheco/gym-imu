@@ -27,8 +27,7 @@
 #include <optional>
 #include <sys/param.h>
 
-// TODO: add security
-
+ 
 /*
 Overview:
 An application layer class to manage Bluetooth Low Energy (BLE) communication,

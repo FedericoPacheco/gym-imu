@@ -21,7 +21,7 @@
 #include <new>
 #include <tuple>
 
-// TODO: apply singleton pattern like in BLE class
+
 
 /*
   Overview:

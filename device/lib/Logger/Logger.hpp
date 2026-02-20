@@ -10,9 +10,7 @@
 #include <sys/param.h>
 #include <sys/stat.h>
 
-// TODO: remove sequence number to improve performance and allow easy creation
-// of multiple loggers. Create Logger interface, inherit from here and rename
-// this to UARTLogger/SerialLogger
+
 
 enum class LogLevel { ERROR, WARN, INFO, DEBUG };
 

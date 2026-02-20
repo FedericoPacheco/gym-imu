@@ -11,8 +11,7 @@
 #include <QueuePipe.hpp>
 #include <memory>
 
-// TODO: extract control logic to separate class
-// TODO: document overall architecture with C4 model
+
 
 // extern "C" void app_main() {
 

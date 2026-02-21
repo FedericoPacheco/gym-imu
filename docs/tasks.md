@@ -23,17 +23,16 @@ Other rules:
 
 ### In Progress
 
-- Implement singleton pattern on `MPU6050Sensor`, matching `BLE`'s pattern.
-
 ### Next
+
+1. Document overall system architecture with C4 and PlantUML: context, containers, components.
+2. Add essential unit tests for `MPU` class readTask logic.
+3. Add essential unit tests for `BLE` class transmitTask logic.
 
 ### Backlog
 
 - Add checks for logger null pointers across all classes
 - Review if error macros work with variable arguments
-- Document overall system architecture with C4 and PlantUML: context, containers, components.
-- Add essential unit tests for `MPU` class readTask logic.
-- Add essential unit tests for `BLE` class transmitTask logic.
 - Create basic README for the project: summary, architecture, physical device, next steps, etc.
 - Solder components into perfboard.
 - Figure out how to make a case for the device (3D printing?) and design it.
@@ -54,4 +53,5 @@ Other rules:
 
 ### Done
 
-- Rework Logger for less overhead and usefulness: remove atomic sequence number from `Logger` and allow multiple loggers and tags.
+- Rework Logger for less overhead and usefulness: remove atomic sequence number from `Logger` and allow multiple loggers and tags. PR: <https://github.com/FedericoPacheco/gym-imu/pull/1>
+- Implement singleton pattern on `MPU6050Sensor`, matching `BLE`'s pattern. Protect both against races. PR: <https://github.com/FedericoPacheco/gym-imu/pull/2>

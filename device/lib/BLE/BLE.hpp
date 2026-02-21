@@ -136,8 +136,14 @@ private:
   // Time between advertising packets when not connected
   static constexpr int ADVERTISING_INTERVAL_MS = 100;
 
-  static std::unique_ptr<BLE> instance;
-  static BLE *initializingInstance;
+  struct InstanceState {
+    std::unique_ptr<BLE> instance;
+    BLE *initializingInstance;
+    SemaphoreHandle_t semaphoreHandle;
+    StaticSemaphore_t semaphoreControlBlock;
+    portMUX_TYPE mux;
+  } static instanceState;
+
   struct BLEAddress {
     uint8_t type;
     uint8_t value[6];

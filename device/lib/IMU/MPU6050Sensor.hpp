@@ -102,7 +102,13 @@ private:
   gpio_num_t INTPin, SDAPin, SCLPin;
   int samplingFrequencyHz;
 
-  static std::unique_ptr<MPU6050Sensor> instance;
+  struct InstanceState {
+    std::unique_ptr<MPU6050Sensor> instance;
+    SemaphoreHandle_t semaphoreHandle;
+    StaticSemaphore_t semaphoreControlBlock;
+    portMUX_TYPE mux;
+  } static instanceState;
+
   Logger *logger;
   std::shared_ptr<Pipe<IMUSample, SAMPLING_PIPE_SIZE>> pipe;
 

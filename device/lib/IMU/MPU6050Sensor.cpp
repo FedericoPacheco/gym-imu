@@ -1,22 +1,15 @@
+#include "freertos/idf_additions.h"
 #include <MPU6050Sensor.hpp>
 
-std::unique_ptr<MPU6050Sensor> MPU6050Sensor::instance = nullptr;
+MPU6050Sensor::InstanceState MPU6050Sensor::instanceState = {};
 
 MPU6050Sensor::MPU6050Sensor(
     Logger *logger, std::shared_ptr<Pipe<IMUSample, SAMPLING_PIPE_SIZE>> pipe,
     gpio_num_t INTPin, gpio_num_t SDAPin, gpio_num_t SCLPin,
     int samplingFrequencyHz)
-    : logger(logger), pipe(pipe), bus(I2C_NUM_0) {
-
-  this->logger->debug("Sensor parameters: INTPin=%d, SDAPin=%d, SCLPin=%d, "
-                      "samplingFrequencyHz=%d",
-                      INTPin, SDAPin, SCLPin, samplingFrequencyHz);
-
-  this->INTPin = INTPin;
-  this->SDAPin = SDAPin;
-  this->SCLPin = SCLPin;
-  this->samplingFrequencyHz = samplingFrequencyHz;
-}
+    : INTPin(INTPin), SDAPin(SDAPin), SCLPin(SCLPin),
+      samplingFrequencyHz(samplingFrequencyHz), logger(logger), pipe(pipe),
+      bus(I2C_NUM_0) {}
 
 std::unique_ptr<MPU6050Sensor>
 MPU6050Sensor::create(Logger *logger,
@@ -69,10 +62,28 @@ MPU6050Sensor *MPU6050Sensor::getInstance(
     gpio_num_t INTPin, gpio_num_t SDAPin, gpio_num_t SCLPin,
     int samplingFrequencyHz) {
 
-  if (!MPU6050Sensor::instance)
-    MPU6050Sensor::instance = MPU6050Sensor::create(
-        logger, pipe, INTPin, SDAPin, SCLPin, samplingFrequencyHz);
-  return MPU6050Sensor::instance.get();
+  // Protect instance creation with a mutex to ensure thread safety
+  if (MPU6050Sensor::instanceState.semaphoreHandle == nullptr) {
+    taskENTER_CRITICAL(&MPU6050Sensor::instanceState.mux);
+    MPU6050Sensor::instanceState.semaphoreHandle = xSemaphoreCreateMutexStatic(
+        &MPU6050Sensor::instanceState.semaphoreControlBlock);
+    if (MPU6050Sensor::instanceState.semaphoreHandle == nullptr) {
+      if (logger)
+        logger->error("Failed to create mutex for MPU6050Sensor instance");
+      taskEXIT_CRITICAL(&MPU6050Sensor::instanceState.mux);
+      return nullptr;
+    }
+    taskEXIT_CRITICAL(&MPU6050Sensor::instanceState.mux);
+  }
+
+  if (xSemaphoreTake(MPU6050Sensor::instanceState.semaphoreHandle,
+                     portMAX_DELAY) == pdTRUE) {
+    if (!MPU6050Sensor::instanceState.instance)
+      MPU6050Sensor::instanceState.instance = MPU6050Sensor::create(
+          logger, pipe, INTPin, SDAPin, SCLPin, samplingFrequencyHz);
+    xSemaphoreGive(MPU6050Sensor::instanceState.semaphoreHandle);
+  }
+  return MPU6050Sensor::instanceState.instance.get();
 }
 
 bool MPU6050Sensor::initializeI2CBus() {

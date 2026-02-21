@@ -23,14 +23,15 @@ Other rules:
 
 ### In Progress
 
+- Rework Logger for less overhead and usefulness: remove atomic sequence number from `Logger` and allow multiple loggers and tags.
+
 ### Next
 
-1. Rework Logger for less overhead and usefulness: remove atomic sequence number from `Logger` and allow multiple loggers and tags.
-
-2. Implement singleton pattern on `MPU6050Sensor`, matching `BLE`'s pattern.
+1. Implement singleton pattern on `MPU6050Sensor`, matching `BLE`'s pattern.
 
 ### Backlog
 
+- Add checks for logger null pointers across all classes
 - Document overall system architecture with C4 and PlantUML: context, containers, components.
 - Add essential unit tests for `MPU` class readTask logic.
 - Add essential unit tests for `BLE` class transmitTask logic.

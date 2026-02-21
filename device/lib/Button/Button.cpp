@@ -8,6 +8,9 @@ std::unique_ptr<Button> Button::create(Logger *logger, gpio_num_t pin,
                                        int asyncQueueSize,
                                        int debouncingDelayMs) {
 
+  if (logger)
+    logger->info("Initializing Button on pin %d", pin);
+
   std::unique_ptr<Button> button(new (std::nothrow) Button(logger, pin));
   if (!button) {
     if (logger)
@@ -39,6 +42,8 @@ std::unique_ptr<Button> Button::create(Logger *logger, gpio_num_t pin,
     vQueueDelete(button->eventQueue);
     return nullptr;
   }
+
+  logger->info("Button initialized successfully on pin: %d", pin);
 
   return button;
 }

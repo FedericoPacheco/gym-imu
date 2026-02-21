@@ -4,26 +4,25 @@
 #include "esp_timer.h"
 #include <atomic>
 #include <cstdarg>
+#include <cstddef>
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
 #include <sys/param.h>
 #include <sys/stat.h>
 
-
-
 enum class LogLevel { ERROR, WARN, INFO, DEBUG };
 
 class Logger {
 private:
-  inline static constexpr const char *tag = "GymIMU";
-  static const int MAX_LOG_MESSAGE_LENGTH = 512;
+  static const int MAX_LOG_MESSAGE_LENGTH = 192;
+  static constexpr std::size_t TAG_MAX_LENGTH = 16;
 
+  char tag[TAG_MAX_LENGTH];
   LogLevel currentLevel;
-  std::atomic<uint64_t> sequenceNumber;
 
 public:
-  Logger(LogLevel level = LogLevel::INFO);
+  Logger(const char *tag, LogLevel level = LogLevel::INFO);
   ~Logger() = default;
 
   void setLevel(LogLevel level);

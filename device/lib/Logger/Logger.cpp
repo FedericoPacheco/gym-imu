@@ -1,27 +1,25 @@
 #include <Logger.hpp>
 
-Logger::Logger(LogLevel level) {
-  this->sequenceNumber = 0;
+Logger::Logger(const char *tag, LogLevel level) {
+  snprintf(this->tag, Logger::TAG_MAX_LENGTH, "%s", tag);
   this->setLevel(level);
 }
 
 void Logger::log(LogLevel level, const char *formattedMessageStr,
                  va_list messageArgs) {
-  uint64_t incrementedSequence =
-      sequenceNumber.fetch_add(1, std::memory_order_relaxed);
-
   char humanReadableUpTime[32];
   this->getHumanReadableUpTime(humanReadableUpTime);
 
   char finalStrWithPrefix[Logger::MAX_LOG_MESSAGE_LENGTH];
   snprintf(finalStrWithPrefix, sizeof(finalStrWithPrefix),
-           "[%s] [t=%s] [seq=%llu] %s\n", this->mapLevelToString(level),
-           humanReadableUpTime, incrementedSequence, formattedMessageStr);
+           "[ %s ] [ %s ] [ t=%s ] %s\n", this->mapLevelToString(level),
+           this->tag, humanReadableUpTime, formattedMessageStr);
 
   esp_log_level_t espLevel = this->mapToEspLogLevel(level);
 
-  esp_log_writev(espLevel, tag, finalStrWithPrefix, messageArgs);
+  esp_log_writev(espLevel, this->tag, finalStrWithPrefix, messageArgs);
 }
+
 void Logger::getHumanReadableUpTime(char *timerBuffer) {
   const uint64_t ONE_SECOND_IN_MICROS = 1000000;
   const uint64_t ONE_MINUTE_IN_MICROS = ONE_SECOND_IN_MICROS * 60;
@@ -38,12 +36,13 @@ void Logger::getHumanReadableUpTime(char *timerBuffer) {
   uint64_t seconds = remainder / ONE_SECOND_IN_MICROS;
   remainder = remainder % ONE_SECOND_IN_MICROS;
 
-  uint64_t millis = remainder / 1000;
+  uint64_t micros = remainder;
 
-  // Format: HH:MM:SS.mmm e.g. "01:23:45.678"
-  snprintf(timerBuffer, 32, "%02llu:%02llu:%02llu.%03llu", hours, minutes,
-           seconds, millis);
+  // Format: HH:MM:SS.mmmmmm e.g. "01:23:45.678901"
+  snprintf(timerBuffer, 32, "%02llu:%02llu:%02llu.%06llu", hours, minutes,
+           seconds, micros);
 }
+
 esp_log_level_t Logger::mapToEspLogLevel(LogLevel level) {
   switch (level) {
   case LogLevel::ERROR:
@@ -61,15 +60,15 @@ esp_log_level_t Logger::mapToEspLogLevel(LogLevel level) {
 const char *Logger::mapLevelToString(LogLevel level) {
   switch (level) {
   case LogLevel::ERROR:
-    return " ERROR ";
+    return "ERROR";
   case LogLevel::WARN:
-    return " WARN  ";
+    return "WARN ";
   case LogLevel::INFO:
-    return " INFO  ";
+    return "INFO ";
   case LogLevel::DEBUG:
-    return " DEBUG ";
+    return "DEBUG";
   default:
-    return " INFO  ";
+    return "INFO ";
   }
 }
 
@@ -110,7 +109,4 @@ void Logger::debug(const char *formattedMessageStr, ...) {
   va_end(messageArgs);
 }
 
-void Logger::setLevel(LogLevel level) {
-  esp_log_level_set(tag, mapToEspLogLevel(level));
-  this->currentLevel = level;
-}
+void Logger::setLevel(LogLevel level) { this->currentLevel = level; }

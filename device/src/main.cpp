@@ -11,64 +11,43 @@
 #include <QueuePipe.hpp>
 #include <memory>
 
-
-
-// extern "C" void app_main() {
-
-//   vTaskDelay(pdMS_TO_TICKS(5000));
-
-//   Logger logger((LogLevel::DEBUG));
-//   BLE *ble = BLE::getInstance(&logger);
-//   IMUSample sample = {.a = {.x = 1.0f, .y = 2.0f, .z = 3.0f},
-//                       .w = {.roll = 4.0f, .pitch = 5.0f, .yaw = 6.0f},
-//                       .t = 0};
-
-//   while (true) {
-//     ble->send(sample);
-//     sample.a.x += 1.0f;
-//     sample.a.y += 1.0f;
-//     sample.a.z += 1.0f;
-//     sample.w.roll += 1.0f;
-//     sample.w.pitch += 1.0f;
-//     sample.w.yaw += 1.0f;
-//     sample.t += 1000;
-//     vTaskDelay(pdMS_TO_TICKS(100));
-//   }
-// }
-
 extern "C" void app_main() {
   gpio_install_isr_service(ESP_INTR_FLAG_IRAM);
 
-  Logger logger((LogLevel::DEBUG));
-
+  Logger samplingPipeLogger("SamplingPipe", LogLevel::DEBUG);
   std::shared_ptr<Pipe<IMUSample, SAMPLING_PIPE_SIZE>> samplingPipe =
-      QueuePipe<IMUSample, SAMPLING_PIPE_SIZE>::create(&logger);
+      QueuePipe<IMUSample, SAMPLING_PIPE_SIZE>::create(&samplingPipeLogger);
   if (!samplingPipe) {
-    logger.error("Failed to create pipe");
+    samplingPipeLogger.error("Failed to create pipe");
     return;
   }
 
-  std::unique_ptr<LED> led = LED::create(&logger);
+  Logger ledLogger("LED", LogLevel::DEBUG);
+  std::unique_ptr<LED> led = LED::create(&ledLogger);
   if (led == nullptr) {
-    logger.error("Failed to initialize LED");
+    ledLogger.error("Failed to initialize LED");
     return;
   }
 
-  std::unique_ptr<Button> button = Button::create(&logger);
+  Logger buttonLogger("Button", LogLevel::DEBUG);
+  std::unique_ptr<Button> button = Button::create(&buttonLogger);
   if (button == nullptr) {
-    logger.error("Failed to initialize Button");
+    buttonLogger.error("Failed to initialize Button");
     return;
   }
 
-  std::unique_ptr<IMUSensor> imu = MPU6050Sensor::create(&logger, samplingPipe);
+  Logger imuLogger("IMU", LogLevel::DEBUG);
+  std::unique_ptr<IMUSensor> imu =
+      MPU6050Sensor::create(&imuLogger, samplingPipe);
   if (imu == nullptr) {
-    logger.error("Failed to initialize MPU6050 sensor");
+    imuLogger.error("Failed to initialize MPU6050 sensor");
     return;
   }
 
-  BLE *ble = BLE::getInstance(&logger, samplingPipe);
+  Logger bleLogger("BLE", LogLevel::DEBUG);
+  BLE *ble = BLE::getInstance(&bleLogger, samplingPipe);
   if (ble == nullptr) {
-    logger.error("Failed to initialize BLE");
+    bleLogger.error("Failed to initialize BLE");
     return;
   }
 

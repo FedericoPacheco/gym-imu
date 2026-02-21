@@ -14,7 +14,7 @@
 extern "C" void app_main() {
   gpio_install_isr_service(ESP_INTR_FLAG_IRAM);
 
-  Logger samplingPipeLogger("SamplingPipe", LogLevel::DEBUG);
+  Logger samplingPipeLogger("SamplingPipe", LogLevel::WARN);
   std::shared_ptr<Pipe<IMUSample, SAMPLING_PIPE_SIZE>> samplingPipe =
       QueuePipe<IMUSample, SAMPLING_PIPE_SIZE>::create(&samplingPipeLogger);
   if (!samplingPipe) {
@@ -22,21 +22,21 @@ extern "C" void app_main() {
     return;
   }
 
-  Logger ledLogger("LED", LogLevel::DEBUG);
+  Logger ledLogger("LED", LogLevel::WARN);
   std::unique_ptr<LED> led = LED::create(&ledLogger);
   if (led == nullptr) {
     ledLogger.error("Failed to initialize LED");
     return;
   }
 
-  Logger buttonLogger("Button", LogLevel::DEBUG);
+  Logger buttonLogger("Button", LogLevel::WARN);
   std::unique_ptr<Button> button = Button::create(&buttonLogger);
   if (button == nullptr) {
     buttonLogger.error("Failed to initialize Button");
     return;
   }
 
-  Logger imuLogger("IMU", LogLevel::DEBUG);
+  Logger imuLogger("IMU", LogLevel::WARN);
   std::unique_ptr<IMUSensor> imu =
       MPU6050Sensor::create(&imuLogger, samplingPipe);
   if (imu == nullptr) {
@@ -44,7 +44,7 @@ extern "C" void app_main() {
     return;
   }
 
-  Logger bleLogger("BLE", LogLevel::DEBUG);
+  Logger bleLogger("BLE", LogLevel::WARN);
   BLE *ble = BLE::getInstance(&bleLogger, samplingPipe);
   if (ble == nullptr) {
     bleLogger.error("Failed to initialize BLE");

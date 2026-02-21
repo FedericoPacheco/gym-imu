@@ -1,11 +1,10 @@
 #include <BLE.hpp>
 
-std::unique_ptr<BLE> BLE::instance = nullptr;
-// Temporary pointer used while a BLE instance is being created and the static
-// `instance` unique_ptr has not yet been assigned. Some NimBLE callbacks
-// (e.g. sync) may be invoked during initialization. Use this to route those
-// early callbacks to the creating object to avoid null crashes.
-BLE *BLE::initializingInstance = nullptr;
+// InitializingInstace: temporary pointer used while a BLE instance is being
+// created and the static `instance` unique_ptr has not yet been assigned. Some
+// NimBLE callbacks (e.g. sync) may be invoked during initialization. Use this
+// to route those early callbacks to the creating object to avoid null crashes.
+BLE::InstanceState BLE::instanceState = {};
 
 BLE::BLE(Logger *logger,
          std::shared_ptr<Pipe<IMUSample, TRANSMISSION_PIPE_SIZE>> pipe)
@@ -42,40 +41,60 @@ BLE::create(Logger *logger,
 
   // Make early callbacks target this object while we initialize the host
   // stack. Clear on all exit paths to avoid leaving a dangling pointer.
-  BLE::initializingInstance = ble.get();
+  BLE::instanceState.initializingInstance = ble.get();
 
   if (!ble->initializeFlash()) {
-    BLE::initializingInstance = nullptr;
+    BLE::instanceState.initializingInstance = nullptr;
     return nullptr;
   }
   if (!ble->initializeControllerAndHost()) {
-    BLE::initializingInstance = nullptr;
+    BLE::instanceState.initializingInstance = nullptr;
     return nullptr;
   }
   if (!ble->initializeGAP()) {
-    BLE::initializingInstance = nullptr;
+    BLE::instanceState.initializingInstance = nullptr;
     return nullptr;
   }
   if (!ble->initializeGATT()) {
-    BLE::initializingInstance = nullptr;
+    BLE::instanceState.initializingInstance = nullptr;
     return nullptr;
   }
   if (!ble->initializeTasks()) {
-    BLE::initializingInstance = nullptr;
+    BLE::instanceState.initializingInstance = nullptr;
     return nullptr;
   }
 
   // clear the temporary pointer when finished
-  BLE::initializingInstance = nullptr;
+  BLE::instanceState.initializingInstance = nullptr;
 
   return ble;
 }
+
 BLE *BLE::getInstance(
     Logger *logger,
     std::shared_ptr<Pipe<IMUSample, TRANSMISSION_PIPE_SIZE>> pipe) {
-  if (!BLE::instance)
-    BLE::instance = BLE::create(logger, pipe);
-  return BLE::instance.get();
+
+  // Protect instance creation with a mutex to ensure thread safety
+  if (BLE::instanceState.semaphoreHandle == nullptr) {
+    taskENTER_CRITICAL(&BLE::instanceState.mux);
+    BLE::instanceState.semaphoreHandle =
+        xSemaphoreCreateMutexStatic(&BLE::instanceState.semaphoreControlBlock);
+    if (BLE::instanceState.semaphoreHandle == nullptr) {
+      if (logger)
+        logger->error("Failed to create mutex for BLE instance");
+      taskEXIT_CRITICAL(&BLE::instanceState.mux);
+      return nullptr;
+    }
+    taskEXIT_CRITICAL(&BLE::instanceState.mux);
+  }
+
+  if (xSemaphoreTake(BLE::instanceState.semaphoreHandle, portMAX_DELAY) ==
+      pdTRUE) {
+    if (!BLE::instanceState.instance)
+      BLE::instanceState.instance = BLE::create(logger, pipe);
+    xSemaphoreGive(BLE::instanceState.semaphoreHandle);
+  }
+  return BLE::instanceState.instance.get();
 }
 
 BLE::~BLE() {
@@ -133,14 +152,23 @@ bool BLE::initializeControllerAndHost() {
   return true;
 }
 void BLE::onStackReset(int reason) {
-  instance->logger->info("NimBLE stack reset, reason: %d", reason);
+  BLE *self = nullptr;
+  if (BLE::instanceState.instance)
+    self = BLE::instanceState.instance.get();
+  else if (BLE::instanceState.initializingInstance)
+    self = BLE::instanceState.initializingInstance;
+
+  if (self == nullptr)
+    return;
+
+  self->logger->info("NimBLE stack reset, reason: %d", reason);
 }
 void BLE::onStackSync() {
   BLE *self = nullptr;
-  if (BLE::instance)
-    self = BLE::instance.get();
-  else if (BLE::initializingInstance)
-    self = BLE::initializingInstance;
+  if (BLE::instanceState.instance)
+    self = BLE::instanceState.instance.get();
+  else if (BLE::instanceState.initializingInstance)
+    self = BLE::instanceState.initializingInstance;
 
   if (self == nullptr)
     return;
@@ -230,12 +258,13 @@ int BLE::handleGAPEvent(ble_gap_event *event, void *arg) {
           .min_ce_len = BLE_GAP_INITIAL_CONN_MIN_CE_LEN,
           .max_ce_len = BLE_GAP_INITIAL_CONN_MAX_CE_LEN};
 
-      self->logger->debug(
-          "Requesting connection parameters update: itvl_min=%u, itvl_max=%u, "
-          "latency=%u, supervision_timeout=%u",
-          connectionParameters.itvl_min, connectionParameters.itvl_max,
-          connectionParameters.latency,
-          connectionParameters.supervision_timeout);
+      self->logger->debug("Requesting connection parameters update: "
+                          "itvl_min=%u, itvl_max=%u, "
+                          "latency=%u, supervision_timeout=%u",
+                          connectionParameters.itvl_min,
+                          connectionParameters.itvl_max,
+                          connectionParameters.latency,
+                          connectionParameters.supervision_timeout);
 
       int connectionParametersError = ble_gap_update_params(
           self->communicationState.connectionHandle, &connectionParameters);

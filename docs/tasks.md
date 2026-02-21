@@ -23,18 +23,16 @@ Other rules:
 
 ### In Progress
 
-- Rework Logger for less overhead and usefulness: remove atomic sequence number from `Logger` and allow multiple loggers and tags.
-
 ### Next
 
-1. Implement singleton pattern on `MPU6050Sensor`, matching `BLE`'s pattern.
+1. Document overall system architecture with C4 and PlantUML: context, containers, components.
+2. Add essential unit tests for `MPU` class readTask logic.
+3. Add essential unit tests for `BLE` class transmitTask logic.
 
 ### Backlog
 
 - Add checks for logger null pointers across all classes
-- Document overall system architecture with C4 and PlantUML: context, containers, components.
-- Add essential unit tests for `MPU` class readTask logic.
-- Add essential unit tests for `BLE` class transmitTask logic.
+- Review if error macros work with variable arguments
 - Create basic README for the project: summary, architecture, physical device, next steps, etc.
 - Solder components into perfboard.
 - Figure out how to make a case for the device (3D printing?) and design it.
@@ -54,3 +52,6 @@ Other rules:
 - Read EPS-IDF docs (<https://docs.espressif.com/projects/esp-idf/en/stable/esp32/api-guides/ble/index.html#security>) and add basic security to BLE class.
 
 ### Done
+
+- Rework Logger for less overhead and usefulness: remove atomic sequence number from `Logger` and allow multiple loggers and tags. PR: <https://github.com/FedericoPacheco/gym-imu/pull/1>
+- Implement singleton pattern on `MPU6050Sensor`, matching `BLE`'s pattern. Protect both against races. PR: <https://github.com/FedericoPacheco/gym-imu/pull/2>

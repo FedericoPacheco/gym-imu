@@ -37,8 +37,7 @@ extern "C" void app_main() {
   }
 
   Logger imuLogger("IMU", LogLevel::WARN);
-  std::unique_ptr<IMUSensor> imu =
-      MPU6050Sensor::create(&imuLogger, samplingPipe);
+  IMUSensor *imu = MPU6050Sensor::getInstance(&imuLogger, samplingPipe);
   if (imu == nullptr) {
     imuLogger.error("Failed to initialize MPU6050 sensor");
     return;

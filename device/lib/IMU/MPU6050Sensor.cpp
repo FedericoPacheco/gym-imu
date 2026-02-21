@@ -1,22 +1,17 @@
+#include "freertos/idf_additions.h"
 #include <MPU6050Sensor.hpp>
+
+MPU6050Sensor::InstanceState MPU6050Sensor::instanceState = {};
 
 MPU6050Sensor::MPU6050Sensor(
     Logger *logger, std::shared_ptr<Pipe<IMUSample, SAMPLING_PIPE_SIZE>> pipe,
     gpio_num_t INTPin, gpio_num_t SDAPin, gpio_num_t SCLPin,
     int samplingFrequencyHz)
-    : logger(logger), pipe(pipe), bus(I2C_NUM_0) {
+    : INTPin(INTPin), SDAPin(SDAPin), SCLPin(SCLPin),
+      samplingFrequencyHz(samplingFrequencyHz), logger(logger), pipe(pipe),
+      bus(I2C_NUM_0) {}
 
-  this->logger->debug("Sensor parameters: INTPin=%d, SDAPin=%d, SCLPin=%d, "
-                      "samplingFrequencyHz=%d",
-                      INTPin, SDAPin, SCLPin, samplingFrequencyHz);
-
-  this->INTPin = INTPin;
-  this->SDAPin = SDAPin;
-  this->SCLPin = SCLPin;
-  this->samplingFrequencyHz = samplingFrequencyHz;
-}
-
-std::unique_ptr<IMUSensor>
+std::unique_ptr<MPU6050Sensor>
 MPU6050Sensor::create(Logger *logger,
                       std::shared_ptr<Pipe<IMUSample, SAMPLING_PIPE_SIZE>> pipe,
                       gpio_num_t INTPin, gpio_num_t SDAPin, gpio_num_t SCLPin,
@@ -27,16 +22,14 @@ MPU6050Sensor::create(Logger *logger,
       logger, pipe, INTPin, SDAPin, SCLPin, samplingFrequencyHz));
 
   if (!imu) {
-    if (logger) {
+    if (logger)
       logger->error("Failed to allocate MPU6050Sensor");
-    }
     return nullptr;
   }
 
   if (!pipe) {
-    if (logger) {
+    if (logger)
       logger->error("Pipe pointer is null");
-    }
     return nullptr;
   }
 
@@ -44,7 +37,7 @@ MPU6050Sensor::create(Logger *logger,
     return nullptr;
   if (!imu->resetSensor())
     return nullptr;
-  // performDiagnostics();
+  // imu->performDiagnostics();
   if (!imu->testConnection())
     return nullptr;
   if (!imu->initializeSensor())
@@ -62,6 +55,35 @@ MPU6050Sensor::create(Logger *logger,
   logger->info("MPU6050 sensor initialized successfully");
 
   return imu;
+}
+
+MPU6050Sensor *MPU6050Sensor::getInstance(
+    Logger *logger, std::shared_ptr<Pipe<IMUSample, SAMPLING_PIPE_SIZE>> pipe,
+    gpio_num_t INTPin, gpio_num_t SDAPin, gpio_num_t SCLPin,
+    int samplingFrequencyHz) {
+
+  // Protect instance creation with a mutex to ensure thread safety
+  if (MPU6050Sensor::instanceState.semaphoreHandle == nullptr) {
+    taskENTER_CRITICAL(&MPU6050Sensor::instanceState.mux);
+    MPU6050Sensor::instanceState.semaphoreHandle = xSemaphoreCreateMutexStatic(
+        &MPU6050Sensor::instanceState.semaphoreControlBlock);
+    if (MPU6050Sensor::instanceState.semaphoreHandle == nullptr) {
+      if (logger)
+        logger->error("Failed to create mutex for MPU6050Sensor instance");
+      taskEXIT_CRITICAL(&MPU6050Sensor::instanceState.mux);
+      return nullptr;
+    }
+    taskEXIT_CRITICAL(&MPU6050Sensor::instanceState.mux);
+  }
+
+  if (xSemaphoreTake(MPU6050Sensor::instanceState.semaphoreHandle,
+                     portMAX_DELAY) == pdTRUE) {
+    if (!MPU6050Sensor::instanceState.instance)
+      MPU6050Sensor::instanceState.instance = MPU6050Sensor::create(
+          logger, pipe, INTPin, SDAPin, SCLPin, samplingFrequencyHz);
+    xSemaphoreGive(MPU6050Sensor::instanceState.semaphoreHandle);
+  }
+  return MPU6050Sensor::instanceState.instance.get();
 }
 
 bool MPU6050Sensor::initializeI2CBus() {

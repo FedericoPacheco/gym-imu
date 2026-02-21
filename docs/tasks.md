@@ -23,15 +23,14 @@ Other rules:
 
 ### In Progress
 
-- Rework Logger for less overhead and usefulness: remove atomic sequence number from `Logger` and allow multiple loggers and tags.
+- Implement singleton pattern on `MPU6050Sensor`, matching `BLE`'s pattern.
 
 ### Next
-
-1. Implement singleton pattern on `MPU6050Sensor`, matching `BLE`'s pattern.
 
 ### Backlog
 
 - Add checks for logger null pointers across all classes
+- Review if error macros work with variable arguments
 - Document overall system architecture with C4 and PlantUML: context, containers, components.
 - Add essential unit tests for `MPU` class readTask logic.
 - Add essential unit tests for `BLE` class transmitTask logic.
@@ -54,3 +53,5 @@ Other rules:
 - Read EPS-IDF docs (<https://docs.espressif.com/projects/esp-idf/en/stable/esp32/api-guides/ble/index.html#security>) and add basic security to BLE class.
 
 ### Done
+
+- Rework Logger for less overhead and usefulness: remove atomic sequence number from `Logger` and allow multiple loggers and tags.

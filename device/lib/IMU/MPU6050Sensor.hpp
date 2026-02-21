@@ -22,51 +22,51 @@
 #include <tuple>
 
 /*
-  Overview:
-  A class to interface with the MPU6050 IMU sensor, providing synchronous and
-  asynchronous sample reading capabilities.
+Overview:
+A class to interface with the MPU6050 IMU sensor, providing synchronous and
+asynchronous sample reading capabilities.
 
-  How it works:
-  - Initializes and configures the MPU6050 sensor over I2C, as well as its FIFO
-  buffer and interrupt configuration.
-  - On syncronous read, it fetches the latest accelerometer and gyroscope data
-  from the sensor and converts them into physical units.
-  - On asynchronous read, it leverages FreeRTOS tasks, notifications and a pipe
-  (queue under the hood) to handle data reading in the background. An interrupt
-  service routine (ISR) is triggered when new data is available, notifying the
-  read task to fetch and process the data, which is then stored in a pipe for
-  later retrieval. This process can be turned on and off with a dedicated flag.
+How it works:
+- Initializes and configures the MPU6050 sensor over I2C, as well as its FIFO
+buffer and interrupt configuration.
+- On syncronous read, it fetches the latest accelerometer and gyroscope data
+from the sensor and converts them into physical units.
+- On asynchronous read, it leverages FreeRTOS tasks, notifications and a pipe
+(queue under the hood) to handle data reading in the background. An interrupt
+service routine (ISR) is triggered when new data is available, notifying the
+read task to fetch and process the data, which is then stored in a pipe for
+later retrieval. This process can be turned on and off with a dedicated flag.
 
-  How to use:
-  Sync:
-  Logger logger((LogLevel::DEBUG));
-  std::unique_ptr<IMUSensor> imu = MPU6050Sensor::create(&logger);
-  while (true) {
-    auto sampleOpt = imu->readSync();
-    if (sampleOpt) {
-      // Process sample...
-      }
-      }
-      Async:
-      gpio_install_isr_service(0); // Install ISR service once globally
-      Logger logger((LogLevel::DEBUG));
-      std::unique_ptr<IMUSensor> imu = MPU6050Sensor::create(&logger);
-      imu->beginAsync();
-      while (true) {
-      auto sampleOpt = imu->readAsync();
-      if (sampleOpt) {
-        // Process sample...
-        }
-        }
-        imu->stopAsync();
+How to use:
+Sync:
+Logger logger((LogLevel::DEBUG));
+std::unique_ptr<IMUSensor> imu = MPU6050Sensor::create(&logger);
+while (true) {
+  auto sampleOpt = imu->readSync();
+  if (sampleOpt) {
+    // Process sample...
+  }
+}
+Async:
+gpio_install_isr_service(0); // Install ISR service once globally
+Logger logger((LogLevel::DEBUG));
+std::unique_ptr<IMUSensor> imu = MPU6050Sensor::create(&logger);
+imu->beginAsync();
+while (true) {
+  auto sampleOpt = imu->readAsync();
+  if (sampleOpt) {
+    // Process sample...
+  }
+}
+imu->stopAsync();
 
-        Notes:
-        Requires to edit the MPU.testConnection() method to accept other
-  WHO_AM_I values due to the sensor being fake/clone/counterfeit (see setup.md
-  for details). This may affect the quality and reliability of the sensor data,
-  but it's accepted due to the difficulty and cost of getting better hardware
-  here in Argentina.
-        */
+Notes:
+Requires to edit the MPU.testConnection() method to accept other
+WHO_AM_I values due to the sensor being fake/clone/counterfeit (see setup.md
+for details). This may affect the quality and reliability of the sensor data,
+but it's accepted due to the difficulty and cost of getting better hardware
+here in Argentina.
+*/
 
 class MPU6050Sensor : public IMUSensor {
 public:

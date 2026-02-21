@@ -1,10 +1,10 @@
 #include <BLE.hpp>
 
-BLE::InstanceState BLE::instanceState = {};
-// InitializingInstace: emporary pointer used while a BLE instance is being
+// InitializingInstace: temporary pointer used while a BLE instance is being
 // created and the static `instance` unique_ptr has not yet been assigned. Some
 // NimBLE callbacks (e.g. sync) may be invoked during initialization. Use this
 // to route those early callbacks to the creating object to avoid null crashes.
+BLE::InstanceState BLE::instanceState = {};
 
 BLE::BLE(Logger *logger,
          std::shared_ptr<Pipe<IMUSample, TRANSMISSION_PIPE_SIZE>> pipe)

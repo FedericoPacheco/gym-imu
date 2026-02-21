@@ -1,0 +1,18 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+
+title C4: Context
+
+LAYOUT_LEFT_RIGHT()
+
+Person(athlete, "Athlete", "A person that performs strength training exercises")
+Person(coach, "Coach", "A person that programs training sessions and reviews athlete's performance")
+
+System(vbtSystem, "Velocity-Based Training (VBT) System", "Captures motion data, processes it, and computes metrics")
+
+Rel(athlete, vbtSystem, "Triggers exercise motion capture")
+Rel(coach, vbtSystem, "Reviews athlete's performance for everyday training decisions and long-term programming")
+
+SHOW_LEGEND()
+
+@enduml

@@ -1,5 +1,7 @@
 #include <MPU6050Sensor.hpp>
 
+std::unique_ptr<MPU6050Sensor> MPU6050Sensor::instance = nullptr;
+
 MPU6050Sensor::MPU6050Sensor(
     Logger *logger, std::shared_ptr<Pipe<IMUSample, SAMPLING_PIPE_SIZE>> pipe,
     gpio_num_t INTPin, gpio_num_t SDAPin, gpio_num_t SCLPin,
@@ -16,7 +18,7 @@ MPU6050Sensor::MPU6050Sensor(
   this->samplingFrequencyHz = samplingFrequencyHz;
 }
 
-std::unique_ptr<IMUSensor>
+std::unique_ptr<MPU6050Sensor>
 MPU6050Sensor::create(Logger *logger,
                       std::shared_ptr<Pipe<IMUSample, SAMPLING_PIPE_SIZE>> pipe,
                       gpio_num_t INTPin, gpio_num_t SDAPin, gpio_num_t SCLPin,
@@ -27,16 +29,14 @@ MPU6050Sensor::create(Logger *logger,
       logger, pipe, INTPin, SDAPin, SCLPin, samplingFrequencyHz));
 
   if (!imu) {
-    if (logger) {
+    if (logger)
       logger->error("Failed to allocate MPU6050Sensor");
-    }
     return nullptr;
   }
 
   if (!pipe) {
-    if (logger) {
+    if (logger)
       logger->error("Pipe pointer is null");
-    }
     return nullptr;
   }
 
@@ -44,7 +44,7 @@ MPU6050Sensor::create(Logger *logger,
     return nullptr;
   if (!imu->resetSensor())
     return nullptr;
-  // performDiagnostics();
+  // imu->performDiagnostics();
   if (!imu->testConnection())
     return nullptr;
   if (!imu->initializeSensor())
@@ -62,6 +62,17 @@ MPU6050Sensor::create(Logger *logger,
   logger->info("MPU6050 sensor initialized successfully");
 
   return imu;
+}
+
+MPU6050Sensor *MPU6050Sensor::getInstance(
+    Logger *logger, std::shared_ptr<Pipe<IMUSample, SAMPLING_PIPE_SIZE>> pipe,
+    gpio_num_t INTPin, gpio_num_t SDAPin, gpio_num_t SCLPin,
+    int samplingFrequencyHz) {
+
+  if (!MPU6050Sensor::instance)
+    MPU6050Sensor::instance = MPU6050Sensor::create(
+        logger, pipe, INTPin, SDAPin, SCLPin, samplingFrequencyHz);
+  return MPU6050Sensor::instance.get();
 }
 
 bool MPU6050Sensor::initializeI2CBus() {

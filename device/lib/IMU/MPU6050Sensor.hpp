@@ -76,12 +76,12 @@ public:
 
   static constexpr float g = 9.80665f; // m/s²
 
-  // Factory method, returns null on failure
-  static std::unique_ptr<IMUSensor>
-  create(Logger *logger,
-         std::shared_ptr<Pipe<IMUSample, SAMPLING_PIPE_SIZE>> pipe,
-         gpio_num_t INTPin = GPIO_NUM_5, gpio_num_t SDAPin = GPIO_NUM_6,
-         gpio_num_t SCLPin = GPIO_NUM_7, int samplingFrequencyHz = 30);
+  static MPU6050Sensor *
+  getInstance(Logger *logger,
+              std::shared_ptr<Pipe<IMUSample, SAMPLING_PIPE_SIZE>> pipe,
+              gpio_num_t INTPin = GPIO_NUM_5, gpio_num_t SDAPin = GPIO_NUM_6,
+              gpio_num_t SCLPin = GPIO_NUM_7, int samplingFrequencyHz = 30);
+
   ~MPU6050Sensor() override;
 
   std::optional<IMUSample> readSync() override;
@@ -102,6 +102,7 @@ private:
   gpio_num_t INTPin, SDAPin, SCLPin;
   int samplingFrequencyHz;
 
+  static std::unique_ptr<MPU6050Sensor> instance;
   Logger *logger;
   std::shared_ptr<Pipe<IMUSample, SAMPLING_PIPE_SIZE>> pipe;
 
@@ -112,6 +113,13 @@ private:
 
   MPU_t sensor;
   I2C_t bus;
+
+  // Factory method, returns null on failure
+  static std::unique_ptr<MPU6050Sensor>
+  create(Logger *logger,
+         std::shared_ptr<Pipe<IMUSample, SAMPLING_PIPE_SIZE>> pipe,
+         gpio_num_t INTPin, gpio_num_t SDAPin, gpio_num_t SCLPin,
+         int samplingFrequencyHz);
 
   static IRAM_ATTR void isrHandler(void *arg);
   static void readTask(void *arg);

@@ -1,0 +1,30 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title C4: Component (Device Firmware)
+
+LAYOUT_LEFT_RIGHT()
+
+Person(athlete, "Athlete", "A person that performs strength training exercises")
+Person(coach, "Coach", "A person that programs training sessions and reviews athlete's performance")
+
+Container_Boundary(device_firmware, "Gym-IMU Device Firmware [ESP32-C3]") {
+  Component(imu_sampling, "IMUSample Producer", "C++ / esp32-MPU-driver / FreeRTOS task", "Reads acceleration and angular velocity and publishes IMUSamples")
+  Component(signal_processing, "Motion Signal Transformer", "C++ / FreeRTOS task", "Performs math operations over the IMUSample time-series")
+  Component(ble_streaming, "BLE Consumer", "C++ / NimBLE / FreeRTOS task", "Batches and transmits motion time-series to connected and subscribed clients")
+}
+
+Container_Ext(mobile_app, "Companion Mobile App", "iOS/Android", "Receives motion data, stores recorded sessions, computes velocity metrics, and displays results")
+System_Ext(imu_sensor, "Internal IMU Sensor (MPU6050)", "Hardware sensor")
+
+Rel(coach, mobile_app, "Reviews athlete performance and plans training")
+Rel(athlete, imu_sampling, "Triggers capture by pressing a button")
+
+Rel(imu_sensor, imu_sampling, "Provides raw acceleration and gyroscope samples", "I2C")
+Rel(imu_sampling, signal_processing, "Publishes IMUSamples", "Pipe/FreeRTOS Queue")
+Rel(signal_processing, ble_streaming, "Publishes processed motion series", "Pipe/FreeRTOS Queue")
+Rel(ble_streaming, mobile_app, "Streams motion series in soft real-time", "BLE notifications")
+
+SHOW_LEGEND()
+
+@enduml

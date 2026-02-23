@@ -8,17 +8,17 @@ LAYOUT_LEFT_RIGHT()
 Person(athlete, "Athlete", "A person that performs strength training exercises")
 Person(coach, "Coach", "A person that programs training sessions and reviews athlete's performance")
 
-System_Boundary(vbt_system, "Velocity-Based Training (VBT) System") {
-  Container(device_firmware, "Gym-IMU Device Firmware", "C++ / ESP-IDF / FreeRTOS", "Captures motion data from IMU, processes it, and streams motion series in soft real-time")
-  Container(mobile_app, "Companion Mobile App", "iOS/Android", "Receives motion data, stores recorded sessions, computes velocity metrics, and displays results")
+System_Boundary(vbtSystem, "Velocity-Based Training (VBT) System") {
+  Container(deviceFirmware, "Gym-IMU Device Firmware", "C++ / ESP-IDF / FreeRTOS", "Captures motion data from IMU, processes it, and streams motion series in soft real-time")
+  Container(mobileApp, "Companion Mobile App", "iOS/Android", "Receives motion data, stores recorded sessions, computes velocity metrics, and displays results")
 }
 
-System_Ext(imu_sensor, "Internal IMU Sensor (MPU6050)", "Hardware sensor")
+System_Ext(imuSensor, "Internal IMU Sensor (MPU6050)", "Hardware sensor")
 
-Rel(coach, mobile_app, "Reviews athlete performance and plans training")
-Rel(athlete, device_firmware, "Triggers data capture by pressing device button")
-Rel(imu_sensor, device_firmware, "Provides raw acceleration and gyroscope samples", "I2C")
-Rel(device_firmware, mobile_app, "Streams motion series in soft real-time", "BLE notifications")
+Rel(coach, mobileApp, "Reviews athlete performance and plans training")
+Rel(athlete, deviceFirmware, "Triggers data capture by pressing device button")
+Rel(imuSensor, deviceFirmware, "Provides raw acceleration and gyroscope samples", "I2C")
+Rel(deviceFirmware, mobileApp, "Streams motion series in soft real-time", "BLE notifications")
 
 SHOW_LEGEND()
 

@@ -1,0 +1,25 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+title C4: Container
+
+LAYOUT_LEFT_RIGHT()
+
+Person(athlete, "Athlete", "A person that performs strength training exercises")
+Person(coach, "Coach", "A person that programs training sessions and reviews athlete's performance")
+
+System_Boundary(vbtSystem, "Velocity-Based Training (VBT) System") {
+  Container(deviceFirmware, "Gym-IMU Device Firmware", "C++ / ESP-IDF / FreeRTOS", "Captures motion data from IMU, processes it, and streams motion series in soft real-time")
+  Container(mobileApp, "Companion Mobile App", "iOS/Android", "Receives motion data, stores recorded sessions, computes velocity metrics, and displays results")
+}
+
+System_Ext(imuSensor, "Internal IMU Sensor (MPU6050)", "Hardware sensor")
+
+Rel(coach, mobileApp, "Reviews athlete performance and plans training")
+Rel(athlete, deviceFirmware, "Triggers data capture by pressing device button")
+Rel(imuSensor, deviceFirmware, "Provides raw acceleration and gyroscope samples", "I2C")
+Rel(deviceFirmware, mobileApp, "Streams motion series in soft real-time", "BLE notifications")
+
+SHOW_LEGEND()
+
+@enduml

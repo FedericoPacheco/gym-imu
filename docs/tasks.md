@@ -25,17 +25,16 @@ Other rules:
 
 ### Next
 
-1. Document overall system architecture with C4 and PlantUML: context, containers, components.
-2. Add essential unit tests for `MPU` class readTask logic.
-3. Add essential unit tests for `BLE` class transmitTask logic.
+1. Add essential unit tests for `MPU` class readTask logic.
+2. Add essential unit tests for `BLE` class transmitTask logic.
 
 ### Backlog
 
 - Add checks for logger null pointers across all classes
 - Review if error macros work with variable arguments
-- Create basic README for the project: summary, architecture, physical device, next steps, etc.
 - Solder components into perfboard.
 - Figure out how to make a case for the device (3D printing?) and design it.
+- Write final BOM (bill of materials) for the device.
 - Fine tune transmission parameters to optimize for latency.
 - Get raw, real world data from gym exercises: pull ups, dips.
 - Learn about filters (complementary, Kalman, etc.) and create a jupyter notebook to experiment with them on fake data.
@@ -55,3 +54,5 @@ Other rules:
 
 - Rework Logger for less overhead and usefulness: remove atomic sequence number from `Logger` and allow multiple loggers and tags. PR: <https://github.com/FedericoPacheco/gym-imu/pull/1>
 - Implement singleton pattern on `MPU6050Sensor`, matching `BLE`'s pattern. Protect both against races. PR: <https://github.com/FedericoPacheco/gym-imu/pull/2>
+- Document overall system architecture with C4 and PlantUML: context, containers, components. PR: <https://github.com/FedericoPacheco/gym-imu/pull/3>
+- Create basic README for the project: summary, architecture, physical device, next steps, etc. PR: <https://github.com/FedericoPacheco/gym-imu/pull/3>

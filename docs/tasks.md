@@ -23,11 +23,12 @@ Other rules:
 
 ### In Progress
 
+- Create basic README for the project: summary, architecture, physical device, next steps, etc. PR: <https://github.com/FedericoPacheco/gym-imu/pull/3>
+
 ### Next
 
-1. Create basic README for the project: summary, architecture, physical device, next steps, etc.
-2. Add essential unit tests for `MPU` class readTask logic.
-3. Add essential unit tests for `BLE` class transmitTask logic.
+1. Add essential unit tests for `MPU` class readTask logic.
+2. Add essential unit tests for `BLE` class transmitTask logic.
 
 ### Backlog
 

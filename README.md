@@ -18,6 +18,7 @@ The project was inspired by the chapter "Velocity in the Weight Room" from the b
   - [Testing](#testing)
 - [Signal Analysis and Processing](#signal-analysis-and-processing)
 - [Mobile App](#mobile-app)
+- [Tasks & Roadmap](#tasks--roadmap)
 
 ## Overview
 
@@ -60,3 +61,7 @@ TBD
 ## Mobile App
 
 TBD
+
+## Tasks & Roadmap
+
+See the lightweight kanban [tasks.md](docs/tasks.md) for current Next/In Progress/Backlog items and priorities.

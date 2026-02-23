@@ -35,6 +35,7 @@ Other rules:
 - Review if error macros work with variable arguments
 - Solder components into perfboard.
 - Figure out how to make a case for the device (3D printing?) and design it.
+- Write final BOM (bill of materials) for the device.
 - Fine tune transmission parameters to optimize for latency.
 - Get raw, real world data from gym exercises: pull ups, dips.
 - Learn about filters (complementary, Kalman, etc.) and create a jupyter notebook to experiment with them on fake data.

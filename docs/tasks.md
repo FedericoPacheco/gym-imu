@@ -23,8 +23,6 @@ Other rules:
 
 ### In Progress
 
-- Create basic README for the project: summary, architecture, physical device, next steps, etc. PR: <https://github.com/FedericoPacheco/gym-imu/pull/3>
-
 ### Next
 
 1. Add essential unit tests for `MPU` class readTask logic.
@@ -57,3 +55,4 @@ Other rules:
 - Rework Logger for less overhead and usefulness: remove atomic sequence number from `Logger` and allow multiple loggers and tags. PR: <https://github.com/FedericoPacheco/gym-imu/pull/1>
 - Implement singleton pattern on `MPU6050Sensor`, matching `BLE`'s pattern. Protect both against races. PR: <https://github.com/FedericoPacheco/gym-imu/pull/2>
 - Document overall system architecture with C4 and PlantUML: context, containers, components. PR: <https://github.com/FedericoPacheco/gym-imu/pull/3>
+- Create basic README for the project: summary, architecture, physical device, next steps, etc. PR: <https://github.com/FedericoPacheco/gym-imu/pull/3>

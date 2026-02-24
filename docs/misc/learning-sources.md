@@ -3,7 +3,7 @@
 ## Essential
 
 - PlatformIO: <https://docs.platformio.org/en/latest/>
-- ESP-IDF: <https://docs.espressif.com/projects/esp-idf/en/stable/esp32/index.html>
+- ESP-IDF: <https://docs.espressif.com/projects/esp-idf/en/stable/esp32c3/index.html>
 - FreeRTOS: <https://www.freertos.org/Documentation/00-Overview>
 - C++ Reference: <https://en.cppreference.com/index.html>
 - Cplusplus Reference: <https://cplusplus.com/reference/>
@@ -30,11 +30,14 @@
 - <https://randomnerdtutorials.com/vs-code-platformio-ide-esp32-esp8266-arduino/>
 - <https://docs.platformio.org/en/latest/integration/ide/vscode.html>
 
-## Testing on PlatformIO
+## Testing
 
 - <https://docs.platformio.org/en/latest/advanced/unit-testing/index.html>
 - <http://youtube.com/watch?v=UOGMNRcV9-4>
 - <https://www.youtube.com/watch?v=z-uWt5wVVkU>
+- <https://docs.espressif.com/projects/esp-idf/en/stable/esp32c3/api-guides/unit-tests.html>
+- <https://docs.espressif.com/projects/esp-idf/en/stable/esp32c3/api-guides/host-apps.html>
+- <https://www.freertos.org/Documentation/02-Kernel/03-Supported-devices/04-Demos/03-Emulation-and-simulation/Linux/FreeRTOS-simulator-for-Linux>
 
 ## MPU-6050
 

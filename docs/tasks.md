@@ -23,10 +23,11 @@ Other rules:
 
 ### In Progress
 
+- Add essential unit tests for `MPU` class readTask logic.
+
 ### Next
 
-1. Add essential unit tests for `MPU` class readTask logic.
-2. Add essential unit tests for `BLE` class transmitTask logic.
+1. Add essential unit tests for `BLE` class transmitTask logic.
 
 ### Backlog
 

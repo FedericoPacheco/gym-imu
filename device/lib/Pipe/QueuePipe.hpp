@@ -1,6 +1,5 @@
 #pragma once
-#include "freertos/FreeRTOS.h"
-#include "freertos/queue.h"
+#include <FreeRTOSPort.hpp>
 #include <Logger.hpp>
 #include <Pipe.hpp>
 #include <atomic>

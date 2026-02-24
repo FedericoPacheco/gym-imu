@@ -36,6 +36,8 @@ Other rules:
 - Solder components into perfboard.
 - Figure out how to make a case for the device (3D printing?) and design it.
 - Write final BOM (bill of materials) for the device.
+- Fork I2C and MPU libraries and apply changes there. Then include as dependencies in the platformIO file.
+- Remove unnecessary includes to reduce compiled code size.
 - Fine tune transmission parameters to optimize for latency.
 - Get raw, real world data from gym exercises: pull ups, dips.
 - Learn about filters (complementary, Kalman, etc.) and create a jupyter notebook to experiment with them on fake data.

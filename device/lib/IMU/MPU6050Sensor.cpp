@@ -1,4 +1,3 @@
-#include "freertos/idf_additions.h"
 #include <MPU6050Sensor.hpp>
 
 MPU6050Sensor::InstanceState MPU6050Sensor::instanceState = {};
@@ -64,24 +63,24 @@ MPU6050Sensor *MPU6050Sensor::getInstance(
 
   // Protect instance creation with a mutex to ensure thread safety
   if (MPU6050Sensor::instanceState.semaphoreHandle == nullptr) {
-    taskENTER_CRITICAL(&MPU6050Sensor::instanceState.mux);
-    MPU6050Sensor::instanceState.semaphoreHandle = xSemaphoreCreateMutexStatic(
+    rtosTaskEnterCritical(&MPU6050Sensor::instanceState.mux);
+    MPU6050Sensor::instanceState.semaphoreHandle = rtosCreateMutexStatic(
         &MPU6050Sensor::instanceState.semaphoreControlBlock);
     if (MPU6050Sensor::instanceState.semaphoreHandle == nullptr) {
       if (logger)
         logger->error("Failed to create mutex for MPU6050Sensor instance");
-      taskEXIT_CRITICAL(&MPU6050Sensor::instanceState.mux);
+      rtosTaskExitCritical(&MPU6050Sensor::instanceState.mux);
       return nullptr;
     }
-    taskEXIT_CRITICAL(&MPU6050Sensor::instanceState.mux);
+    rtosTaskExitCritical(&MPU6050Sensor::instanceState.mux);
   }
 
-  if (xSemaphoreTake(MPU6050Sensor::instanceState.semaphoreHandle,
-                     portMAX_DELAY) == pdTRUE) {
+  if (rtosSemaphoreTake(MPU6050Sensor::instanceState.semaphoreHandle,
+                        portMAX_DELAY) == pdTRUE) {
     if (!MPU6050Sensor::instanceState.instance)
       MPU6050Sensor::instanceState.instance = MPU6050Sensor::create(
           logger, pipe, INTPin, SDAPin, SCLPin, samplingFrequencyHz);
-    xSemaphoreGive(MPU6050Sensor::instanceState.semaphoreHandle);
+    rtosSemaphoreGive(MPU6050Sensor::instanceState.semaphoreHandle);
   }
   return MPU6050Sensor::instanceState.instance.get();
 }
@@ -109,7 +108,7 @@ bool MPU6050Sensor::resetSensor() {
   this->logger->debug("Performing sensor reset");
 
   RETURN_FALSE_ON_ERROR(this->sensor.reset(), this->logger, "Reset failed");
-  vTaskDelay(pdMS_TO_TICKS(250));
+  rtosTaskDelay(pdMS_TO_TICKS(250));
 
   return true;
 }
@@ -138,7 +137,7 @@ bool MPU6050Sensor::testConnection() {
   while (err != ESP_OK && attempts < MAX_CONNECTION_ATTEMPTS) {
     this->logger->error("I2C connection failed: %s (%#X)", esp_err_to_name(err),
                         err);
-    vTaskDelay(pdMS_TO_TICKS(1000));
+    rtosTaskDelay(pdMS_TO_TICKS(1000));
     err = this->sensor.testConnection();
     attempts++;
   }
@@ -194,7 +193,7 @@ bool MPU6050Sensor::setupTask() {
   this->logger->debug("Setting up FreeRTOS task for async reading");
 
   this->setDoRead(false);
-  BaseType_t taskResult = xTaskCreate(
+  BaseType_t taskResult = rtosTaskCreate(
       readTask, "readTask", MPU6050Sensor::READ_TASK_STACK_SIZE, this,
       MPU6050Sensor::READ_TASK_PRIORITY, &this->readTaskHandle);
   if (taskResult != pdPASS) {
@@ -240,9 +239,9 @@ MPU6050Sensor::~MPU6050Sensor() {
 
   this->logger->debug("Notifying read task to unblock and finish cleanly");
   if (this->readTaskHandle) {
-    xTaskNotifyGive(this->readTaskHandle);
-    vTaskDelay(1);
-    vTaskDelete(this->readTaskHandle);
+    rtosTaskNotifyGive(this->readTaskHandle);
+    rtosTaskDelay(1);
+    rtosTaskDelete(this->readTaskHandle);
   }
 
   this->logger->debug("Removing ISR handler");
@@ -279,9 +278,9 @@ void IRAM_ATTR MPU6050Sensor::isrHandler(void *arg) {
 
   // Notify the read task to process the interrupt
   BaseType_t highPriorityTaskWoken = pdFALSE;
-  vTaskNotifyGiveFromISR(self->readTaskHandle, &highPriorityTaskWoken);
+  rtosTaskNotifyGiveFromISR(self->readTaskHandle, &highPriorityTaskWoken);
   if (highPriorityTaskWoken == pdTRUE)
-    portYIELD_FROM_ISR(); // Context switch if needed
+    rtosYieldFromISR(); // Context switch if needed
 }
 
 void MPU6050Sensor::readTask(void *arg) {
@@ -292,7 +291,7 @@ void MPU6050Sensor::readTask(void *arg) {
 
   while (true) {
     // Block and wait for ISR notification
-    uint32_t notificationValue = ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+    uint32_t notificationValue = rtosTaskNotifyTake(pdTRUE, portMAX_DELAY);
 
     if (!self->getDoRead()) {
       continue;

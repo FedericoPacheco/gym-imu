@@ -2,7 +2,6 @@
 #include "esp_log.h"
 #include "esp_log_level.h"
 #include "esp_timer.h"
-#include <atomic>
 #include <cstdarg>
 #include <cstddef>
 #include <cstdint>

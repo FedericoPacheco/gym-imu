@@ -76,23 +76,23 @@ BLE *BLE::getInstance(
 
   // Protect instance creation with a mutex to ensure thread safety
   if (BLE::instanceState.semaphoreHandle == nullptr) {
-    taskENTER_CRITICAL(&BLE::instanceState.mux);
+    rtosTaskEnterCritical(&BLE::instanceState.mux);
     BLE::instanceState.semaphoreHandle =
-        xSemaphoreCreateMutexStatic(&BLE::instanceState.semaphoreControlBlock);
+        rtosCreateMutexStatic(&BLE::instanceState.semaphoreControlBlock);
     if (BLE::instanceState.semaphoreHandle == nullptr) {
       if (logger)
         logger->error("Failed to create mutex for BLE instance");
-      taskEXIT_CRITICAL(&BLE::instanceState.mux);
+      rtosTaskExitCritical(&BLE::instanceState.mux);
       return nullptr;
     }
-    taskEXIT_CRITICAL(&BLE::instanceState.mux);
+    rtosTaskExitCritical(&BLE::instanceState.mux);
   }
 
-  if (xSemaphoreTake(BLE::instanceState.semaphoreHandle, portMAX_DELAY) ==
+  if (rtosSemaphoreTake(BLE::instanceState.semaphoreHandle, portMAX_DELAY) ==
       pdTRUE) {
     if (!BLE::instanceState.instance)
       BLE::instanceState.instance = BLE::create(logger, pipe);
-    xSemaphoreGive(BLE::instanceState.semaphoreHandle);
+    rtosSemaphoreGive(BLE::instanceState.semaphoreHandle);
   }
   return BLE::instanceState.instance.get();
 }
@@ -101,14 +101,14 @@ BLE::~BLE() {
   // Transmit remaining samples before shutting down
   if (this->transmitTaskHandle) {
     this->setDoTransmit(false);
-    vTaskDelay(pdMS_TO_TICKS(BLE::TRANSMIT_TASK_SHUTDOWN_DELAY_MS));
-    vTaskDelete(this->transmitTaskHandle);
+    rtosTaskDelay(pdMS_TO_TICKS(BLE::TRANSMIT_TASK_SHUTDOWN_DELAY_MS));
+    rtosTaskDelete(this->transmitTaskHandle);
   }
 
   nimble_port_stop();
 
   if (this->bleTaskHandle)
-    vTaskDelete(this->bleTaskHandle);
+    rtosTaskDelete(this->bleTaskHandle);
 }
 
 bool BLE::initializeFlash() {
@@ -235,9 +235,9 @@ int BLE::handleGAPEvent(ble_gap_event *event, void *arg) {
   case BLE_GAP_EVENT_CONNECT: {
     if (event->connect.status == 0) {
       // Allow only one connection at a time (e.g. phone or laptop)
-      portENTER_CRITICAL(&self->communicationState.mux);
+      rtosPortEnterCritical(&self->communicationState.mux);
       self->communicationState.connectionHandle = event->connect.conn_handle;
-      portEXIT_CRITICAL(&self->communicationState.mux);
+      rtosPortExitCritical(&self->communicationState.mux);
       self->logger->info("Connection established with handle: %d",
                          self->communicationState.connectionHandle);
 
@@ -285,14 +285,14 @@ int BLE::handleGAPEvent(ble_gap_event *event, void *arg) {
     if (event->subscribe.attr_handle ==
         self->communicationState.imuSampleCharacteristicHandle) {
       if (event->subscribe.cur_notify) {
-        portENTER_CRITICAL(&self->communicationState.mux);
+        rtosPortEnterCritical(&self->communicationState.mux);
         self->communicationState.isSubscribedToImuSampleCharacteristic = true;
-        portEXIT_CRITICAL(&self->communicationState.mux);
+        rtosPortExitCritical(&self->communicationState.mux);
         self->logger->info("Client subscribed to IMU Sample Characteristic");
       } else {
-        portENTER_CRITICAL(&self->communicationState.mux);
+        rtosPortEnterCritical(&self->communicationState.mux);
         self->communicationState.isSubscribedToImuSampleCharacteristic = false;
-        portEXIT_CRITICAL(&self->communicationState.mux);
+        rtosPortExitCritical(&self->communicationState.mux);
         self->logger->info(
             "Client unsubscribed from IMU Sample Characteristic");
       }
@@ -302,10 +302,10 @@ int BLE::handleGAPEvent(ble_gap_event *event, void *arg) {
   case BLE_GAP_EVENT_DISCONNECT: {
     self->logger->info("Connection terminated, reason: %d",
                        event->disconnect.reason);
-    portENTER_CRITICAL(&self->communicationState.mux);
+    rtosPortEnterCritical(&self->communicationState.mux);
     self->communicationState.connectionHandle = BLE_HS_CONN_HANDLE_NONE;
     self->communicationState.isSubscribedToImuSampleCharacteristic = false;
-    portEXIT_CRITICAL(&self->communicationState.mux);
+    rtosPortExitCritical(&self->communicationState.mux);
     self->startAdvertising();
     break;
   }
@@ -318,12 +318,12 @@ int BLE::handleGAPEvent(ble_gap_event *event, void *arg) {
     break;
   }
   case BLE_GAP_EVENT_MTU: {
-    portENTER_CRITICAL(&self->communicationState.mux);
+    rtosPortEnterCritical(&self->communicationState.mux);
     self->communicationState.mtu = event->mtu.value;
     self->communicationState.currentBatchSize =
         MIN(BLE::PREFERRED_BATCH_SEND_SIZE,
             MAX(1, (self->communicationState.mtu - 3) / sizeof(IMUSample)));
-    portEXIT_CRITICAL(&self->communicationState.mux);
+    rtosPortExitCritical(&self->communicationState.mux);
     self->logger->info(
         "Negotiated MTU: %d bytes. Current batch size: %d packets",
         self->communicationState.mtu,
@@ -374,7 +374,7 @@ bool BLE::initializeTasks() {
 
   this->logger->debug("Initializing BLE tasks");
 
-  BaseType_t transmitTaskResult = xTaskCreate(
+  BaseType_t transmitTaskResult = rtosTaskCreate(
       BLE::transmitTask, "transmitTask", BLE::TRANSMIT_TASK_STACK_SIZE, this,
       BLE::TRANSMIT_TASK_PRIORITY, &this->transmitTaskHandle);
   if (transmitTaskResult != pdPASS) {
@@ -383,11 +383,11 @@ bool BLE::initializeTasks() {
   }
 
   BaseType_t bleTaskResult =
-      xTaskCreate(BLE::bleTask, "bleTask", BLE::BLE_TASK_STACK_SIZE, this,
-                  BLE::BLE_TASK_PRIORITY, &this->bleTaskHandle);
+      rtosTaskCreate(BLE::bleTask, "bleTask", BLE::BLE_TASK_STACK_SIZE, this,
+                     BLE::BLE_TASK_PRIORITY, &this->bleTaskHandle);
   if (bleTaskResult != pdPASS) {
     this->logger->error("Failed to create BLE task");
-    vTaskDelete(this->transmitTaskHandle);
+    rtosTaskDelete(this->transmitTaskHandle);
     return false;
   }
 
@@ -421,40 +421,40 @@ void BLE::transmitTask(void *arg) {
 
   while (true) {
     if (!self->getDoTransmit()) {
-      vTaskDelay(idleDelayTicks);
+      rtosTaskDelay(idleDelayTicks);
       continue;
     }
 
     // Sincronize access to shared variables
-    portENTER_CRITICAL(&self->communicationState.mux);
+    rtosPortEnterCritical(&self->communicationState.mux);
     characteristicHandle =
         self->communicationState.imuSampleCharacteristicHandle;
     connectionHandle = self->communicationState.connectionHandle;
     isSubscribed =
         self->communicationState.isSubscribedToImuSampleCharacteristic;
     currentBatchSize = self->communicationState.currentBatchSize;
-    portEXIT_CRITICAL(&self->communicationState.mux);
+    rtosPortExitCritical(&self->communicationState.mux);
 
     if (characteristicHandle == 0) {
       self->logger->warn(
           "Can't send data: IMU Sample Characteristic handle is invalid");
-      vTaskDelay(idleDelayTicks);
+      rtosTaskDelay(idleDelayTicks);
       continue;
     }
     if (connectionHandle == BLE_HS_CONN_HANDLE_NONE) {
       self->logger->warn("Can't send data: no connected client");
-      vTaskDelay(idleDelayTicks);
+      rtosTaskDelay(idleDelayTicks);
       continue;
     }
     if (!isSubscribed) {
       self->logger->warn("Can't send data: client not subscribed to IMU "
                          "sample Characteristic");
-      vTaskDelay(idleDelayTicks);
+      rtosTaskDelay(idleDelayTicks);
       continue;
     }
 
     if (self->pipe->itemsFilled() < currentBatchSize) {
-      vTaskDelay(idleDelayTicks);
+      rtosTaskDelay(idleDelayTicks);
       continue;
     }
 
@@ -474,7 +474,7 @@ void BLE::transmitTask(void *arg) {
       if (nimbleBuffer == NULL) {
         self->logger->error("Can't send data: no memory available for nimble "
                             "buffer");
-        vTaskDelay(idleDelayTicks);
+        rtosTaskDelay(idleDelayTicks);
         continue;
       }
       // Broadcast notification with data to all connected clients. The
@@ -485,7 +485,7 @@ void BLE::transmitTask(void *arg) {
       if (ble_gatts_notify_custom(connectionHandle, characteristicHandle,
                                   nimbleBuffer) != 0) {
         self->logger->error("Failed to send IMU samples notification");
-        vTaskDelay(idleDelayTicks);
+        rtosTaskDelay(idleDelayTicks);
       } else {
         self->logger->debug("Sent notification with %d IMU samples",
                             batchCount);
@@ -589,9 +589,9 @@ bool BLE::startAdvertising() {
 
 bool BLE::isConnected() {
   uint16_t connectionHandle;
-  portENTER_CRITICAL(&this->communicationState.mux);
+  rtosPortEnterCritical(&this->communicationState.mux);
   connectionHandle = this->communicationState.connectionHandle;
-  portEXIT_CRITICAL(&this->communicationState.mux);
+  rtosPortExitCritical(&this->communicationState.mux);
   return connectionHandle != BLE_HS_CONN_HANDLE_NONE;
 }
 

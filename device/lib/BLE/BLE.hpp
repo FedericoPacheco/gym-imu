@@ -1,8 +1,5 @@
 #pragma once
 #include "esp_system.h"
-#include "freertos/FreeRTOS.h"
-#include "freertos/idf_additions.h"
-#include "freertos/projdefs.h"
 #include "host/ble_hs.h"
 #include "host/ble_store.h"
 #include "host/ble_uuid.h"
@@ -10,21 +7,18 @@
 #include "nimble/nimble_port.h"
 #include "nimble/nimble_port_freertos.h"
 #include "nvs_flash.h"
-#include "portmacro.h"
 #include "services/gap/ble_svc_gap.h"
 #include "services/gatt/ble_svc_gatt.h"
 #include "store/config/ble_store_config.h"
 #include <Constants.hpp>
 #include <ErrorMacros.hpp>
+#include <FreeRTOSPort.hpp>
 #include <IMUSensor.hpp>
 #include <Logger.hpp>
 #include <Pipe.hpp>
 #include <atomic>
-#include <cstddef>
 #include <cstdint>
-#include <freertos/task.h>
 #include <memory>
-#include <optional>
 #include <sys/param.h>
 
 /*
@@ -56,13 +50,11 @@ Logger logger((LogLevel::DEBUG));
 std::shared_ptr<Pipe<IMUSample, TRANSMISSION_PIPE_SIZE>> pipe =
     QueuePipe<IMUSample, TRANSMISSION_PIPE_SIZE>::create(&logger);
 unique_ptr<BLE> ble = BLE::getInstance(logger, pipe);
-...
-if (ble->isConnected()) {
+... if (ble->isConnected()) {
   ble->beginTransmission(); // receives samples from the pipe and sends them to
-the client
+  the client
 }
-...
-ble->stopTransmission();
+... ble->stopTransmission();
 
 Data can be received on the phone with the app nRF Connect.
 

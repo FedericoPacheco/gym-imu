@@ -38,6 +38,7 @@
 - <https://docs.espressif.com/projects/esp-idf/en/stable/esp32c3/api-guides/unit-tests.html>
 - <https://docs.espressif.com/projects/esp-idf/en/stable/esp32c3/api-guides/host-apps.html>
 - <https://www.freertos.org/Documentation/02-Kernel/03-Supported-devices/04-Demos/03-Emulation-and-simulation/Linux/FreeRTOS-simulator-for-Linux>
+- <https://github.com/meekrosoft/fff>
 
 ## MPU-6050
 

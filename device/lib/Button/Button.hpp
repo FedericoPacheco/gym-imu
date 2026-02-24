@@ -1,8 +1,7 @@
 #pragma once
 #include "driver/gpio.h"
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
 #include <ErrorMacros.hpp>
+#include <FreeRTOSPort.hpp>
 #include <Logger.hpp>
 #include <memory>
 

@@ -14,7 +14,7 @@
 #include <ErrorMacros.hpp>
 #include <FreeRTOSPort.hpp>
 #include <IMUSensor.hpp>
-#include <Logger.hpp>
+#include <LoggerPort.hpp>
 #include <Pipe.hpp>
 #include <atomic>
 #include <cstdint>
@@ -46,10 +46,10 @@ negotiated MTU) and then sends them as a notification to connected
 clients.
 
 How to use:
-Logger logger((LogLevel::DEBUG));
+UARTLogger logger((LogLevel::DEBUG));
 std::shared_ptr<Pipe<IMUSample, TRANSMISSION_PIPE_SIZE>> pipe =
     QueuePipe<IMUSample, TRANSMISSION_PIPE_SIZE>::create(&logger);
-unique_ptr<BLE> ble = BLE::getInstance(logger, pipe);
+unique_ptr<BLE> ble = BLE::getInstance(&logger, pipe);
 ... if (ble->isConnected()) {
   ble->beginTransmission(); // receives samples from the pipe and sends them to
   the client
@@ -99,7 +99,7 @@ public:
   static constexpr int TRANSMIT_TASK_STACK_SIZE = 4096;
 
   static BLE *
-  getInstance(Logger *logger,
+  getInstance(LoggerPort *logger,
               std::shared_ptr<Pipe<IMUSample, TRANSMISSION_PIPE_SIZE>> pipe);
   ~BLE();
   bool isConnected();
@@ -152,7 +152,7 @@ private:
     BLEAddress address;
   } communicationState;
 
-  Logger *logger;
+  LoggerPort *logger;
 
   ble_gatt_chr_def imuCharacteristics[2];
   ble_gatt_svc_def services[2];
@@ -165,10 +165,10 @@ private:
   ble_hs_adv_fields scanResponsePacket;
   ble_gap_adv_params advertisingConfig;
 
-  BLE(Logger *logger,
+  BLE(LoggerPort *logger,
       std::shared_ptr<Pipe<IMUSample, TRANSMISSION_PIPE_SIZE>> pipe);
   static std::unique_ptr<BLE>
-  create(Logger *logger,
+  create(LoggerPort *logger,
          std::shared_ptr<Pipe<IMUSample, TRANSMISSION_PIPE_SIZE>> pipe);
 
   inline bool initializeFlash();

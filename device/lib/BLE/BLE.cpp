@@ -6,7 +6,7 @@
 // to route those early callbacks to the creating object to avoid null crashes.
 BLE::InstanceState BLE::instanceState = {};
 
-BLE::BLE(Logger *logger,
+BLE::BLE(LoggerPort *logger,
          std::shared_ptr<Pipe<IMUSample, TRANSMISSION_PIPE_SIZE>> pipe)
     : communicationState{}, logger(logger), imuCharacteristics{}, services{},
       bleTaskHandle(nullptr), transmitTaskHandle(nullptr), pipe(pipe),
@@ -23,7 +23,7 @@ BLE::BLE(Logger *logger,
 }
 
 std::unique_ptr<BLE>
-BLE::create(Logger *logger,
+BLE::create(LoggerPort *logger,
             std::shared_ptr<Pipe<IMUSample, TRANSMISSION_PIPE_SIZE>> pipe) {
   std::unique_ptr<BLE> ble(new (std::nothrow) BLE(logger, pipe));
 
@@ -71,7 +71,7 @@ BLE::create(Logger *logger,
 }
 
 BLE *BLE::getInstance(
-    Logger *logger,
+    LoggerPort *logger,
     std::shared_ptr<Pipe<IMUSample, TRANSMISSION_PIPE_SIZE>> pipe) {
 
   // Protect instance creation with a mutex to ensure thread safety

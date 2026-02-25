@@ -2,12 +2,12 @@
 
 // -------------------------------------------------------------------------
 
-LED::LED(Logger *logger, gpio_num_t pin) : logger(logger) {
+LED::LED(LoggerPort *logger, gpio_num_t pin) : logger(logger) {
   this->pin = pin;
   this->softwareState = false;
 }
 
-std::unique_ptr<LED> LED::create(Logger *logger, gpio_num_t pin) {
+std::unique_ptr<LED> LED::create(LoggerPort *logger, gpio_num_t pin) {
   logger->info("Initializing LED on pin %d", pin);
 
   std::unique_ptr<LED> led(new (std::nothrow) LED(logger, pin));

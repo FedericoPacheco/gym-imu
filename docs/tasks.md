@@ -49,7 +49,6 @@ Other rules:
 - Review numerical integration/ODE solving methods and and test them on jupyter notebook with fake data.
 - Apply numerical integration/ODE solving methods to real data on jupyter notebook and evaluate results.
 - Extract control logic from `src/main.cpp` to separate class.
-- Rework Logger for more flexibility: create a `Logger` interface and inherit from the current class renaming it to `UARTLogger`/`SerialLogger`
 - Review and update current tasks priorities and ISR behaviors to optimize for latency and responsiveness.
 - Read EPS-IDF docs (<https://docs.espressif.com/projects/esp-idf/en/stable/esp32/api-guides/ble/index.html#security>) and add basic security to BLE class.
 
@@ -59,3 +58,4 @@ Other rules:
 - Implement singleton pattern on `MPU6050Sensor`, matching `BLE`'s pattern. Protect both against races. PR: <https://github.com/FedericoPacheco/gym-imu/pull/2>
 - Document overall system architecture with C4 and PlantUML: context, containers, components. PR: <https://github.com/FedericoPacheco/gym-imu/pull/3>
 - Create basic README for the project: summary, architecture, physical device, next steps, etc. PR: <https://github.com/FedericoPacheco/gym-imu/pull/3>
+- Rework Logger for more flexibility: create a `Logger` interface and inherit from the current class renaming it to `UARTLogger`/`SerialLogger`

@@ -1,10 +1,10 @@
 #include <Button.hpp>
 
-Button::Button(Logger *logger, gpio_num_t pin) : logger(logger) {
+Button::Button(LoggerPort *logger, gpio_num_t pin) : logger(logger) {
   this->pin = pin;
 }
 
-std::unique_ptr<Button> Button::create(Logger *logger, gpio_num_t pin,
+std::unique_ptr<Button> Button::create(LoggerPort *logger, gpio_num_t pin,
                                        int asyncQueueSize,
                                        int debouncingDelayMs) {
 

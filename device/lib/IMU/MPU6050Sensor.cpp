@@ -3,7 +3,8 @@
 MPU6050Sensor::InstanceState MPU6050Sensor::instanceState = {};
 
 MPU6050Sensor::MPU6050Sensor(
-    Logger *logger, std::shared_ptr<Pipe<IMUSample, SAMPLING_PIPE_SIZE>> pipe,
+    LoggerPort *logger,
+    std::shared_ptr<Pipe<IMUSample, SAMPLING_PIPE_SIZE>> pipe,
     gpio_num_t INTPin, gpio_num_t SDAPin, gpio_num_t SCLPin,
     int samplingFrequencyHz)
     : INTPin(INTPin), SDAPin(SDAPin), SCLPin(SCLPin),
@@ -11,7 +12,7 @@ MPU6050Sensor::MPU6050Sensor(
       bus(I2C_NUM_0) {}
 
 std::unique_ptr<MPU6050Sensor>
-MPU6050Sensor::create(Logger *logger,
+MPU6050Sensor::create(LoggerPort *logger,
                       std::shared_ptr<Pipe<IMUSample, SAMPLING_PIPE_SIZE>> pipe,
                       gpio_num_t INTPin, gpio_num_t SDAPin, gpio_num_t SCLPin,
                       int samplingFrequencyHz) {
@@ -57,7 +58,8 @@ MPU6050Sensor::create(Logger *logger,
 }
 
 MPU6050Sensor *MPU6050Sensor::getInstance(
-    Logger *logger, std::shared_ptr<Pipe<IMUSample, SAMPLING_PIPE_SIZE>> pipe,
+    LoggerPort *logger,
+    std::shared_ptr<Pipe<IMUSample, SAMPLING_PIPE_SIZE>> pipe,
     gpio_num_t INTPin, gpio_num_t SDAPin, gpio_num_t SCLPin,
     int samplingFrequencyHz) {
 

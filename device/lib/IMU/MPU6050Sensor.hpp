@@ -10,7 +10,7 @@
 #include <ErrorMacros.hpp>
 #include <FreeRTOSPort.hpp>
 #include <IMUSensor.hpp>
-#include <Logger.hpp>
+#include <LoggerPort.hpp>
 #include <MPU.hpp>
 #include <Pipe.hpp>
 #include <atomic>
@@ -37,7 +37,7 @@ later retrieval. This process can be turned on and off with a dedicated flag.
 
 How to use:
 Sync:
-Logger logger((LogLevel::DEBUG));
+UARTLogger logger((LogLevel::DEBUG));
 std::unique_ptr<IMUSensor> imu = MPU6050Sensor::create(&logger);
 while (true) {
   auto sampleOpt = imu->readSync();
@@ -47,7 +47,7 @@ while (true) {
 }
 Async:
 gpio_install_isr_service(0); // Install ISR service once globally
-Logger logger((LogLevel::DEBUG));
+UARTLogger logger((LogLevel::DEBUG));
 std::unique_ptr<IMUSensor> imu = MPU6050Sensor::create(&logger);
 imu->beginAsync();
 while (true) {
@@ -75,7 +75,7 @@ public:
   static constexpr float g = 9.80665f; // m/s²
 
   static MPU6050Sensor *
-  getInstance(Logger *logger,
+  getInstance(LoggerPort *logger,
               std::shared_ptr<Pipe<IMUSample, SAMPLING_PIPE_SIZE>> pipe,
               gpio_num_t INTPin = GPIO_NUM_5, gpio_num_t SDAPin = GPIO_NUM_6,
               gpio_num_t SCLPin = GPIO_NUM_7, int samplingFrequencyHz = 30);
@@ -107,7 +107,7 @@ private:
     portMUX_TYPE mux;
   } static instanceState;
 
-  Logger *logger;
+  LoggerPort *logger;
   std::shared_ptr<Pipe<IMUSample, SAMPLING_PIPE_SIZE>> pipe;
 
   // Prevent races between main and read tasks
@@ -120,7 +120,7 @@ private:
 
   // Factory method, returns null on failure
   static std::unique_ptr<MPU6050Sensor>
-  create(Logger *logger,
+  create(LoggerPort *logger,
          std::shared_ptr<Pipe<IMUSample, SAMPLING_PIPE_SIZE>> pipe,
          gpio_num_t INTPin, gpio_num_t SDAPin, gpio_num_t SCLPin,
          int samplingFrequencyHz);
@@ -131,7 +131,7 @@ private:
   void setDoRead(bool value);
   bool getDoRead();
 
-  MPU6050Sensor(Logger *logger,
+  MPU6050Sensor(LoggerPort *logger,
                 std::shared_ptr<Pipe<IMUSample, SAMPLING_PIPE_SIZE>> pipe,
                 gpio_num_t INTPin, gpio_num_t SDAPin, gpio_num_t SCLPin,
                 int samplingFrequencyHz);

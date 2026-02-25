@@ -1,7 +1,7 @@
 #pragma once
 #include "esp_err.h"
 #include "host/ble_hs.h"
-#include <Logger.hpp>
+#include <LoggerPort.hpp>
 #include <cstdio>
 
 #define RETURN_NULL_ON_ERROR(result, logger, msg)                              \
@@ -11,7 +11,7 @@
   if (!checkError((result), (logger), (msg)))                                  \
   return false
 
-inline bool checkError(esp_err_t err, Logger *logger, const char *msg) {
+inline bool checkError(esp_err_t err, LoggerPort *logger, const char *msg) {
   if (err != ESP_OK) {
     if (logger != nullptr)
       logger->error("%s: %s", msg, esp_err_to_name(err));
@@ -28,7 +28,8 @@ inline const char *nimble_err_to_name(esp_err_t err);
   if (!checkNimbleError((result), (logger), (msg)))                            \
   return false
 
-inline bool checkNimbleError(int errorCode, Logger *logger, const char *msg) {
+inline bool checkNimbleError(int errorCode, LoggerPort *logger,
+                             const char *msg) {
   if (errorCode != 0) {
     if (logger != nullptr)
       logger->error("%s: %s (%d)", msg, nimble_err_to_name(errorCode),

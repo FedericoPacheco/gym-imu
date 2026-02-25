@@ -23,7 +23,6 @@ Other rules:
 
 ### In Progress
 
-- Create compatibility file for FreeRTOSPort.
 - Consider merging GPIO functions in ESPCompatibility.hpp.
 - Add essential unit tests for `MPU` class readTask logic.
 
@@ -63,3 +62,4 @@ Other rules:
 - Create basic README for the project: summary, architecture, physical device, next steps, etc. PR: <https://github.com/FedericoPacheco/gym-imu/pull/3>
 - Rework Logger for more flexibility: create a `Logger` interface and inherit from the current class renaming it to `UARTLogger`/`SerialLogger`
 - Move all platform(esp, freertos, etc.) ports to include and my own ones to lib.
+- Create compatibility file for FreeRTOSPort.

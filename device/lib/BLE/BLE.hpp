@@ -13,7 +13,7 @@
 #include <Constants.hpp>
 #include <ErrorMacros.hpp>
 #include <FreeRTOSPort.hpp>
-#include <IMUSensor.hpp>
+#include <IMUSensorPort.hpp>
 #include <LoggerPort.hpp>
 #include <Pipe.hpp>
 #include <atomic>

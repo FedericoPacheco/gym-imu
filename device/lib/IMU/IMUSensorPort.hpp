@@ -1,5 +1,4 @@
 #pragma once
-#include "soc/gpio_num.h"
 #include <optional>
 #include <stdint.h>
 

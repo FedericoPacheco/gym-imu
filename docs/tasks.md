@@ -23,6 +23,9 @@ Other rules:
 
 ### In Progress
 
+- Move all platform(esp, freertos, etc.) ports to include and my own ones to lib.
+- Consider merging GPIO functions in ESPCompatibility.hpp.
+- Create compatibility file for FreeRTOSPort.
 - Add essential unit tests for `MPU` class readTask logic.
 
 ### Next
@@ -38,6 +41,7 @@ Other rules:
 - Write final BOM (bill of materials) for the device.
 - Fork I2C and MPU libraries and apply changes there. Then include as dependencies in the platformIO file.
 - Remove unnecessary includes to reduce compiled code size.
+- Rename RETURN_..._ON_ERROR macros to RETURN_..._ON_ESP_ERROR.
 - Fine tune transmission parameters to optimize for latency.
 - Get raw, real world data from gym exercises: pull ups, dips.
 - Learn about filters (complementary, Kalman, etc.) and create a jupyter notebook to experiment with them on fake data.

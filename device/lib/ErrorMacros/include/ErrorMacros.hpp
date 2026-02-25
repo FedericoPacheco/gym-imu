@@ -1,6 +1,6 @@
 #pragma once
-#include "esp_err.h"
-#include "host/ble_hs.h"
+
+#include <ESPCompatibility.hpp>
 #include <LoggerPort.hpp>
 #include <cstdio>
 
@@ -19,6 +19,10 @@ inline bool checkError(esp_err_t err, LoggerPort *logger, const char *msg) {
   }
   return true;
 }
+
+#if !defined(UNIT_TEST) || defined(ESP_PLATFORM)
+
+#include "host/ble_hs.h"
 
 inline const char *nimble_err_to_name(esp_err_t err);
 #define RETURN_NULL_ON_NIMBLE_ERROR(result, logger, msg)                       \
@@ -127,3 +131,5 @@ inline const char *nimble_err_to_name(int errorCode) {
   }
   }
 }
+
+#endif

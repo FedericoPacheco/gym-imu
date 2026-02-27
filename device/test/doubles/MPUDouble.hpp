@@ -1,7 +1,7 @@
 #pragma once
 
-#include <MPUPort.hpp>
 #include <gmock/gmock.h>
+#include <ports/MPU/MPUPort.hpp>
 
 class MPUDouble : public MPUPort {
 public:

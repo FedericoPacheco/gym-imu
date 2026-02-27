@@ -1,7 +1,7 @@
 #pragma once
 
-#include <I2CPort.hpp>
 #include <gmock/gmock.h>
+#include <ports/I2C/I2CPort.hpp>
 
 class I2CDouble : public I2CPort {
 public:

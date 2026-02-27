@@ -12,13 +12,13 @@
 #include "store/config/ble_store_config.h"
 #include <Constants.hpp>
 #include <ErrorMacros.hpp>
-#include <FreeRTOSPort.hpp>
 #include <IMUSensorPort.hpp>
 #include <LoggerPort.hpp>
 #include <Pipe.hpp>
 #include <atomic>
 #include <cstdint>
 #include <memory>
+#include <ports/FreeRTOS/FreeRTOSPort.hpp>
 #include <sys/param.h>
 
 /*

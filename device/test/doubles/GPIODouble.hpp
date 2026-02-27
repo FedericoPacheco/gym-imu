@@ -4,7 +4,7 @@ extern "C" {
 #include <fff.h>
 }
 
-#include <GPIOPort.hpp>
+#include <ports/ESP-IDF/GPIOPort.hpp>
 
 DECLARE_FAKE_VALUE_FUNC(esp_err_t, gpioConfigureInterrupt,
                         const gpio_config_t *);

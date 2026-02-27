@@ -1,7 +1,7 @@
 #pragma once
 
-#include <ESPCompatibility.hpp>
-#include <I2CCompatibility.hpp>
+#include <ports/ESP-IDF/ESPCompatibility.hpp>
+#include <ports/I2C/I2CCompatibility.hpp>
 
 class I2CPort {
 public:

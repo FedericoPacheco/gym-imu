@@ -2,7 +2,7 @@ extern "C" {
 #include <fff.h>
 }
 
-#include <FreeRTOSPort.hpp>
+#include <ports/FreeRTOS/FreeRTOSPort.hpp>
 
 DEFINE_FFF_GLOBALS;
 

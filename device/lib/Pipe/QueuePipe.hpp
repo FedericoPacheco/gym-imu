@@ -1,11 +1,11 @@
 #pragma once
-#include <FreeRTOSPort.hpp>
 #include <LoggerPort.hpp>
 #include <Pipe.hpp>
 #include <atomic>
 #include <cstdint>
 #include <memory>
 #include <optional>
+#include <ports/FreeRTOS/FreeRTOSPort.hpp>
 
 template <typename T, uint32_t N> class QueuePipe : public Pipe<T, N> {
 public:

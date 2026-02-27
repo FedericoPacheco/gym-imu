@@ -1,9 +1,9 @@
 #pragma once
 #include "driver/gpio.h"
 #include <ErrorMacros.hpp>
-#include <FreeRTOSPort.hpp>
 #include <LoggerPort.hpp>
 #include <memory>
+#include <ports/FreeRTOS/FreeRTOSPort.hpp>
 
 /*
 Overview:

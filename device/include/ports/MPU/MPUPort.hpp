@@ -1,7 +1,7 @@
 #pragma once
 
-#include <I2CPort.hpp>
-#include <MPUCompatibility.hpp>
+#include <ports/I2C/I2CPort.hpp>
+#include <ports/MPU/MPUCompatibility.hpp>
 
 class MPUPort {
 public:

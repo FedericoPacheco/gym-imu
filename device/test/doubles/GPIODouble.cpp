@@ -2,7 +2,7 @@ extern "C" {
 #include <fff.h>
 }
 
-#include "doubles/IMU/GPIODouble.hpp"
+#include "doubles/GPIODouble.hpp"
 
 DEFINE_FFF_GLOBALS;
 

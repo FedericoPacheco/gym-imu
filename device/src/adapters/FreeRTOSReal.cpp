@@ -1,4 +1,4 @@
-#include <FreeRTOSPort.hpp>
+#include <ports/FreeRTOS/FreeRTOSPort.hpp>
 
 SemaphoreHandle_t rtosCreateMutexStatic(StaticSemaphore_t *controlBlock) {
   return xSemaphoreCreateMutexStatic(controlBlock);

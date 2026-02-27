@@ -4,7 +4,7 @@ extern "C" {
 #include <fff.h>
 }
 
-#include <FreeRTOSPort.hpp>
+#include <ports/FreeRTOS/FreeRTOSPort.hpp>
 
 DECLARE_FAKE_VALUE_FUNC(SemaphoreHandle_t, rtosCreateMutexStatic,
                         StaticSemaphore_t *);

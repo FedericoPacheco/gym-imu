@@ -1,8 +1,8 @@
 #pragma once
 
-#include <ESPCompatibility.hpp>
 #include <LoggerPort.hpp>
 #include <cstdio>
+#include <ports/ESP-IDF/ESPCompatibility.hpp>
 
 #define RETURN_NULL_ON_ERROR(result, logger, msg)                              \
   if (!checkError((result), (logger), (msg)))                                  \

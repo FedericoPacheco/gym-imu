@@ -1,7 +1,7 @@
 #pragma once
 
 #include "I2CReal.hpp"
-#include <MPUPort.hpp>
+#include <ports/MPU/MPUPort.hpp>
 
 class MPUReal : public MPUPort {
 public:

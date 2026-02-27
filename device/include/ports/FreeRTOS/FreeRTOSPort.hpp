@@ -1,6 +1,6 @@
 #pragma once
 
-#include <FreeRTOSCompatibility.hpp>
+#include <ports/FreeRTOS/FreeRTOSCompatibility.hpp>
 
 SemaphoreHandle_t rtosCreateMutexStatic(StaticSemaphore_t *controlBlock);
 BaseType_t rtosSemaphoreTake(SemaphoreHandle_t semaphore, TickType_t ticks);

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <ESPCompatibility.hpp>
 #include <I2CCompatibility.hpp>
 
 class I2CPort {

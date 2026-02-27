@@ -1,14 +1,22 @@
 #pragma once
 
-#include <GPIOPort.hpp>
-#include <gmock/gmock.h>
+extern "C" {
+#include <fff.h>
+}
 
-class GPIODouble : public GPIOPort {
-public:
-  MOCK_METHOD(esp_err_t, configureInterrupt,
-              (const GPIOInputInterruptConfig &config), (override));
-  MOCK_METHOD(esp_err_t, addISRHandler,
-              (gpio_num_t pin, void (*handler)(void *), void *arg), (override));
-  MOCK_METHOD(esp_err_t, removeISRHandler, (gpio_num_t pin), (override));
-  MOCK_METHOD(int64_t, getTimeUs, (), (override));
-};
+#include <GPIOPort.hpp>
+
+DECLARE_FAKE_VALUE_FUNC(esp_err_t, gpioConfigureInterrupt,
+                        const gpio_config_t *);
+DECLARE_FAKE_VALUE_FUNC(esp_err_t, gpioAddISRHandler, gpio_num_t, gpio_isr_t,
+                        void *);
+DECLARE_FAKE_VALUE_FUNC(esp_err_t, gpioRemoveISRHandler, gpio_num_t);
+DECLARE_FAKE_VALUE_FUNC(int64_t, gpioGetTimeUs);
+
+inline void resetGPIOPortFakes() {
+  RESET_FAKE(gpioConfigureInterrupt);
+  RESET_FAKE(gpioAddISRHandler);
+  RESET_FAKE(gpioRemoveISRHandler);
+  RESET_FAKE(gpioGetTimeUs);
+  FFF_RESET_HISTORY();
+}

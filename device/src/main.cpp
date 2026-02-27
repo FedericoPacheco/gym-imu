@@ -1,3 +1,5 @@
+#include "adapters/I2CReal.hpp"
+#include "adapters/MPUReal.hpp"
 #include "driver/gpio.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/projdefs.h"
@@ -37,7 +39,10 @@ extern "C" void app_main() {
   }
 
   UARTLogger imuLogger("IMU", LogLevel::DEBUG);
-  IMUSensor *imu = MPU6050Sensor::getInstance(&imuLogger, samplingPipe);
+  auto imuMPUPort = std::make_unique<MPUReal>();
+  auto imuI2CPort = std::make_unique<I2CReal>();
+  IMUSensorPort *imu = MPU6050Sensor::getInstance(
+      &imuLogger, samplingPipe, imuMPUPort.get(), imuI2CPort.get());
   if (imu == nullptr) {
     imuLogger.error("Failed to initialize MPU6050 sensor");
     return;

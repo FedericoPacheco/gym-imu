@@ -22,7 +22,6 @@ typedef int gpio_pulldown_t;
 typedef int gpio_mode_t;
 typedef int gpio_int_type_t;
 typedef void (*gpio_isr_t)(void *);
-
 struct gpio_config_t {
   uint64_t pin_bit_mask;
   gpio_mode_t mode;
@@ -30,7 +29,6 @@ struct gpio_config_t {
   gpio_pulldown_t pull_down_en;
   gpio_int_type_t intr_type;
 };
-
 static constexpr gpio_num_t GPIO_NUM_5 = 5;
 static constexpr gpio_num_t GPIO_NUM_6 = 6;
 static constexpr gpio_num_t GPIO_NUM_7 = 7;
@@ -43,9 +41,12 @@ static constexpr gpio_mode_t GPIO_MODE_INPUT = 1;
 static constexpr gpio_int_type_t GPIO_INTR_DISABLE = 0;
 static constexpr gpio_int_type_t GPIO_INTR_POSEDGE = 1;
 
+#define IRAM_ATTR
+
 #else
 
 #include "driver/gpio.h"
+#include "esp_attr.h"
 #include "esp_err.h"
 #include "esp_timer.h"
 

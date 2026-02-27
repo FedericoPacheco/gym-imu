@@ -1,6 +1,6 @@
 #include "ports/ESP-IDF/GPIOPort.hpp"
 
-esp_err_t gpioConfigureInterrupt(const gpio_config_t *config) {
+esp_err_t gpioSetConfig(const gpio_config_t *config) {
   return gpio_config(config);
 }
 

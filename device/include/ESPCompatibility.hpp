@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 
 #if defined(UNIT_TEST) && !defined(ESP_PLATFORM)
@@ -36,7 +37,7 @@ static constexpr gpio_num_t GPIO_NUM_7 = 7;
 static constexpr gpio_pullup_t GPIO_PULLUP_DISABLE = 0;
 static constexpr gpio_pullup_t GPIO_PULLUP_ENABLE = 1;
 static constexpr gpio_pulldown_t GPIO_PULLDOWN_DISABLE = 0;
-static constexpr gpio_pullup_t GPIO_PULLDOWN_ENABLE = 1;
+static constexpr gpio_pulldown_t GPIO_PULLDOWN_ENABLE = 1;
 static constexpr gpio_mode_t GPIO_MODE_DISABLE = 0;
 static constexpr gpio_mode_t GPIO_MODE_INPUT = 1;
 static constexpr gpio_int_type_t GPIO_INTR_DISABLE = 0;
@@ -46,5 +47,6 @@ static constexpr gpio_int_type_t GPIO_INTR_POSEDGE = 1;
 
 #include "driver/gpio.h"
 #include "esp_err.h"
+#include "esp_timer.h"
 
 #endif

@@ -2,8 +2,6 @@
 
 #include <I2CPort.hpp>
 #include <MPUCompatibility.hpp>
-#include <cstddef>
-#include <cstdint>
 
 class MPUPort {
 public:

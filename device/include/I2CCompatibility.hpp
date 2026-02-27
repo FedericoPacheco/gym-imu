@@ -1,7 +1,6 @@
 #pragma once
 
 #include <ESPCompatibility.hpp>
-#include <cstdint>
 
 #if defined(UNIT_TEST) && !defined(ESP_PLATFORM)
 

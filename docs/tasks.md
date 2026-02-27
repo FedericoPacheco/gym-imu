@@ -23,7 +23,6 @@ Other rules:
 
 ### In Progress
 
-- Consider merging GPIO functions in ESPCompatibility.hpp.
 - Add essential unit tests for `MPU` class readTask logic.
 
 ### Next
@@ -61,5 +60,6 @@ Other rules:
 - Document overall system architecture with C4 and PlantUML: context, containers, components. PR: <https://github.com/FedericoPacheco/gym-imu/pull/3>
 - Create basic README for the project: summary, architecture, physical device, next steps, etc. PR: <https://github.com/FedericoPacheco/gym-imu/pull/3>
 - Rework Logger for more flexibility: create a `Logger` interface and inherit from the current class renaming it to `UARTLogger`/`SerialLogger`
-- Move all platform(esp, freertos, etc.) ports to include and my own ones to lib.
+- Move all platform (esp, freertos, etc.) ports to include and my own ones to lib.
 - Create compatibility file for FreeRTOSPort.
+- Merge GPIO functions in ESPCompatibility.hpp.

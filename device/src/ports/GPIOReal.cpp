@@ -1,7 +1,5 @@
 #include "GPIOPort.hpp"
 
-#include "esp_timer.h"
-
 esp_err_t gpioConfigureInterrupt(const gpio_config_t *config) {
   return gpio_config(config);
 }

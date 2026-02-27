@@ -1,7 +1,6 @@
 #pragma once
 
 #include <ESPCompatibility.hpp>
-#include <cstdint>
 
 #if defined(UNIT_TEST) && !defined(ESP_PLATFORM)
 
@@ -70,7 +69,7 @@ inline float_axes_t gyroDegPerSec(raw_axes_t wRaw, gyro_fs_t) {
 
 #else
 
-#include "I2Cbus.hpp"
+// #include "I2Cbus.hpp"
 #include "MPU.hpp"
 #include "mpu/math.hpp"
 #include "mpu/types.hpp"

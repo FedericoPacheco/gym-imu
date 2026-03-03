@@ -1,7 +1,5 @@
 #include <LED.hpp>
 
-// -------------------------------------------------------------------------
-
 LED::LED(LoggerPort *logger, gpio_num_t pin) : logger(logger) {
   this->pin = pin;
   this->softwareState = false;

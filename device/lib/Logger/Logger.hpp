@@ -1,9 +1,9 @@
 #pragma once
-#include <LoggerPort.hpp>
 
 #include "esp_log.h"
 #include "esp_log_level.h"
 #include "esp_timer.h"
+#include <LoggerPort.hpp>
 #include <cstdarg>
 #include <cstddef>
 #include <cstdint>

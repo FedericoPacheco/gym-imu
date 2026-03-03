@@ -4,19 +4,21 @@ MPU6050Sensor::InstanceState MPU6050Sensor::instanceState = {};
 
 MPU6050Sensor::MPU6050Sensor(
     LoggerPort *logger,
-    std::shared_ptr<Pipe<IMUSample, SAMPLING_PIPE_SIZE>> pipe, MPUPort *sensor,
-    I2CPort *i2c, gpio_num_t INTPin, gpio_num_t SDAPin, gpio_num_t SCLPin,
-    int samplingFrequencyHz)
-    : logger(logger), pipe(pipe), sensor(sensor), bus(i2c), INTPin(INTPin),
+    std::shared_ptr<Pipe<IMUSample, SAMPLING_PIPE_SIZE>> pipe,
+    std::unique_ptr<MPUPort> sensor, std::unique_ptr<I2CPort> i2c,
+    std::unique_ptr<Runner> runner, gpio_num_t INTPin, gpio_num_t SDAPin,
+    gpio_num_t SCLPin, int samplingFrequencyHz)
+    : logger(logger), pipe(pipe), sensor(std::move(sensor)),
+      bus(std::move(i2c)), runner(std::move(runner)), INTPin(INTPin),
       SDAPin(SDAPin), SCLPin(SCLPin), samplingFrequencyHz(samplingFrequencyHz) {
 }
 
-std::unique_ptr<MPU6050Sensor>
-MPU6050Sensor::create(LoggerPort *logger,
-                      std::shared_ptr<Pipe<IMUSample, SAMPLING_PIPE_SIZE>> pipe,
-                      MPUPort *sensor, I2CPort *i2c, gpio_num_t INTPin,
-                      gpio_num_t SDAPin, gpio_num_t SCLPin,
-                      int samplingFrequencyHz) {
+std::unique_ptr<MPU6050Sensor> MPU6050Sensor::create(
+    LoggerPort *logger,
+    std::shared_ptr<Pipe<IMUSample, SAMPLING_PIPE_SIZE>> pipe,
+    std::unique_ptr<MPUPort> sensor, std::unique_ptr<I2CPort> i2c,
+    std::unique_ptr<Runner> runner, gpio_num_t INTPin, gpio_num_t SDAPin,
+    gpio_num_t SCLPin, int samplingFrequencyHz) {
   if (!pipe) {
     if (logger)
       logger->error("Pipe pointer is null");
@@ -32,10 +34,16 @@ MPU6050Sensor::create(LoggerPort *logger,
       logger->error("I2C adapter pointer is null");
     return nullptr;
   }
+  if (!runner) {
+    if (logger)
+      logger->error("Runner pointer is null");
+    return nullptr;
+  }
 
   // nothrow: in case of failure, return nullptr instead of throwing
   std::unique_ptr<MPU6050Sensor> imu(new (std::nothrow) MPU6050Sensor(
-      logger, pipe, sensor, i2c, INTPin, SDAPin, SCLPin, samplingFrequencyHz));
+      logger, pipe, std::move(sensor), std::move(i2c), std::move(runner),
+      INTPin, SDAPin, SCLPin, samplingFrequencyHz));
 
   if (!imu) {
     if (logger)
@@ -70,9 +78,10 @@ MPU6050Sensor::create(LoggerPort *logger,
 
 MPU6050Sensor *MPU6050Sensor::getInstance(
     LoggerPort *logger,
-    std::shared_ptr<Pipe<IMUSample, SAMPLING_PIPE_SIZE>> pipe, MPUPort *sensor,
-    I2CPort *i2c, gpio_num_t INTPin, gpio_num_t SDAPin, gpio_num_t SCLPin,
-    int samplingFrequencyHz) {
+    std::shared_ptr<Pipe<IMUSample, SAMPLING_PIPE_SIZE>> pipe,
+    std::unique_ptr<MPUPort> sensor, std::unique_ptr<I2CPort> i2c,
+    std::unique_ptr<Runner> runner, gpio_num_t INTPin, gpio_num_t SDAPin,
+    gpio_num_t SCLPin, int samplingFrequencyHz) {
 
   // Protect instance creation with a mutex to ensure thread safety
   if (MPU6050Sensor::instanceState.semaphoreHandle == nullptr) {
@@ -91,9 +100,9 @@ MPU6050Sensor *MPU6050Sensor::getInstance(
   if (rtosSemaphoreTake(MPU6050Sensor::instanceState.semaphoreHandle,
                         portMAX_DELAY) == pdTRUE) {
     if (!MPU6050Sensor::instanceState.instance)
-      MPU6050Sensor::instanceState.instance =
-          MPU6050Sensor::create(logger, pipe, sensor, i2c, INTPin, SDAPin,
-                                SCLPin, samplingFrequencyHz);
+      MPU6050Sensor::instanceState.instance = MPU6050Sensor::create(
+          logger, pipe, std::move(sensor), std::move(i2c), std::move(runner),
+          INTPin, SDAPin, SCLPin, samplingFrequencyHz);
     rtosSemaphoreGive(MPU6050Sensor::instanceState.semaphoreHandle);
   }
   return MPU6050Sensor::instanceState.instance.get();
@@ -204,14 +213,13 @@ bool MPU6050Sensor::setupDMPQueue() {
 }
 
 bool MPU6050Sensor::setupTask() {
-  this->logger->debug("Setting up FreeRTOS task for async reading");
+  this->logger->debug("Setting up runner for async reading");
 
   this->setDoRead(false);
-  BaseType_t taskResult = rtosTaskCreate(
-      readTask, "readTask", MPU6050Sensor::READ_TASK_STACK_SIZE, this,
-      MPU6050Sensor::READ_TASK_PRIORITY, &this->readTaskHandle);
-  if (taskResult != pdPASS) {
-    this->logger->error("Failed to create read task");
+  bool didStart = this->runner->start(MPU6050Sensor::onReadTaskNotification,
+                                      static_cast<void *>(this));
+  if (!didStart) {
+    this->logger->error("Failed to start read runner");
     return false;
   }
 
@@ -252,11 +260,9 @@ MPU6050Sensor::~MPU6050Sensor() {
 
   this->setDoRead(false);
 
-  this->logger->debug("Notifying read task to unblock and finish cleanly");
-  if (this->readTaskHandle) {
-    rtosTaskNotifyGive(this->readTaskHandle);
-    rtosTaskDelay(1);
-    rtosTaskDelete(this->readTaskHandle);
+  this->logger->debug("Stopping async runner");
+  if (this->runner) {
+    this->runner->stop();
   }
 
   this->logger->debug("Removing ISR handler");
@@ -288,55 +294,46 @@ std::optional<IMUSample> MPU6050Sensor::readAsync() {
 void IRAM_ATTR MPU6050Sensor::isrHandler(void *arg) {
   MPU6050Sensor *self = static_cast<MPU6050Sensor *>(arg);
 
-  if (!self || !self->readTaskHandle)
+  if (!self || !self->runner)
     return;
 
-  // Notify the read task to process the interrupt
-  BaseType_t highPriorityTaskWoken = pdFALSE;
-  rtosTaskNotifyGiveFromISR(self->readTaskHandle, &highPriorityTaskWoken);
-  if (highPriorityTaskWoken == pdTRUE)
-    rtosYieldFromISR(); // Context switch if needed
+  self->runner->notifyFromISR();
 }
 
-void MPU6050Sensor::readTask(void *arg) {
-  // Get the instance pointer
+void MPU6050Sensor::onReadTaskNotification(void *arg,
+                                           uint32_t notificationValue) {
   MPU6050Sensor *self = static_cast<MPU6050Sensor *>(arg);
+  if (!self)
+    return;
 
-  self->logger->debug("Read task started");
-
-  while (true) {
-    // Block and wait for ISR notification
-    uint32_t notificationValue = rtosTaskNotifyTake(pdTRUE, portMAX_DELAY);
-
-    if (!self->getDoRead()) {
-      continue;
-    }
-
-    if (notificationValue > 1) {
-      self->logger->warn(
-          "Read task: multiple notifications received (%d), processing backlog",
-          notificationValue);
-    }
-
-    bool wasCountReadError = self->sensor->lastError() != ESP_OK;
-    if (wasCountReadError) {
-      self->logger->warn("Read task: FIFO count read error");
-      self->sensor->resetFIFO();
-      continue;
-    }
-
-    uint16_t initialFifoCount = self->sensor->getFIFOCount();
-    bool isFifoMisaligned =
-        initialFifoCount % MPU6050Sensor::FIFO_PACKET_SIZE != 0;
-    if (isFifoMisaligned) {
-      self->logger->warn("Read task: FIFO misaligned (count=%d)",
-                         initialFifoCount);
-      self->sensor->resetFIFO();
-      continue;
-    }
-
-    self->batchReadDMPQueue(initialFifoCount);
+  if (!self->getDoRead()) {
+    return;
   }
+
+  if (notificationValue > 1) {
+    self->logger->warn(
+        "Read task: multiple notifications received (%d), processing backlog",
+        notificationValue);
+  }
+
+  bool wasCountReadError = self->sensor->lastError() != ESP_OK;
+  if (wasCountReadError) {
+    self->logger->warn("Read task: FIFO count read error");
+    self->sensor->resetFIFO();
+    return;
+  }
+
+  uint16_t initialFifoCount = self->sensor->getFIFOCount();
+  bool isFifoMisaligned =
+      initialFifoCount % MPU6050Sensor::FIFO_PACKET_SIZE != 0;
+  if (isFifoMisaligned) {
+    self->logger->warn("Read task: FIFO misaligned (count=%d)",
+                       initialFifoCount);
+    self->sensor->resetFIFO();
+    return;
+  }
+
+  self->batchReadDMPQueue(initialFifoCount);
 }
 
 void MPU6050Sensor::batchReadDMPQueue(uint16_t initialFifoCount) {
@@ -352,7 +349,7 @@ void MPU6050Sensor::batchReadDMPQueue(uint16_t initialFifoCount) {
   int currentFifoCount = (int)initialFifoCount;
   uint8_t sensorBuffer[MPU6050Sensor::FIFO_PACKET_SIZE];
   while (currentFifoCount >= MPU6050Sensor::FIFO_PACKET_SIZE &&
-         packetsProcessed < MPU6050Sensor::READ_TASK_MAX_BATCH) {
+         packetsProcessed < IMU_READ_TASK_MAX_BATCH) {
 
     wasBufferReadError = this->sensor->readFIFO(MPU6050Sensor::FIFO_PACKET_SIZE,
                                                 sensorBuffer) != ESP_OK;

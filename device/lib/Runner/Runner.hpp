@@ -12,7 +12,7 @@ public:
   // notificationValue); }, this);
   virtual bool start(std::function<void(void *, uint32_t)> loopFunction,
                      void *arg) = 0;
-  virtual void runOneStep();
+  virtual void runOneStep() = 0;
   virtual void notifyFromISR() = 0;
   virtual void notify() = 0;
   virtual void stop() = 0;

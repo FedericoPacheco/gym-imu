@@ -24,6 +24,7 @@ Other rules:
 ### In Progress
 
 - Add essential unit tests for `MPU` class readTask logic.
+- Replace all device libraries includes with ports.
 
 ### Next
 

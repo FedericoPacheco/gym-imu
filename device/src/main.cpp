@@ -7,6 +7,7 @@
 #include <BLE.hpp>
 #include <Button.hpp>
 #include <Constants.hpp>
+#include <FreeRTOSRunner.hpp>
 #include <LED.hpp>
 #include <Logger.hpp>
 #include <MPU6050Sensor.hpp>
@@ -41,8 +42,11 @@ extern "C" void app_main() {
   UARTLogger imuLogger("IMU", LogLevel::DEBUG);
   auto imuMPUPort = std::make_unique<MPUReal>();
   auto imuI2CPort = std::make_unique<I2CReal>();
+  auto imuRunner = std::make_unique<FreeRTOSRunner>(
+      "readTask", IMU_READ_TASK_STACK_SIZE, IMU_READ_TASK_PRIORITY);
   IMUSensorPort *imu = MPU6050Sensor::getInstance(
-      &imuLogger, samplingPipe, imuMPUPort.get(), imuI2CPort.get());
+      &imuLogger, samplingPipe, std::move(imuMPUPort), std::move(imuI2CPort),
+      std::move(imuRunner));
   if (imu == nullptr) {
     imuLogger.error("Failed to initialize MPU6050 sensor");
     return;

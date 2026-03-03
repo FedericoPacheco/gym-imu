@@ -4,6 +4,7 @@
 #include <IMUSensorPort.hpp>
 #include <LoggerPort.hpp>
 #include <Pipe.hpp>
+#include <Runner.hpp>
 #include <atomic>
 #include <cstdint>
 #include <memory>
@@ -11,6 +12,7 @@
 #include <ports/FreeRTOS/FreeRTOSPort.hpp>
 #include <ports/MPU/MPUPort.hpp>
 #include <tuple>
+#include <utility>
 
 /*
 Overview:
@@ -31,15 +33,19 @@ later retrieval. This process can be turned on and off with a dedicated flag.
 How to use:
 Sync:
 ...
-IMUSensorPort *imu = MPU6050Sensor::getInstance(&logger, &pipe, &sensorPort,
-&i2cPort); while (true) { auto sampleOpt = imu->readSync(); if (sampleOpt) {
+IMUSensorPort *imu = MPU6050Sensor::getInstance(&logger, &pipe,
+std::move(sensorPort), std::move(i2cPort));
+while (true)
+{
+  auto sampleOpt = imu->readSync();
+  imu->readSync(); if (sampleOpt) {
     // Process sample...
   }
 }
 Async:
 gpio_install_isr_service(0); // Install ISR service once globally
-IMUSensorPort *imu = MPU6050Sensor::getInstance(&logger, &pipe, &sensorPort,
-&i2cPort);
+IMUSensorPort *imu = MPU6050Sensor::getInstance(&logger, &pipe,
+std::move(sensorPort), std::move(i2cPort));
 imu->beginAsync();
 while (true) {
   auto sampleOpt = imu->readAsync();
@@ -59,16 +65,14 @@ here in Argentina.
 
 class MPU6050Sensor : public IMUSensorPort {
 public:
-  static constexpr int READ_TASK_STACK_SIZE = 4096;
-  static constexpr int READ_TASK_MAX_BATCH = 12;
-  static constexpr int READ_TASK_PRIORITY = 5;
-
   static constexpr float g = 9.80665f; // m/s²
 
   static MPU6050Sensor *
   getInstance(LoggerPort *logger,
               std::shared_ptr<Pipe<IMUSample, SAMPLING_PIPE_SIZE>> pipe,
-              MPUPort *sensor = nullptr, I2CPort *i2c = nullptr,
+              std::unique_ptr<MPUPort> sensor = nullptr,
+              std::unique_ptr<I2CPort> i2c = nullptr,
+              std::unique_ptr<Runner> runner = nullptr,
               gpio_num_t INTPin = GPIO_NUM_5, gpio_num_t SDAPin = GPIO_NUM_6,
               gpio_num_t SCLPin = GPIO_NUM_7, int samplingFrequencyHz = 30);
 
@@ -91,8 +95,9 @@ private:
 
   LoggerPort *logger;
   std::shared_ptr<Pipe<IMUSample, SAMPLING_PIPE_SIZE>> pipe;
-  MPUPort *sensor;
-  I2CPort *bus;
+  std::unique_ptr<MPUPort> sensor;
+  std::unique_ptr<I2CPort> bus;
+  std::unique_ptr<Runner> runner;
   gpio_num_t INTPin, SDAPin, SCLPin;
   int samplingFrequencyHz;
 
@@ -103,24 +108,20 @@ private:
     portMUX_TYPE mux;
   } static instanceState;
 
-  // Prevent races between main and read tasks
   std::atomic<bool> doRead;
-  TaskHandle_t readTaskHandle;
-
-  static IRAM_ATTR void isrHandler(void *arg);
-  static void readTask(void *arg);
-  void setDoRead(bool value);
-  bool getDoRead();
 
   MPU6050Sensor(LoggerPort *logger,
                 std::shared_ptr<Pipe<IMUSample, SAMPLING_PIPE_SIZE>> pipe,
-                MPUPort *sensor, I2CPort *i2c, gpio_num_t INTPin,
+                std::unique_ptr<MPUPort> sensor, std::unique_ptr<I2CPort> i2c,
+                std::unique_ptr<Runner> runner, gpio_num_t INTPin,
                 gpio_num_t SDAPin, gpio_num_t SCLPin, int samplingFrequencyHz);
 
   static std::unique_ptr<MPU6050Sensor>
   create(LoggerPort *logger,
          std::shared_ptr<Pipe<IMUSample, SAMPLING_PIPE_SIZE>> pipe,
-         MPUPort *sensor = nullptr, I2CPort *i2c = nullptr,
+         std::unique_ptr<MPUPort> sensor = nullptr,
+         std::unique_ptr<I2CPort> i2c = nullptr,
+         std::unique_ptr<Runner> runner = nullptr,
          gpio_num_t INTPin = GPIO_NUM_5, gpio_num_t SDAPin = GPIO_NUM_6,
          gpio_num_t SCLPin = GPIO_NUM_7, int samplingFrequencyHz = 30);
   bool initializeI2CBus();
@@ -133,6 +134,10 @@ private:
   bool configureInterrupts();
   bool setupTask();
 
+  static IRAM_ATTR void isrHandler(void *arg);
+  static void onReadTaskNotification(void *arg, uint32_t notificationValue);
+  void setDoRead(bool value);
+  bool getDoRead();
   void batchReadDMPQueue(uint16_t initialFifoCount);
   std::tuple<mpud::raw_axes_t, mpud::raw_axes_t>
   parseSensorData(const uint8_t *data);

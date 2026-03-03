@@ -4,7 +4,9 @@ extern "C" {
 
 #include "doubles/GPIODouble.hpp"
 
-DEFINE_FFF_GLOBALS;
+// FFF globals are intentionally defined in the test translation unit
+// (e.g. MPU6050Sensor.test.cpp) to avoid multiple-definition linker errors
+// when several *Double.cpp files are included together.
 
 DEFINE_FAKE_VALUE_FUNC(esp_err_t, gpioSetConfig, const gpio_config_t *);
 DEFINE_FAKE_VALUE_FUNC(esp_err_t, gpioAddISRHandler, gpio_num_t, gpio_isr_t,

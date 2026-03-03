@@ -2,9 +2,11 @@ extern "C" {
 #include <fff.h>
 }
 
-#include <ports/FreeRTOS/FreeRTOSPort.hpp>
+#include "doubles/FreeRTOSDouble.hpp"
 
-DEFINE_FFF_GLOBALS;
+// FFF globals are intentionally defined in the test translation unit
+// (e.g. MPU6050Sensor.test.cpp) to avoid multiple-definition linker errors
+// when several *Double.cpp files are included together.
 
 DEFINE_FAKE_VALUE_FUNC(SemaphoreHandle_t, rtosCreateMutexStatic,
                        StaticSemaphore_t *);

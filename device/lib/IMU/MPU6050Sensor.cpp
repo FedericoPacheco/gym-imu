@@ -293,11 +293,8 @@ std::optional<IMUSample> MPU6050Sensor::readAsync() {
 
 void IRAM_ATTR MPU6050Sensor::isrHandler(void *arg) {
   MPU6050Sensor *self = static_cast<MPU6050Sensor *>(arg);
-
-  if (!self || !self->runner)
-    return;
-
-  self->runner->notifyFromISR();
+  if (self && self->runner)
+    self->runner->notifyFromISR();
 }
 
 void MPU6050Sensor::onReadTaskNotification(void *arg,

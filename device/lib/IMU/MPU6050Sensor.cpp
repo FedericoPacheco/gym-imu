@@ -67,8 +67,10 @@ std::unique_ptr<MPU6050Sensor> MPU6050Sensor::create(
   // Leave everything ready BEFORE enabling interrupts
   if (!imu->setupTask())
     return nullptr;
-  if (!imu->configureInterrupts())
+  if (!imu->configureInterrupts()) {
+    runner->stop();
     return nullptr;
+  }
 
   if (logger)
     logger->info("MPU6050 sensor initialized successfully");

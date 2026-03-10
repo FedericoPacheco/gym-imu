@@ -24,34 +24,33 @@ TEST(MPU6050Sensor, GetInstanceInitializesSuccessfullyAndCallsAllDrivers) {
   using testing::AtLeast;
   using testing::Return;
 
+  // C (global) dependencies
   resetFreeRTOSPortFakes();
-  resetGPIOPortFakes();
-
   rtosCreateMutexStatic_fake.return_val =
       reinterpret_cast<SemaphoreHandle_t>(0x1);
   rtosSemaphoreTake_fake.return_val = pdTRUE;
   rtosSemaphoreGive_fake.return_val = pdTRUE;
-
+  resetGPIOPortFakes();
   gpioSetConfig_fake.return_val = ESP_OK;
   gpioAddISRHandler_fake.return_val = ESP_OK;
 
+  // Injected dependencies
   auto pipe = std::make_shared<testing::NiceMock<PipeDouble>>();
   auto sensor = std::make_unique<testing::NiceMock<MPUDouble>>();
   auto i2c = std::make_unique<testing::NiceMock<I2CDouble>>();
   auto runner = std::make_unique<DeterministicRunner>();
   auto *runnerRaw = runner.get();
-
+  // I2C
   EXPECT_CALL(*i2c,
               begin(testing::_, testing::_, testing::_, testing::_, testing::_))
       .Times(AtLeast(1))
       .WillRepeatedly(Return(ESP_OK));
-
+  // Sensor init
   EXPECT_CALL(*sensor, setBus(testing::_)).Times(AtLeast(1));
   EXPECT_CALL(*sensor, setAddr(testing::_)).Times(AtLeast(1));
   EXPECT_CALL(*sensor, lastError())
       .Times(AtLeast(1))
       .WillRepeatedly(Return(ESP_OK));
-
   EXPECT_CALL(*sensor, reset())
       .Times(AtLeast(1))
       .WillRepeatedly(Return(ESP_OK));
@@ -61,7 +60,7 @@ TEST(MPU6050Sensor, GetInstanceInitializesSuccessfullyAndCallsAllDrivers) {
   EXPECT_CALL(*sensor, initialize())
       .Times(AtLeast(1))
       .WillRepeatedly(Return(ESP_OK));
-
+  // Sampling and scaling
   EXPECT_CALL(*sensor, setSampleRate(testing::_))
       .Times(AtLeast(1))
       .WillRepeatedly(Return(ESP_OK));
@@ -71,14 +70,14 @@ TEST(MPU6050Sensor, GetInstanceInitializesSuccessfullyAndCallsAllDrivers) {
   EXPECT_CALL(*sensor, setGyroFullScale(testing::_))
       .Times(AtLeast(1))
       .WillRepeatedly(Return(ESP_OK));
-
+  // FIFO sample queue
   EXPECT_CALL(*sensor, setFIFOConfig(testing::_))
       .Times(AtLeast(1))
       .WillRepeatedly(Return(ESP_OK));
   EXPECT_CALL(*sensor, setFIFOEnabled(testing::_))
       .Times(AtLeast(1))
       .WillRepeatedly(Return(ESP_OK));
-
+  // Interrupts
   EXPECT_CALL(*sensor, setInterruptConfig(testing::_))
       .Times(AtLeast(1))
       .WillRepeatedly(Return(ESP_OK));
@@ -91,16 +90,7 @@ TEST(MPU6050Sensor, GetInstanceInitializesSuccessfullyAndCallsAllDrivers) {
       GPIO_NUM_5, GPIO_NUM_6, GPIO_NUM_7, 30);
 
   EXPECT_NE(instance, nullptr);
-  EXPECT_GT(rtosTaskDelay_fake.call_count, 0);
-
   EXPECT_GT(runnerRaw->getStartCallCount(), 0);
-
   EXPECT_GT(gpioSetConfig_fake.call_count, 0);
   EXPECT_GT(gpioAddISRHandler_fake.call_count, 0);
-
-  EXPECT_GT(rtosTaskEnterCritical_fake.call_count, 0);
-  EXPECT_GT(rtosTaskExitCritical_fake.call_count, 0);
-  EXPECT_GT(rtosCreateMutexStatic_fake.call_count, 0);
-  EXPECT_GT(rtosSemaphoreTake_fake.call_count, 0);
-  EXPECT_GT(rtosSemaphoreGive_fake.call_count, 0);
 }

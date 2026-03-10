@@ -23,7 +23,10 @@ LoggerDouble gLogger;
 namespace {
 
 using ::testing::_;
+using ::testing::Invoke;
 using ::testing::Return;
+
+constexpr int FIFO_PACKET_SIZE = 12;
 
 class StartFailRunner final : public DeterministicRunner {
 public:
@@ -37,8 +40,17 @@ struct MPU6050SensorDependencies {
   std::unique_ptr<testing::NiceMock<I2CDouble>> i2c;
   std::unique_ptr<Runner> runner;
 };
-MPU6050SensorDependencies
-buildDefaultDependencies(std::unique_ptr<Runner> runner) {
+
+enum class DependencyPreset {
+  InitializationFlow,
+  NotificationFlow,
+};
+
+MPU6050SensorDependencies buildDefaultDependencies(
+    std::unique_ptr<Runner> runner,
+    DependencyPreset preset = DependencyPreset::InitializationFlow) {
+  MPU6050Sensor::resetInstanceForTests();
+
   resetFreeRTOSPortFakes();
   rtosCreateMutexStatic_fake.return_val =
       reinterpret_cast<SemaphoreHandle_t>(0x1);
@@ -72,15 +84,43 @@ buildDefaultDependencies(std::unique_ptr<Runner> runner) {
   ON_CALL(*deps.sensor, setInterruptConfig(_)).WillByDefault(Return(ESP_OK));
   ON_CALL(*deps.sensor, setInterruptEnabled(_)).WillByDefault(Return(ESP_OK));
 
+  if (preset == DependencyPreset::NotificationFlow) {
+    RESET_FAKE(gpioGetTimeUs);
+    gpioGetTimeUs_fake.return_val = 123456;
+
+    ON_CALL(*deps.sensor, resetFIFO()).WillByDefault(Return(ESP_OK));
+    ON_CALL(*deps.sensor, getFIFOCount()).WillByDefault(Return(0));
+    ON_CALL(*deps.sensor, readFIFO(_, _)).WillByDefault(Return(ESP_OK));
+
+    ON_CALL(*deps.pipe, pop(_)).WillByDefault(Return(std::nullopt));
+    ON_CALL(*deps.pipe, push(_)).WillByDefault(Return(true));
+  }
+
   return deps;
 }
-MPU6050SensorDependencies buildDefaultDependencies() {
-  return buildDefaultDependencies(std::make_unique<DeterministicRunner>());
+MPU6050SensorDependencies buildDefaultDependencies(
+    DependencyPreset preset = DependencyPreset::InitializationFlow) {
+  return buildDefaultDependencies(std::make_unique<DeterministicRunner>(),
+                                  preset);
 }
 MPU6050Sensor *getInstanceWith(MPU6050SensorDependencies &&deps) {
   return MPU6050Sensor::getInstance(&gLogger, deps.pipe, std::move(deps.sensor),
                                     std::move(deps.i2c),
                                     std::move(deps.runner));
+}
+
+esp_err_t fillDeterministicFIFOPacket(size_t length, uint8_t *data) {
+  if (length != static_cast<size_t>(FIFO_PACKET_SIZE) || data == nullptr)
+    return ESP_FAIL;
+
+  static constexpr uint8_t packet[FIFO_PACKET_SIZE] = {
+      0x00, 0x64, 0xFF, 0x9C, 0x00, 0x32, 0x00, 0x0A, 0xFF, 0xF6, 0x00, 0x14,
+  };
+
+  for (size_t i = 0; i < static_cast<size_t>(FIFO_PACKET_SIZE); ++i)
+    data[i] = packet[i];
+
+  return ESP_OK;
 }
 
 TEST(MPU6050Sensor_getInstance, ReturnsNullWhenI2CFails) {
@@ -209,6 +249,144 @@ TEST(MPU6050Sensor_getInstance, InitializesSuccessfully) {
   EXPECT_GT(runnerRaw->getStartCallCount(), 0);
   EXPECT_GT(gpioSetConfig_fake.call_count, 0);
   EXPECT_GT(gpioAddISRHandler_fake.call_count, 0);
+}
+
+TEST(MPU6050Sensor_onReadTaskNotification,
+     SendsMultipleSamplesToPipeWhenFifoCountIsValid) {
+  auto deps = buildDefaultDependencies(DependencyPreset::NotificationFlow);
+  auto *runner = static_cast<DeterministicRunner *>(deps.runner.get());
+  auto *sensor = deps.sensor.get();
+  auto *pipe = deps.pipe.get();
+  MPU6050Sensor *instance = getInstanceWith(std::move(deps));
+  constexpr uint16_t fifoCount = 3 * FIFO_PACKET_SIZE;
+
+  EXPECT_CALL(*sensor, resetFIFO()).Times(1);
+  EXPECT_CALL(*sensor, getFIFOCount()).WillOnce(Return(fifoCount));
+  EXPECT_CALL(*sensor, lastError()).WillOnce(Return(ESP_OK));
+  EXPECT_CALL(*sensor, readFIFO(FIFO_PACKET_SIZE, _))
+      .Times(3)
+      .WillRepeatedly(Invoke(fillDeterministicFIFOPacket));
+  EXPECT_CALL(*pipe, push(_)).Times(3).WillRepeatedly(Return(true));
+
+  instance->beginAsync();
+  runner->notify();
+  runner->runOneStep();
+
+  EXPECT_EQ(gpioGetTimeUs_fake.call_count, 3u);
+}
+
+TEST(MPU6050Sensor_onReadTaskNotification,
+     ResetsFIFOWhenFifoCountReadReturnsError) {
+  auto deps = buildDefaultDependencies(DependencyPreset::NotificationFlow);
+  auto *runner = static_cast<DeterministicRunner *>(deps.runner.get());
+  auto *sensor = deps.sensor.get();
+  auto *pipe = deps.pipe.get();
+  MPU6050Sensor *instance = getInstanceWith(std::move(deps));
+
+  EXPECT_CALL(*sensor, resetFIFO()).Times(2);
+  EXPECT_CALL(*sensor, getFIFOCount()).WillOnce(Return(FIFO_PACKET_SIZE));
+  EXPECT_CALL(*sensor, lastError()).WillOnce(Return(ESP_FAIL));
+  EXPECT_CALL(*sensor, readFIFO(_, _)).Times(0);
+  EXPECT_CALL(*pipe, push(_)).Times(0);
+
+  instance->beginAsync();
+  runner->notify();
+  runner->runOneStep();
+
+  EXPECT_EQ(gpioGetTimeUs_fake.call_count, 0u);
+}
+
+TEST(MPU6050Sensor_onReadTaskNotification,
+     ResetsFIFOWhenFifoByteCountIsMisaligned) {
+  auto deps = buildDefaultDependencies(DependencyPreset::NotificationFlow);
+  auto *runner = static_cast<DeterministicRunner *>(deps.runner.get());
+  auto *sensor = deps.sensor.get();
+  auto *pipe = deps.pipe.get();
+  MPU6050Sensor *instance = getInstanceWith(std::move(deps));
+
+  EXPECT_CALL(*sensor, resetFIFO()).Times(2);
+  EXPECT_CALL(*sensor, getFIFOCount()).WillOnce(Return(FIFO_PACKET_SIZE + 1));
+  EXPECT_CALL(*sensor, lastError()).WillOnce(Return(ESP_OK));
+  EXPECT_CALL(*sensor, readFIFO(_, _)).Times(0);
+  EXPECT_CALL(*pipe, push(_)).Times(0);
+
+  instance->beginAsync();
+  runner->notify();
+  runner->runOneStep();
+
+  EXPECT_EQ(gpioGetTimeUs_fake.call_count, 0u);
+}
+
+TEST(MPU6050Sensor_onReadTaskNotification,
+     ResetsFIFOWhenReadFIFOFailsDuringBatchRead) {
+  auto deps = buildDefaultDependencies(DependencyPreset::NotificationFlow);
+  auto *runner = static_cast<DeterministicRunner *>(deps.runner.get());
+  auto *sensor = deps.sensor.get();
+  auto *pipe = deps.pipe.get();
+  MPU6050Sensor *instance = getInstanceWith(std::move(deps));
+
+  EXPECT_CALL(*sensor, resetFIFO()).Times(2);
+  EXPECT_CALL(*sensor, getFIFOCount()).WillOnce(Return(2 * FIFO_PACKET_SIZE));
+  EXPECT_CALL(*sensor, lastError()).WillOnce(Return(ESP_OK));
+  EXPECT_CALL(*sensor, readFIFO(FIFO_PACKET_SIZE, _))
+      .WillOnce(Invoke(fillDeterministicFIFOPacket))
+      .WillOnce(Return(ESP_FAIL));
+  EXPECT_CALL(*pipe, push(_)).Times(1).WillOnce(Return(true));
+
+  instance->beginAsync();
+  runner->notify();
+  runner->runOneStep();
+
+  EXPECT_EQ(gpioGetTimeUs_fake.call_count, 1u);
+}
+
+TEST(MPU6050Sensor_onReadTaskNotification,
+     ResetsFIFOWhenBacklogRemainsAfterMaxBatchProcessing) {
+  auto deps = buildDefaultDependencies(DependencyPreset::NotificationFlow);
+  auto *runner = static_cast<DeterministicRunner *>(deps.runner.get());
+  auto *sensor = deps.sensor.get();
+  auto *pipe = deps.pipe.get();
+  MPU6050Sensor *instance = getInstanceWith(std::move(deps));
+
+  const uint16_t initialFifoCount =
+      static_cast<uint16_t>((IMU_READ_TASK_MAX_BATCH + 2) * FIFO_PACKET_SIZE);
+
+  EXPECT_CALL(*sensor, resetFIFO()).Times(2);
+  EXPECT_CALL(*sensor, getFIFOCount()).WillOnce(Return(initialFifoCount));
+  EXPECT_CALL(*sensor, lastError()).WillOnce(Return(ESP_OK));
+  EXPECT_CALL(*sensor, readFIFO(FIFO_PACKET_SIZE, _))
+      .Times(IMU_READ_TASK_MAX_BATCH)
+      .WillRepeatedly(Invoke(fillDeterministicFIFOPacket));
+  EXPECT_CALL(*pipe, push(_))
+      .Times(IMU_READ_TASK_MAX_BATCH)
+      .WillRepeatedly(Return(true));
+
+  instance->beginAsync();
+  runner->notify();
+  runner->runOneStep();
+
+  EXPECT_EQ(gpioGetTimeUs_fake.call_count,
+            static_cast<unsigned int>(IMU_READ_TASK_MAX_BATCH));
+}
+
+TEST(MPU6050Sensor_onReadTaskNotification, ReturnsEarlyWhenDoReadFlagIsFalse) {
+  auto deps = buildDefaultDependencies(DependencyPreset::NotificationFlow);
+  auto *runner = static_cast<DeterministicRunner *>(deps.runner.get());
+  auto *sensor = deps.sensor.get();
+  auto *pipe = deps.pipe.get();
+  MPU6050Sensor *instance = getInstanceWith(std::move(deps));
+
+  EXPECT_CALL(*sensor, getFIFOCount()).Times(0);
+  EXPECT_CALL(*sensor, lastError()).Times(0);
+  EXPECT_CALL(*sensor, readFIFO(_, _)).Times(0);
+  EXPECT_CALL(*sensor, resetFIFO()).Times(0);
+  EXPECT_CALL(*pipe, push(_)).Times(0);
+
+  instance->stopAsync();
+  runner->notify();
+  runner->runOneStep();
+
+  EXPECT_EQ(gpioGetTimeUs_fake.call_count, 0u);
 }
 
 } // namespace

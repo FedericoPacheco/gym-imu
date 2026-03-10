@@ -110,6 +110,15 @@ MPU6050Sensor *MPU6050Sensor::getInstance(
   return MPU6050Sensor::instanceState.instance.get();
 }
 
+#if defined(UNIT_TEST) && !defined(ESP_PLATFORM)
+void MPU6050Sensor::resetInstanceForTests() {
+  MPU6050Sensor::instanceState.instance.reset();
+  MPU6050Sensor::instanceState.semaphoreHandle = nullptr;
+  MPU6050Sensor::instanceState.semaphoreControlBlock = {};
+  MPU6050Sensor::instanceState.mux = {};
+}
+#endif
+
 bool MPU6050Sensor::initializeI2CBus() {
   this->logger->debug("Initializing I2C bus");
 
@@ -315,6 +324,7 @@ void MPU6050Sensor::onReadTaskNotification(void *arg,
         notificationValue);
   }
 
+  uint16_t initialFifoCount = self->sensor->getFIFOCount();
   bool wasCountReadError = self->sensor->lastError() != ESP_OK;
   if (wasCountReadError) {
     self->logger->warn("Read task: FIFO count read error");
@@ -322,7 +332,6 @@ void MPU6050Sensor::onReadTaskNotification(void *arg,
     return;
   }
 
-  uint16_t initialFifoCount = self->sensor->getFIFOCount();
   bool isFifoMisaligned =
       initialFifoCount % MPU6050Sensor::FIFO_PACKET_SIZE != 0;
   if (isFifoMisaligned) {
@@ -337,7 +346,7 @@ void MPU6050Sensor::onReadTaskNotification(void *arg,
 
 void MPU6050Sensor::batchReadDMPQueue(uint16_t initialFifoCount) {
   bool areManyPacketsAvailable =
-      initialFifoCount > 2 * MPU6050Sensor::FIFO_PACKET_SIZE;
+      initialFifoCount >= 2 * MPU6050Sensor::FIFO_PACKET_SIZE;
   if (areManyPacketsAvailable)
     this->logger->warn("Read task: many packets available (count=%d), "
                        "attempting to process backlog",
@@ -378,7 +387,7 @@ void MPU6050Sensor::batchReadDMPQueue(uint16_t initialFifoCount) {
 
   // Reset as fallback to avoid overflow
   areManyPacketsAvailable =
-      currentFifoCount > 2 * MPU6050Sensor::FIFO_PACKET_SIZE;
+      currentFifoCount >= 2 * MPU6050Sensor::FIFO_PACKET_SIZE;
   if (areManyPacketsAvailable) {
     this->logger->warn("Read task: FIFO still overloaded after processing "
                        "(count=%d), resetting",

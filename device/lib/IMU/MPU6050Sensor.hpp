@@ -76,6 +76,10 @@ public:
               gpio_num_t INTPin = GPIO_NUM_5, gpio_num_t SDAPin = GPIO_NUM_6,
               gpio_num_t SCLPin = GPIO_NUM_7, int samplingFrequencyHz = 30);
 
+#if defined(UNIT_TEST) && !defined(ESP_PLATFORM)
+  static void resetInstanceForTests();
+#endif
+
   ~MPU6050Sensor() override;
 
   std::optional<IMUSample> readSync() override;

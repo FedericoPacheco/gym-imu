@@ -68,7 +68,7 @@ std::unique_ptr<MPU6050Sensor> MPU6050Sensor::create(
   if (!imu->setupTask())
     return nullptr;
   if (!imu->configureInterrupts()) {
-    runner->stop();
+    imu->runner->stop();
     return nullptr;
   }
 

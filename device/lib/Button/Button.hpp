@@ -1,8 +1,8 @@
 #pragma once
-#include "driver/gpio.h"
 #include <ErrorMacros.hpp>
 #include <LoggerPort.hpp>
 #include <memory>
+#include <ports/ESP-IDF/GPIOPort.hpp>
 #include <ports/FreeRTOS/FreeRTOSPort.hpp>
 
 /*
@@ -38,7 +38,7 @@ Async:
 
 class Button {
 public:
-  std::unique_ptr<Button> static create(LoggerPort *logger,
+  static std::unique_ptr<Button> create(LoggerPort *logger,
                                         gpio_num_t pin = GPIO_NUM_3 /* D1 */,
                                         int asyncQueueSize = 10,
                                         int debouncingDelayMs = 500);

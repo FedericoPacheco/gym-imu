@@ -7,9 +7,7 @@ class Runner {
 public:
   virtual ~Runner() = default;
 
-  // Call from inside the class with lambda wrapping private static method:
-  // runner->start([](void *arg, uint32_t notificationValue) { loopFunction(arg,
-  // notificationValue); }, this);
+  // Call from inside a class with a private static method and this
   virtual bool start(std::function<void(void *, uint32_t)> loopFunction,
                      void *arg) = 0;
   virtual void runOneStep() = 0;

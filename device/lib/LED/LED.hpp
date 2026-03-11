@@ -1,11 +1,9 @@
 #pragma once
-#include "driver/gpio.h"
-#include "esp_err.h"
 #include <ErrorMacros.hpp>
 #include <LoggerPort.hpp>
 #include <memory>
+#include <ports/ESP-IDF/GPIOPort.hpp>
 #include <ports/FreeRTOS/FreeRTOSPort.hpp>
-
 class LED {
 public:
   static std::unique_ptr<LED> create(LoggerPort *logger,

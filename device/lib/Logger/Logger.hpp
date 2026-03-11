@@ -9,8 +9,6 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
-#include <sys/param.h>
-#include <sys/stat.h>
 
 class UARTLogger : public LoggerPort {
 private:

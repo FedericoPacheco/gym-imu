@@ -105,7 +105,7 @@ BLE::~BLE() {
     rtosTaskDelete(this->transmitTaskHandle);
   }
 
-  nimble_port_stop();
+  nimblePortStop();
 
   if (this->bleTaskHandle)
     rtosTaskDelete(this->bleTaskHandle);
@@ -130,7 +130,7 @@ bool BLE::initializeControllerAndHost() {
   this->logger->debug("Initializing controller and NimBLE host stack");
 
   // Initialize both at once
-  RETURN_FALSE_ON_NIMBLE_ERROR(nimble_port_init(), this->logger,
+  RETURN_FALSE_ON_NIMBLE_ERROR(nimblePortInit(), this->logger,
                                "Failed to initialize NimBLE port");
 
   // Set callbacks for application logic
@@ -147,7 +147,7 @@ bool BLE::initializeControllerAndHost() {
   ble_hs_cfg.store_delete_cb = ble_store_config_delete;
 
   // Set larger MTU for batch sending IMU samples
-  ble_att_set_preferred_mtu(BLE::PREFERRED_MTU);
+  nimbleSetPreferredMtu(BLE::PREFERRED_MTU);
 
   return true;
 }
@@ -184,14 +184,14 @@ void BLE::onGATTRegister(struct ble_gatt_register_ctxt *context, void *arg) {
   // Service register event
   case BLE_GATT_REGISTER_OP_SVC:
     self->logger->debug("Registered service %s with handle: %d",
-                        ble_uuid_to_str(context->svc.svc_def->uuid, buffer),
+                        nimbleUuidToStr(context->svc.svc_def->uuid, buffer),
                         context->svc.handle);
     break;
   // Characteristic register event
   case BLE_GATT_REGISTER_OP_CHR:
     self->logger->debug(
         "Registered characteristic %s with def_handle: %d val_handle: %d",
-        ble_uuid_to_str(context->chr.chr_def->uuid, buffer),
+        nimbleUuidToStr(context->chr.chr_def->uuid, buffer),
         context->chr.def_handle, context->chr.val_handle);
     break;
 
@@ -209,15 +209,14 @@ void BLE::onGATTRegister(struct ble_gatt_register_ctxt *context, void *arg) {
 bool BLE::initializeGAP() {
   this->logger->debug("Initializing GAP service");
 
-  ble_svc_gap_init();
+  nimbleGapServiceInit();
 
-  RETURN_FALSE_ON_NIMBLE_ERROR(ble_svc_gap_device_name_set(BLE::DEVICE_NAME),
+  RETURN_FALSE_ON_NIMBLE_ERROR(nimbleGapDeviceNameSet(BLE::DEVICE_NAME),
                                this->logger, "Failed to set device name");
 
   // Set how the device advertises itself to other devices
-  RETURN_FALSE_ON_NIMBLE_ERROR(
-      ble_svc_gap_device_appearance_set(BLE::APPEARANCE), this->logger,
-      "Failed to set device appearance");
+  RETURN_FALSE_ON_NIMBLE_ERROR(nimbleGapDeviceAppearanceSet(BLE::APPEARANCE),
+                               this->logger, "Failed to set device appearance");
 
   return true;
 }
@@ -242,8 +241,8 @@ int BLE::handleGAPEvent(ble_gap_event *event, void *arg) {
                          self->communicationState.connectionHandle);
 
       RETURN_FALSE_ON_NIMBLE_ERROR(
-          ble_gattc_exchange_mtu(self->communicationState.connectionHandle,
-                                 NULL, NULL),
+          nimbleGattClientExchangeMtu(
+              self->communicationState.connectionHandle),
           self->logger,
           "Failed to negotiate MTU with client, using default (23 bytes)");
 
@@ -266,7 +265,7 @@ int BLE::handleGAPEvent(ble_gap_event *event, void *arg) {
                           connectionParameters.latency,
                           connectionParameters.supervision_timeout);
 
-      int connectionParametersError = ble_gap_update_params(
+      int connectionParametersError = nimbleGapUpdateParams(
           self->communicationState.connectionHandle, &connectionParameters);
       if (connectionParametersError != 0) {
         self->logger->warn(
@@ -339,7 +338,7 @@ int BLE::handleGAPEvent(ble_gap_event *event, void *arg) {
 bool BLE::initializeGATT() {
   this->logger->debug("Initializing GATT service");
 
-  ble_svc_gatt_init();
+  nimbleGattServiceInit();
 
   imuCharacteristics[0].uuid = &BLE::IMU_SAMPLE_CHARACTERISTIC_UUID.u;
   imuCharacteristics[0].access_cb = BLE::accessImuSampleCharacteristic;
@@ -353,12 +352,12 @@ bool BLE::initializeGATT() {
   services[0].uuid = &BLE::IMU_SERVICE_UUID.u;
   services[0].characteristics = this->imuCharacteristics;
 
-  RETURN_FALSE_ON_NIMBLE_ERROR(ble_gatts_count_cfg(this->services),
+  RETURN_FALSE_ON_NIMBLE_ERROR(nimbleGattServerCountConfig(this->services),
                                this->logger,
                                "Failed to count GATT configuration");
 
-  RETURN_FALSE_ON_NIMBLE_ERROR(ble_gatts_add_svcs(this->services), this->logger,
-                               "Failed to add GATT services");
+  RETURN_FALSE_ON_NIMBLE_ERROR(nimbleGattServerAddServices(this->services),
+                               this->logger, "Failed to add GATT services");
 
   return true;
 }
@@ -399,7 +398,7 @@ void BLE::bleTask(void *arg) {
 
   self->logger->debug("BLE task started");
 
-  nimble_port_run();
+  nimblePortRun();
 }
 
 void BLE::transmitTask(void *arg) {
@@ -469,7 +468,7 @@ void BLE::transmitTask(void *arg) {
       }
 
       struct os_mbuf *nimbleBuffer =
-          ble_hs_mbuf_from_flat(batchSamples, batchCount * sizeof(IMUSample));
+          nimbleMbufFromFlat(batchSamples, batchCount * sizeof(IMUSample));
 
       if (nimbleBuffer == NULL) {
         self->logger->error("Can't send data: no memory available for nimble "
@@ -482,8 +481,8 @@ void BLE::transmitTask(void *arg) {
       // Note: ble_gatts_notify() only notifies the client to later pull the
       // data from the server, which I think is less efficient and more
       // complicated than pushing directly
-      if (ble_gatts_notify_custom(connectionHandle, characteristicHandle,
-                                  nimbleBuffer) != 0) {
+      if (nimbleGattServerNotifyCustom(connectionHandle, characteristicHandle,
+                                       nimbleBuffer) != 0) {
         self->logger->error("Failed to send IMU samples notification");
         rtosTaskDelay(idleDelayTicks);
       } else {
@@ -499,12 +498,12 @@ bool BLE::initializeAdvertising() {
 
   // Infer address type: public/private, static/random
   RETURN_FALSE_ON_NIMBLE_ERROR(
-      ble_hs_id_infer_auto(0, &this->communicationState.address.type),
+      nimbleInferAutoAddressType(&this->communicationState.address.type),
       this->logger, "Failed to determine address type");
 
   RETURN_FALSE_ON_NIMBLE_ERROR(
-      ble_hs_id_copy_addr(this->communicationState.address.type,
-                          this->communicationState.address.value, NULL),
+      nimbleCopyAddress(this->communicationState.address.type,
+                        this->communicationState.address.value, nullptr),
       this->logger, "Failed to read device address");
 
   sprintf(this->communicationState.address.readableValue,
@@ -568,20 +567,20 @@ bool BLE::initializeAdvertising() {
   this->advertisingConfig.disc_mode = BLE_GAP_DISC_MODE_GEN;
 
   RETURN_FALSE_ON_NIMBLE_ERROR(
-      ble_gap_adv_set_fields(&this->primaryAdvertisingPacket), this->logger,
-      "Failed to set primary advertising packet fields");
+      nimbleGapAdvertisingSetFields(&this->primaryAdvertisingPacket),
+      this->logger, "Failed to set primary advertising packet fields");
 
   RETURN_FALSE_ON_NIMBLE_ERROR(
-      ble_gap_adv_rsp_set_fields(&this->scanResponsePacket), this->logger,
-      "Failed to set scan response packet fields");
+      nimbleGapAdvertisingResponseSetFields(&this->scanResponsePacket),
+      this->logger, "Failed to set scan response packet fields");
 
   return true;
 }
 bool BLE::startAdvertising() {
   RETURN_FALSE_ON_NIMBLE_ERROR(
-      ble_gap_adv_start(this->communicationState.address.type, NULL,
-                        BLE_HS_FOREVER, &this->advertisingConfig,
-                        BLE::handleGAPEvent, this),
+      nimbleGapAdvertisingStart(this->communicationState.address.type,
+                                &this->advertisingConfig, BLE::handleGAPEvent,
+                                this),
       this->logger, "Failed to start advertising");
 
   return true;

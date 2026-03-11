@@ -1,15 +1,6 @@
 #pragma once
 #include "esp_system.h"
-#include "host/ble_hs.h"
-#include "host/ble_store.h"
-#include "host/ble_uuid.h"
-#include "nimble/ble.h"
-#include "nimble/nimble_port.h"
-#include "nimble/nimble_port_freertos.h"
 #include "nvs_flash.h"
-#include "services/gap/ble_svc_gap.h"
-#include "services/gatt/ble_svc_gatt.h"
-#include "store/config/ble_store_config.h"
 #include <Constants.hpp>
 #include <ErrorMacros.hpp>
 #include <IMUSensorPort.hpp>
@@ -19,6 +10,7 @@
 #include <cstdint>
 #include <memory>
 #include <ports/FreeRTOS/FreeRTOSPort.hpp>
+#include <ports/NimBLE/NimBLEPort.hpp>
 #include <sys/param.h>
 
 /*

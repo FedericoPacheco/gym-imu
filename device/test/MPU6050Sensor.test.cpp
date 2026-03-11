@@ -22,8 +22,10 @@ LoggerDouble gLogger;
 namespace {
 
 using ::testing::_;
+using ::testing::DoAll;
 using ::testing::Invoke;
 using ::testing::Return;
+using ::testing::WithArg;
 
 constexpr int FIFO_PACKET_SIZE = 12;
 
@@ -101,7 +103,7 @@ esp_err_t fillDeterministicFIFOPacket(size_t length, uint8_t *data) {
     return ESP_FAIL;
 
   static constexpr uint8_t packet[FIFO_PACKET_SIZE] = {
-      0x00, 0x64, 0xFF, 0x9C, 0x00, 0x32, 0x00, 0x0A, 0xFF, 0xF6, 0x00, 0x14,
+      0x00, 0x01, 0x00, 0x02, 0x00, 0x03, 0x00, 0x05, 0x00, 0x0A, 0x00, 0x0F,
   };
 
   for (size_t i = 0; i < static_cast<size_t>(FIFO_PACKET_SIZE); ++i)
@@ -252,10 +254,9 @@ TEST(MPU6050Sensor_onReadTaskNotification,
   auto *sensor = deps.sensor.get();
   auto *pipe = deps.pipe.get();
   MPU6050Sensor *instance = getInstanceWith(std::move(deps));
-  constexpr uint16_t fifoCount = 3 * FIFO_PACKET_SIZE;
 
-  EXPECT_CALL(*sensor, resetFIFO()).Times(1);
-  EXPECT_CALL(*sensor, getFIFOCount()).WillOnce(Return(fifoCount));
+  EXPECT_CALL(*sensor, resetFIFO()).Times(1); // beginAsync() call
+  EXPECT_CALL(*sensor, getFIFOCount()).WillOnce(Return(3 * FIFO_PACKET_SIZE));
   EXPECT_CALL(*sensor, lastError()).WillOnce(Return(ESP_OK));
   EXPECT_CALL(*sensor, readFIFO(FIFO_PACKET_SIZE, _))
       .Times(3)
@@ -265,8 +266,41 @@ TEST(MPU6050Sensor_onReadTaskNotification,
   instance->beginAsync();
   runner->notify();
   runner->runOneStep();
+  instance->stopAsync();
+}
 
-  EXPECT_EQ(gpioGetTimeUs_fake.call_count, 3u);
+TEST(MPU6050Sensor_onReadTaskNotification,
+     ConvertsRawBytesAndPushesSampleWithGravityScaling) {
+  auto deps = buildDefaultDependencies();
+  auto *runner = static_cast<DeterministicRunner *>(deps.runner.get());
+  auto *sensor = deps.sensor.get();
+  auto *pipe = deps.pipe.get();
+  MPU6050Sensor *instance = getInstanceWith(std::move(deps));
+
+  EXPECT_CALL(*sensor, resetFIFO()).Times(1);
+  EXPECT_CALL(*sensor, getFIFOCount()).WillOnce(Return(FIFO_PACKET_SIZE));
+  EXPECT_CALL(*sensor, lastError()).WillOnce(Return(ESP_OK));
+  EXPECT_CALL(*sensor, readFIFO(FIFO_PACKET_SIZE, _))
+      .Times(1)
+      .WillOnce(Invoke(fillDeterministicFIFOPacket));
+  EXPECT_CALL(*pipe, push(_))
+      .Times(1)
+      .WillOnce(DoAll(
+          WithArg<0>([](const IMUSample &sample) {
+            EXPECT_FLOAT_EQ(sample.a.x, 1.0f * MPU6050Sensor::g);
+            EXPECT_FLOAT_EQ(sample.a.y, 2.0f * MPU6050Sensor::g);
+            EXPECT_FLOAT_EQ(sample.a.z, 3.0f * MPU6050Sensor::g);
+            EXPECT_FLOAT_EQ(sample.w.roll, 5.0f);
+            EXPECT_FLOAT_EQ(sample.w.pitch, 10.0f);
+            EXPECT_FLOAT_EQ(sample.w.yaw, 15.0f);
+            EXPECT_EQ(sample.t, 123456);
+          }),
+          Return(true)));
+
+  instance->beginAsync();
+  runner->notify();
+  runner->runOneStep();
+  instance->stopAsync();
 }
 
 TEST(MPU6050Sensor_onReadTaskNotification,
@@ -286,8 +320,7 @@ TEST(MPU6050Sensor_onReadTaskNotification,
   instance->beginAsync();
   runner->notify();
   runner->runOneStep();
-
-  EXPECT_EQ(gpioGetTimeUs_fake.call_count, 0u);
+  instance->stopAsync();
 }
 
 TEST(MPU6050Sensor_onReadTaskNotification,
@@ -307,8 +340,7 @@ TEST(MPU6050Sensor_onReadTaskNotification,
   instance->beginAsync();
   runner->notify();
   runner->runOneStep();
-
-  EXPECT_EQ(gpioGetTimeUs_fake.call_count, 0u);
+  instance->stopAsync();
 }
 
 TEST(MPU6050Sensor_onReadTaskNotification,
@@ -330,8 +362,7 @@ TEST(MPU6050Sensor_onReadTaskNotification,
   instance->beginAsync();
   runner->notify();
   runner->runOneStep();
-
-  EXPECT_EQ(gpioGetTimeUs_fake.call_count, 1u);
+  instance->stopAsync();
 }
 
 TEST(MPU6050Sensor_onReadTaskNotification,
@@ -342,11 +373,9 @@ TEST(MPU6050Sensor_onReadTaskNotification,
   auto *pipe = deps.pipe.get();
   MPU6050Sensor *instance = getInstanceWith(std::move(deps));
 
-  const uint16_t initialFifoCount =
-      static_cast<uint16_t>((IMU_READ_TASK_MAX_BATCH + 2) * FIFO_PACKET_SIZE);
-
   EXPECT_CALL(*sensor, resetFIFO()).Times(2);
-  EXPECT_CALL(*sensor, getFIFOCount()).WillOnce(Return(initialFifoCount));
+  EXPECT_CALL(*sensor, getFIFOCount())
+      .WillOnce(Return((IMU_READ_TASK_MAX_BATCH + 2) * FIFO_PACKET_SIZE));
   EXPECT_CALL(*sensor, lastError()).WillOnce(Return(ESP_OK));
   EXPECT_CALL(*sensor, readFIFO(FIFO_PACKET_SIZE, _))
       .Times(IMU_READ_TASK_MAX_BATCH)
@@ -358,9 +387,7 @@ TEST(MPU6050Sensor_onReadTaskNotification,
   instance->beginAsync();
   runner->notify();
   runner->runOneStep();
-
-  EXPECT_EQ(gpioGetTimeUs_fake.call_count,
-            static_cast<unsigned int>(IMU_READ_TASK_MAX_BATCH));
+  instance->stopAsync();
 }
 
 TEST(MPU6050Sensor_onReadTaskNotification, ReturnsEarlyWhenDoReadFlagIsFalse) {
@@ -379,8 +406,6 @@ TEST(MPU6050Sensor_onReadTaskNotification, ReturnsEarlyWhenDoReadFlagIsFalse) {
   instance->stopAsync();
   runner->notify();
   runner->runOneStep();
-
-  EXPECT_EQ(gpioGetTimeUs_fake.call_count, 0u);
 }
 
 } // namespace

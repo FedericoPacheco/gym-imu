@@ -1,5 +1,4 @@
 #pragma once
-#include "nvs_flash.h"
 #include <Constants.hpp>
 #include <ErrorMacros.hpp>
 #include <IMUSensorPort.hpp>
@@ -8,6 +7,7 @@
 #include <atomic>
 #include <cstdint>
 #include <memory>
+#include <ports/ESP-IDF/ESPIDFPort.hpp>
 #include <ports/FreeRTOS/FreeRTOSPort.hpp>
 #include <ports/NimBLE/NimBLEPort.hpp>
 

@@ -115,11 +115,11 @@ bool BLE::initializeFlash() {
   this->logger->debug("Initializing NVS flash");
 
   // NVS: non-volatile storage
-  esp_err_t error = nvs_flash_init();
+  esp_err_t error = nvsFlashInit();
   if (error == ESP_ERR_NVS_NO_FREE_PAGES ||
       error == ESP_ERR_NVS_NEW_VERSION_FOUND) {
-    ESP_ERROR_CHECK(nvs_flash_erase());
-    RETURN_FALSE_ON_ERROR(nvs_flash_init(), this->logger,
+    ESP_ERROR_CHECK(nvsFlashErase());
+    RETURN_FALSE_ON_ERROR(nvsFlashInit(), this->logger,
                           "Failed to initialize NVS flash");
   }
 

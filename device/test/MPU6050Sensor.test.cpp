@@ -17,7 +17,7 @@ DEFINE_FFF_GLOBALS;
 #include <DeterministicNotificationRunner.hpp>
 #include <MPU6050Sensor.hpp>
 
-LoggerDouble gLogger;
+LoggerDouble logger;
 
 namespace {
 
@@ -93,7 +93,7 @@ MPU6050SensorDependencies buildDefaultDependencies() {
   return deps;
 }
 MPU6050Sensor *getInstanceWith(MPU6050SensorDependencies &&deps) {
-  return MPU6050Sensor::getInstance(&gLogger, deps.pipe, std::move(deps.sensor),
+  return MPU6050Sensor::getInstance(&logger, deps.pipe, std::move(deps.sensor),
                                     std::move(deps.i2c),
                                     std::move(deps.runner));
 }

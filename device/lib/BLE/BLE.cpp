@@ -47,8 +47,7 @@ BLE::create(LoggerPort *logger,
                                BLE(logger, pipe, std::move(transmitRunner)));
 
   if (!ble) {
-    if (logger)
-      logger->error("BLE", "Failed to allocate memory for BLE instance");
+    logger->error("BLE", "Failed to allocate memory for BLE instance");
     return nullptr;
   }
 
@@ -94,8 +93,7 @@ BLE *BLE::getInstance(
     BLE::instanceState.semaphoreHandle =
         rtosCreateMutexStatic(&BLE::instanceState.semaphoreControlBlock);
     if (BLE::instanceState.semaphoreHandle == nullptr) {
-      if (logger)
-        logger->error("Failed to create mutex for BLE instance");
+      logger->error("Failed to create mutex for BLE instance");
       rtosTaskExitCritical(&BLE::instanceState.mux);
       return nullptr;
     }
@@ -466,10 +464,6 @@ void BLE::transmitLoopFunction(void *arg) {
   if (!isSubscribed) {
     self->logger->warn("Can't send data: client not subscribed to IMU sample "
                        "Characteristic");
-    return;
-  }
-
-  if (self->pipe->itemsFilled() < currentBatchSize) {
     return;
   }
 

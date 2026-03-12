@@ -19,24 +19,24 @@ std::unique_ptr<MPU6050Sensor> MPU6050Sensor::create(
     std::unique_ptr<MPUPort> sensor, std::unique_ptr<I2CPort> i2c,
     std::unique_ptr<NotificationRunner> runner, gpio_num_t INTPin,
     gpio_num_t SDAPin, gpio_num_t SCLPin, int samplingFrequencyHz) {
+
+  if (!logger)
+    return nullptr;
+
   if (!pipe) {
-    if (logger)
-      logger->error("Pipe pointer is null");
+    logger->error("Pipe pointer is null");
     return nullptr;
   }
   if (!sensor) {
-    if (logger)
-      logger->error("Sensor adapter pointer is null");
+    logger->error("Sensor adapter pointer is null");
     return nullptr;
   }
   if (!i2c) {
-    if (logger)
-      logger->error("I2C adapter pointer is null");
+    logger->error("I2C adapter pointer is null");
     return nullptr;
   }
   if (!runner) {
-    if (logger)
-      logger->error("Runner pointer is null");
+    logger->error("Runner pointer is null");
     return nullptr;
   }
 
@@ -46,8 +46,7 @@ std::unique_ptr<MPU6050Sensor> MPU6050Sensor::create(
       INTPin, SDAPin, SCLPin, samplingFrequencyHz));
 
   if (!imu) {
-    if (logger)
-      logger->error("Failed to allocate MPU6050Sensor");
+    logger->error("Failed to allocate MPU6050Sensor");
     return nullptr;
   }
 
@@ -72,8 +71,7 @@ std::unique_ptr<MPU6050Sensor> MPU6050Sensor::create(
     return nullptr;
   }
 
-  if (logger)
-    logger->info("MPU6050 sensor initialized successfully");
+  logger->info("MPU6050 sensor initialized successfully");
 
   return imu;
 }
@@ -91,8 +89,7 @@ MPU6050Sensor *MPU6050Sensor::getInstance(
     MPU6050Sensor::instanceState.semaphoreHandle = rtosCreateMutexStatic(
         &MPU6050Sensor::instanceState.semaphoreControlBlock);
     if (MPU6050Sensor::instanceState.semaphoreHandle == nullptr) {
-      if (logger)
-        logger->error("Failed to create mutex for MPU6050Sensor instance");
+      logger->error("Failed to create mutex for MPU6050Sensor instance");
       rtosTaskExitCritical(&MPU6050Sensor::instanceState.mux);
       return nullptr;
     }

@@ -21,6 +21,11 @@ struct portMUX_TYPE {
   uint8_t storage;
 };
 
+#ifndef portMUX_INITIALIZER_UNLOCKED
+#define portMUX_INITIALIZER_UNLOCKED                                           \
+  {}
+#endif
+
 static constexpr BaseType_t pdTRUE = 1;
 static constexpr BaseType_t pdFALSE = 0;
 static constexpr BaseType_t pdPASS = 1;

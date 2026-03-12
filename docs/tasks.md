@@ -53,6 +53,7 @@ Other rules:
 - Extract control logic from `src/main.cpp` to separate class.
 - Review and update current tasks priorities and ISR behaviors to optimize for latency and responsiveness.
 - Read EPS-IDF docs (<https://docs.espressif.com/projects/esp-idf/en/stable/esp32/api-guides/ble/index.html#security>) and add basic security to BLE class.
+- Move class docs to separate markdown files (documentation as code).
 
 ### Done
 

@@ -28,24 +28,27 @@ std::unique_ptr<BLE>
 BLE::create(LoggerPort *logger,
             std::shared_ptr<Pipe<IMUSample, TRANSMISSION_PIPE_SIZE>> pipe,
             std::unique_ptr<LoopRunner> transmitRunner) {
+
+  if (!logger) {
+    return nullptr;
+  }
+
+  if (!pipe) {
+    logger->error("BLE", "Invalid pipe provided to BLE instance");
+    return nullptr;
+  }
+
+  if (!transmitRunner) {
+    logger->error("BLE", "Invalid loop runner provided to BLE instance");
+    return nullptr;
+  }
+
   std::unique_ptr<BLE> ble(new (std::nothrow)
                                BLE(logger, pipe, std::move(transmitRunner)));
 
   if (!ble) {
     if (logger)
       logger->error("BLE", "Failed to allocate memory for BLE instance");
-    return nullptr;
-  }
-
-  if (!pipe) {
-    if (logger)
-      logger->error("BLE", "Invalid pipe provided to BLE instance");
-    return nullptr;
-  }
-
-  if (!ble->transmitRunner) {
-    if (logger)
-      logger->error("BLE", "Invalid loop runner provided to BLE instance");
     return nullptr;
   }
 
@@ -126,14 +129,19 @@ bool BLE::initializeFlash() {
 
   // NVS: non-volatile storage
   esp_err_t error = nvsFlashInit();
+  if (error == ESP_OK)
+    return true;
+
   if (error == ESP_ERR_NVS_NO_FREE_PAGES ||
       error == ESP_ERR_NVS_NEW_VERSION_FOUND) {
     ESP_ERROR_CHECK(nvsFlashErase());
     RETURN_FALSE_ON_ERROR(nvsFlashInit(), this->logger,
                           "Failed to initialize NVS flash");
+    return true;
   }
 
-  return true;
+  this->logger->error("Failed to initialize NVS flash");
+  return false;
 }
 
 bool BLE::initializeControllerAndHost() {
@@ -161,6 +169,17 @@ bool BLE::initializeControllerAndHost() {
 
   return true;
 }
+
+#if defined(UNIT_TEST) && !defined(ESP_PLATFORM)
+void BLE::resetInstanceForTests() {
+  BLE::instanceState.instance.reset();
+  BLE::instanceState.initializingInstance = nullptr;
+  BLE::instanceState.semaphoreHandle = nullptr;
+  BLE::instanceState.semaphoreControlBlock = {};
+  BLE::instanceState.mux = {};
+}
+#endif
+
 void BLE::onStackReset(int reason) {
   BLE *self = nullptr;
   if (BLE::instanceState.instance)
@@ -329,9 +348,10 @@ int BLE::handleGAPEvent(ble_gap_event *event, void *arg) {
   case BLE_GAP_EVENT_MTU: {
     rtosPortEnterCritical(&self->communicationState.mux);
     self->communicationState.mtu = event->mtu.value;
-    self->communicationState.currentBatchSize =
-        MIN(BLE::PREFERRED_BATCH_SEND_SIZE,
-            MAX(1, (self->communicationState.mtu - 3) / sizeof(IMUSample)));
+    self->communicationState.currentBatchSize = std::min(
+        BLE::PREFERRED_BATCH_SEND_SIZE,
+        std::max(1, static_cast<int>((self->communicationState.mtu - 3) /
+                                     sizeof(IMUSample))));
     rtosPortExitCritical(&self->communicationState.mux);
     self->logger->info(
         "Negotiated MTU: %d bytes. Current batch size: %d packets",

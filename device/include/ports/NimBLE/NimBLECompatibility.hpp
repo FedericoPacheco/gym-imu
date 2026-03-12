@@ -97,6 +97,14 @@ struct ble_gap_event {
 
 typedef int ble_gap_event_fn(struct ble_gap_event *event, void *arg);
 
+// Host tests provide no-op implementations for NimBLE persistent store hooks.
+void ble_store_util_status_rr(void);
+void ble_store_config_read(void);
+void ble_store_config_write(void);
+void ble_store_config_delete(void);
+
+using ble_store_callback_t = void (*)(void);
+
 struct ble_gatt_register_ctxt {
   uint8_t op;
   struct {
@@ -109,6 +117,19 @@ struct ble_gatt_register_ctxt {
     uint16_t val_handle;
   } chr;
 };
+
+struct ble_hs_cfg_t {
+  void (*reset_cb)(int reason);
+  void (*sync_cb)(void);
+  void (*gatts_register_cb)(struct ble_gatt_register_ctxt *context, void *arg);
+  void *gatts_register_arg;
+  ble_store_callback_t store_status_cb;
+  ble_store_callback_t store_read_cb;
+  ble_store_callback_t store_write_cb;
+  ble_store_callback_t store_delete_cb;
+};
+
+extern ble_hs_cfg_t ble_hs_cfg;
 
 static constexpr uint16_t BLE_HS_CONN_HANDLE_NONE = 0xFFFFu;
 static constexpr int BLE_HS_EDONE = 1;

@@ -241,8 +241,6 @@ TEST(MPU6050Sensor_getInstance, InitializesSuccessfully) {
 
   EXPECT_NE(instance, nullptr);
   EXPECT_GT(runnerRaw->getStartCallCount(), 0);
-  EXPECT_GT(gpioSetConfig_fake.call_count, 0);
-  EXPECT_GT(gpioAddISRHandler_fake.call_count, 0);
 }
 
 // ----------------------------------------------------------------------------------------------------

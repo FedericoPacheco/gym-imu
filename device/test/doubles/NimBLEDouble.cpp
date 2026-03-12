@@ -4,6 +4,13 @@ extern "C" {
 
 #include "doubles/NimBLEDouble.hpp"
 
+ble_hs_cfg_t ble_hs_cfg = {};
+
+void ble_store_util_status_rr(void) {}
+void ble_store_config_read(void) {}
+void ble_store_config_write(void) {}
+void ble_store_config_delete(void) {}
+
 DEFINE_FAKE_VALUE_FUNC(int, nimblePortInit);
 DEFINE_FAKE_VALUE_FUNC(int, nimblePortStop);
 DEFINE_FAKE_VOID_FUNC(nimblePortRun);

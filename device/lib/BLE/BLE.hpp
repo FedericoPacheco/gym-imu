@@ -5,8 +5,10 @@
 #include <LoggerPort.hpp>
 #include <LoopRunner.hpp>
 #include <Pipe.hpp>
+#include <algorithm>
 #include <atomic>
 #include <cstdint>
+#include <cstring>
 #include <memory>
 #include <ports/ESP-IDF/ESPIDFPort.hpp>
 #include <ports/FreeRTOS/FreeRTOSPort.hpp>
@@ -96,6 +98,11 @@ public:
   getInstance(LoggerPort *logger,
               std::shared_ptr<Pipe<IMUSample, TRANSMISSION_PIPE_SIZE>> pipe,
               std::unique_ptr<LoopRunner> transmitRunner);
+
+#if defined(UNIT_TEST) && !defined(ESP_PLATFORM)
+  static void resetInstanceForTests();
+#endif
+
   ~BLE();
   bool isConnected();
   void beginTransmission();
@@ -108,8 +115,8 @@ private:
   // in a single BLE packet
   static constexpr int DEFAULT_MTU = 23;
   // Effetive payload = MTU (maximum transmission unit) - 3 bytes for ATT header
-  static constexpr int PREFERRED_MTU =
-      MIN(sizeof(IMUSample) * PREFERRED_BATCH_SEND_SIZE + 3, 512);
+  static constexpr int PREFERRED_MTU = std::min(
+      static_cast<int>(sizeof(IMUSample) * PREFERRED_BATCH_SEND_SIZE + 3), 512);
   // Time between data exchanges when connected, between 7.5ms and 4s
   static constexpr int CONNECTION_INTERVAL_MIN_MS = 15;
   static constexpr int CONNECTION_INTERVAL_MAX_MS = 30;

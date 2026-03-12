@@ -48,6 +48,10 @@ static constexpr gpio_int_type_t GPIO_INTR_POSEDGE = 1;
 static constexpr esp_err_t ESP_ERR_NVS_NO_FREE_PAGES = 0x110D;
 static constexpr esp_err_t ESP_ERR_NVS_NEW_VERSION_FOUND = 0x1110;
 
+#ifndef ESP_ERROR_CHECK
+#define ESP_ERROR_CHECK(x) ((void)(x))
+#endif
+
 #else
 
 #include "driver/gpio.h"

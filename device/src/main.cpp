@@ -8,7 +8,7 @@
 #include <Button.hpp>
 #include <Constants.hpp>
 #include <FreeRTOSLoopRunner.hpp>
-#include <FreeRTOSRunner.hpp>
+#include <FreeRTOSNotificationRunner.hpp>
 #include <LED.hpp>
 #include <Logger.hpp>
 #include <MPU6050Sensor.hpp>
@@ -43,7 +43,7 @@ extern "C" void app_main() {
   UARTLogger imuLogger("IMU", LogLevel::DEBUG);
   auto imuMPUPort = std::make_unique<MPUReal>();
   auto imuI2CPort = std::make_unique<I2CReal>();
-  auto imuRunner = std::make_unique<FreeRTOSRunner>(
+  auto imuRunner = std::make_unique<FreeRTOSNotificationRunner>(
       "readTask", IMU_READ_TASK_STACK_SIZE, IMU_READ_TASK_PRIORITY);
   IMUSensorPort *imu = MPU6050Sensor::getInstance(
       &imuLogger, samplingPipe, std::move(imuMPUPort), std::move(imuI2CPort),

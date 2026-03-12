@@ -1,6 +1,6 @@
-#include "Runner.hpp"
+#include "NotificationRunner.hpp"
 
-class DeterministicRunner : public Runner {
+class DeterministicNotificationRunner : public NotificationRunner {
 public:
   bool start(std::function<void(void *, uint32_t)> loopFunction,
              void *argForCallback) override {

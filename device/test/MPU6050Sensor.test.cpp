@@ -14,7 +14,7 @@ DEFINE_FFF_GLOBALS;
 #include "doubles/LoggerDouble.hpp"
 #include "doubles/MPUDouble.hpp"
 #include "doubles/PipeDouble.hpp"
-#include <DeterministicRunner.hpp>
+#include <DeterministicNotificationRunner.hpp>
 #include <MPU6050Sensor.hpp>
 
 LoggerDouble gLogger;
@@ -31,7 +31,7 @@ constexpr int FIFO_PACKET_SIZE = 12;
 
 // ----------------------------------------------------------------------------------------------------
 // Helpers for setting up tests
-class StartFailRunner final : public DeterministicRunner {
+class StartFailRunner final : public DeterministicNotificationRunner {
 public:
   bool start(std::function<void(void *, uint32_t)>, void *) override {
     return false;
@@ -41,7 +41,7 @@ struct MPU6050SensorDependencies {
   std::shared_ptr<testing::NiceMock<PipeDouble>> pipe;
   std::unique_ptr<testing::NiceMock<MPUDouble>> sensor;
   std::unique_ptr<testing::NiceMock<I2CDouble>> i2c;
-  std::unique_ptr<Runner> runner;
+  std::unique_ptr<NotificationRunner> runner;
 };
 MPU6050SensorDependencies buildDefaultDependencies() {
   MPU6050Sensor::resetInstanceForTests();
@@ -61,7 +61,7 @@ MPU6050SensorDependencies buildDefaultDependencies() {
   deps.pipe = std::make_shared<testing::NiceMock<PipeDouble>>();
   deps.sensor = std::make_unique<testing::NiceMock<MPUDouble>>();
   deps.i2c = std::make_unique<testing::NiceMock<I2CDouble>>();
-  deps.runner = std::make_unique<DeterministicRunner>();
+  deps.runner = std::make_unique<DeterministicNotificationRunner>();
 
   ON_CALL(*deps.i2c, begin(_, _, _, _, _)).WillByDefault(Return(ESP_OK));
 
@@ -234,7 +234,8 @@ TEST(MPU6050Sensor_getInstance, ReturnsNullWhenRunnerStartFails) {
 
 TEST(MPU6050Sensor_getInstance, InitializesSuccessfully) {
   auto deps = buildDefaultDependencies();
-  auto *runnerRaw = static_cast<DeterministicRunner *>(deps.runner.get());
+  auto *runnerRaw =
+      static_cast<DeterministicNotificationRunner *>(deps.runner.get());
 
   MPU6050Sensor *instance = getInstanceWith(std::move(deps));
 
@@ -250,7 +251,8 @@ TEST(MPU6050Sensor_getInstance, InitializesSuccessfully) {
 TEST(MPU6050Sensor_onReadTaskNotification,
      SendsMultipleSamplesToPipeWhenFifoCountIsValid) {
   auto deps = buildDefaultDependencies();
-  auto *runner = static_cast<DeterministicRunner *>(deps.runner.get());
+  auto *runner =
+      static_cast<DeterministicNotificationRunner *>(deps.runner.get());
   auto *sensor = deps.sensor.get();
   auto *pipe = deps.pipe.get();
   MPU6050Sensor *instance = getInstanceWith(std::move(deps));
@@ -272,7 +274,8 @@ TEST(MPU6050Sensor_onReadTaskNotification,
 TEST(MPU6050Sensor_onReadTaskNotification,
      ConvertsRawBytesAndPushesSampleWithGravityScaling) {
   auto deps = buildDefaultDependencies();
-  auto *runner = static_cast<DeterministicRunner *>(deps.runner.get());
+  auto *runner =
+      static_cast<DeterministicNotificationRunner *>(deps.runner.get());
   auto *sensor = deps.sensor.get();
   auto *pipe = deps.pipe.get();
   MPU6050Sensor *instance = getInstanceWith(std::move(deps));
@@ -305,7 +308,8 @@ TEST(MPU6050Sensor_onReadTaskNotification,
 TEST(MPU6050Sensor_onReadTaskNotification,
      ResetsFIFOWhenFifoCountReadReturnsError) {
   auto deps = buildDefaultDependencies();
-  auto *runner = static_cast<DeterministicRunner *>(deps.runner.get());
+  auto *runner =
+      static_cast<DeterministicNotificationRunner *>(deps.runner.get());
   auto *sensor = deps.sensor.get();
   auto *pipe = deps.pipe.get();
   MPU6050Sensor *instance = getInstanceWith(std::move(deps));
@@ -325,7 +329,8 @@ TEST(MPU6050Sensor_onReadTaskNotification,
 TEST(MPU6050Sensor_onReadTaskNotification,
      ResetsFIFOWhenFifoByteCountIsMisaligned) {
   auto deps = buildDefaultDependencies();
-  auto *runner = static_cast<DeterministicRunner *>(deps.runner.get());
+  auto *runner =
+      static_cast<DeterministicNotificationRunner *>(deps.runner.get());
   auto *sensor = deps.sensor.get();
   auto *pipe = deps.pipe.get();
   MPU6050Sensor *instance = getInstanceWith(std::move(deps));
@@ -345,7 +350,8 @@ TEST(MPU6050Sensor_onReadTaskNotification,
 TEST(MPU6050Sensor_onReadTaskNotification,
      ResetsFIFOWhenReadFIFOFailsDuringBatchRead) {
   auto deps = buildDefaultDependencies();
-  auto *runner = static_cast<DeterministicRunner *>(deps.runner.get());
+  auto *runner =
+      static_cast<DeterministicNotificationRunner *>(deps.runner.get());
   auto *sensor = deps.sensor.get();
   auto *pipe = deps.pipe.get();
   MPU6050Sensor *instance = getInstanceWith(std::move(deps));
@@ -367,7 +373,8 @@ TEST(MPU6050Sensor_onReadTaskNotification,
 TEST(MPU6050Sensor_onReadTaskNotification,
      ResetsFIFOWhenBacklogRemainsAfterMaxBatchProcessing) {
   auto deps = buildDefaultDependencies();
-  auto *runner = static_cast<DeterministicRunner *>(deps.runner.get());
+  auto *runner =
+      static_cast<DeterministicNotificationRunner *>(deps.runner.get());
   auto *sensor = deps.sensor.get();
   auto *pipe = deps.pipe.get();
   MPU6050Sensor *instance = getInstanceWith(std::move(deps));
@@ -391,7 +398,8 @@ TEST(MPU6050Sensor_onReadTaskNotification,
 
 TEST(MPU6050Sensor_onReadTaskNotification, ReturnsEarlyWhenDoReadFlagIsFalse) {
   auto deps = buildDefaultDependencies();
-  auto *runner = static_cast<DeterministicRunner *>(deps.runner.get());
+  auto *runner =
+      static_cast<DeterministicNotificationRunner *>(deps.runner.get());
   auto *sensor = deps.sensor.get();
   auto *pipe = deps.pipe.get();
   MPU6050Sensor *instance = getInstanceWith(std::move(deps));

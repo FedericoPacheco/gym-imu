@@ -1,18 +1,18 @@
-#include <FreeRTOSRunner.hpp>
+#include <FreeRTOSNotificationRunner.hpp>
 
-FreeRTOSRunner::FreeRTOSRunner(const char *taskName,
-                               configSTACK_DEPTH_TYPE stackDepth,
-                               UBaseType_t taskPriority)
+FreeRTOSNotificationRunner::FreeRTOSNotificationRunner(
+    const char *taskName, configSTACK_DEPTH_TYPE stackDepth,
+    UBaseType_t taskPriority)
     : taskName(strdup(taskName)), stackDepth(stackDepth),
       taskPriority(taskPriority), taskHandle(nullptr) {}
 
-FreeRTOSRunner::~FreeRTOSRunner() {
+FreeRTOSNotificationRunner::~FreeRTOSNotificationRunner() {
   if (taskName)
     free(taskName);
 }
 
-bool FreeRTOSRunner::start(std::function<void(void *, uint32_t)> loopFunction,
-                           void *argForCallback) {
+bool FreeRTOSNotificationRunner::start(
+    std::function<void(void *, uint32_t)> loopFunction, void *argForCallback) {
   if (this->taskHandle)
     return true; // Task already running
 
@@ -22,9 +22,9 @@ bool FreeRTOSRunner::start(std::function<void(void *, uint32_t)> loopFunction,
   this->storedLoopFunction = std::move(loopFunction);
   this->storedArgForCallback = argForCallback;
 
-  BaseType_t result = rtosTaskCreate(&FreeRTOSRunner::taskEntry, this->taskName,
-                                     this->stackDepth, this, this->taskPriority,
-                                     &this->taskHandle);
+  BaseType_t result = rtosTaskCreate(&FreeRTOSNotificationRunner::taskEntry,
+                                     this->taskName, this->stackDepth, this,
+                                     this->taskPriority, &this->taskHandle);
   if (result != pdPASS) {
     this->taskHandle = nullptr; // Task creation failed
     return false;
@@ -32,12 +32,12 @@ bool FreeRTOSRunner::start(std::function<void(void *, uint32_t)> loopFunction,
   return true;
 }
 
-void FreeRTOSRunner::taskEntry(void *param) {
-  auto runner = static_cast<FreeRTOSRunner *>(param);
+void FreeRTOSNotificationRunner::taskEntry(void *param) {
+  auto runner = static_cast<FreeRTOSNotificationRunner *>(param);
   runner->taskLoop();
 }
 
-void FreeRTOSRunner::taskLoop() {
+void FreeRTOSNotificationRunner::taskLoop() {
   while (true) {
     uint32_t notificationValue = rtosTaskNotifyTake(pdTRUE, portMAX_DELAY);
     if (this->storedLoopFunction)
@@ -45,11 +45,11 @@ void FreeRTOSRunner::taskLoop() {
   }
 }
 
-void FreeRTOSRunner::runOneStep() {
+void FreeRTOSNotificationRunner::runOneStep() {
   // Not applicable
 }
 
-void FreeRTOSRunner::notifyFromISR() {
+void FreeRTOSNotificationRunner::notifyFromISR() {
   if (this->taskHandle) {
     BaseType_t highPriorityTaskWoken = pdFALSE;
     rtosTaskNotifyGiveFromISR(this->taskHandle, &highPriorityTaskWoken);
@@ -58,13 +58,13 @@ void FreeRTOSRunner::notifyFromISR() {
   }
 }
 
-void FreeRTOSRunner::notify() {
+void FreeRTOSNotificationRunner::notify() {
   if (this->taskHandle) {
     rtosTaskNotifyGive(this->taskHandle);
   }
 }
 
-void FreeRTOSRunner::stop() {
+void FreeRTOSNotificationRunner::stop() {
   // Notify task to unblock and finish cleanly
   if (this->taskHandle) {
     this->notify();

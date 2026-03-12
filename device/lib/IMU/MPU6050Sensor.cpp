@@ -6,8 +6,8 @@ MPU6050Sensor::MPU6050Sensor(
     LoggerPort *logger,
     std::shared_ptr<Pipe<IMUSample, SAMPLING_PIPE_SIZE>> pipe,
     std::unique_ptr<MPUPort> sensor, std::unique_ptr<I2CPort> i2c,
-    std::unique_ptr<Runner> runner, gpio_num_t INTPin, gpio_num_t SDAPin,
-    gpio_num_t SCLPin, int samplingFrequencyHz)
+    std::unique_ptr<NotificationRunner> runner, gpio_num_t INTPin,
+    gpio_num_t SDAPin, gpio_num_t SCLPin, int samplingFrequencyHz)
     : logger(logger), pipe(pipe), sensor(std::move(sensor)),
       bus(std::move(i2c)), runner(std::move(runner)), INTPin(INTPin),
       SDAPin(SDAPin), SCLPin(SCLPin), samplingFrequencyHz(samplingFrequencyHz) {
@@ -17,8 +17,8 @@ std::unique_ptr<MPU6050Sensor> MPU6050Sensor::create(
     LoggerPort *logger,
     std::shared_ptr<Pipe<IMUSample, SAMPLING_PIPE_SIZE>> pipe,
     std::unique_ptr<MPUPort> sensor, std::unique_ptr<I2CPort> i2c,
-    std::unique_ptr<Runner> runner, gpio_num_t INTPin, gpio_num_t SDAPin,
-    gpio_num_t SCLPin, int samplingFrequencyHz) {
+    std::unique_ptr<NotificationRunner> runner, gpio_num_t INTPin,
+    gpio_num_t SDAPin, gpio_num_t SCLPin, int samplingFrequencyHz) {
   if (!pipe) {
     if (logger)
       logger->error("Pipe pointer is null");
@@ -82,8 +82,8 @@ MPU6050Sensor *MPU6050Sensor::getInstance(
     LoggerPort *logger,
     std::shared_ptr<Pipe<IMUSample, SAMPLING_PIPE_SIZE>> pipe,
     std::unique_ptr<MPUPort> sensor, std::unique_ptr<I2CPort> i2c,
-    std::unique_ptr<Runner> runner, gpio_num_t INTPin, gpio_num_t SDAPin,
-    gpio_num_t SCLPin, int samplingFrequencyHz) {
+    std::unique_ptr<NotificationRunner> runner, gpio_num_t INTPin,
+    gpio_num_t SDAPin, gpio_num_t SCLPin, int samplingFrequencyHz) {
 
   // Protect instance creation with a mutex to ensure thread safety
   if (MPU6050Sensor::instanceState.semaphoreHandle == nullptr) {

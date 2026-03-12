@@ -1,14 +1,15 @@
 #pragma once
 
-#include <Runner.hpp>
+#include <NotificationRunner.hpp>
 #include <ports/FreeRTOS/FreeRTOSPort.hpp>
 #include <string.h>
 
-class FreeRTOSRunner : public Runner {
+class FreeRTOSNotificationRunner : public NotificationRunner {
 public:
-  FreeRTOSRunner(const char *taskName, configSTACK_DEPTH_TYPE stackDepth,
-                 UBaseType_t taskPriority);
-  ~FreeRTOSRunner() override;
+  FreeRTOSNotificationRunner(const char *taskName,
+                             configSTACK_DEPTH_TYPE stackDepth,
+                             UBaseType_t taskPriority);
+  ~FreeRTOSNotificationRunner() override;
 
   bool start(std::function<void(void *, uint32_t)> loopFunction,
              void *argForCallback) override;

@@ -3,9 +3,9 @@
 #include <cstdint>
 #include <functional>
 
-class Runner {
+class NotificationRunner {
 public:
-  virtual ~Runner() = default;
+  virtual ~NotificationRunner() = default;
 
   // Call from inside a class with a private static method and this
   virtual bool start(std::function<void(void *, uint32_t)> loopFunction,

@@ -3,8 +3,8 @@
 #include <ErrorMacros.hpp>
 #include <IMUSensorPort.hpp>
 #include <LoggerPort.hpp>
+#include <NotificationRunner.hpp>
 #include <Pipe.hpp>
-#include <Runner.hpp>
 #include <atomic>
 #include <cstdint>
 #include <memory>
@@ -72,7 +72,7 @@ public:
               std::shared_ptr<Pipe<IMUSample, SAMPLING_PIPE_SIZE>> pipe,
               std::unique_ptr<MPUPort> sensor = nullptr,
               std::unique_ptr<I2CPort> i2c = nullptr,
-              std::unique_ptr<Runner> runner = nullptr,
+              std::unique_ptr<NotificationRunner> runner = nullptr,
               gpio_num_t INTPin = GPIO_NUM_5, gpio_num_t SDAPin = GPIO_NUM_6,
               gpio_num_t SCLPin = GPIO_NUM_7, int samplingFrequencyHz = 30);
 
@@ -101,7 +101,7 @@ private:
   std::shared_ptr<Pipe<IMUSample, SAMPLING_PIPE_SIZE>> pipe;
   std::unique_ptr<MPUPort> sensor;
   std::unique_ptr<I2CPort> bus;
-  std::unique_ptr<Runner> runner;
+  std::unique_ptr<NotificationRunner> runner;
   gpio_num_t INTPin, SDAPin, SCLPin;
   int samplingFrequencyHz;
 
@@ -117,7 +117,7 @@ private:
   MPU6050Sensor(LoggerPort *logger,
                 std::shared_ptr<Pipe<IMUSample, SAMPLING_PIPE_SIZE>> pipe,
                 std::unique_ptr<MPUPort> sensor, std::unique_ptr<I2CPort> i2c,
-                std::unique_ptr<Runner> runner, gpio_num_t INTPin,
+                std::unique_ptr<NotificationRunner> runner, gpio_num_t INTPin,
                 gpio_num_t SDAPin, gpio_num_t SCLPin, int samplingFrequencyHz);
 
   static std::unique_ptr<MPU6050Sensor>
@@ -125,7 +125,7 @@ private:
          std::shared_ptr<Pipe<IMUSample, SAMPLING_PIPE_SIZE>> pipe,
          std::unique_ptr<MPUPort> sensor = nullptr,
          std::unique_ptr<I2CPort> i2c = nullptr,
-         std::unique_ptr<Runner> runner = nullptr,
+         std::unique_ptr<NotificationRunner> runner = nullptr,
          gpio_num_t INTPin = GPIO_NUM_5, gpio_num_t SDAPin = GPIO_NUM_6,
          gpio_num_t SCLPin = GPIO_NUM_7, int samplingFrequencyHz = 30);
   bool initializeI2CBus();

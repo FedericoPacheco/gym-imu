@@ -429,7 +429,7 @@ IMUSample MPU6050Sensor::toIMUSample(mpud::raw_axes_t aRaw,
                 .y = aGravity.y * MPU6050Sensor::g,
                 .z = aGravity.z * MPU6050Sensor::g},
           .w = {.roll = w.x, .pitch = w.y, .yaw = w.z},
-          .t = gpioGetTimeUs()};
+          .t = getTimeUs()};
 }
 
 std::optional<IMUSample> MPU6050Sensor::readSync() {

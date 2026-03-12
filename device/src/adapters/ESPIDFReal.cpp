@@ -1,4 +1,4 @@
-#include "ports/ESP-IDF/GPIOPort.hpp"
+#include "ports/ESP-IDF/ESPIDFPort.hpp"
 
 esp_err_t gpioSetConfig(const gpio_config_t *config) {
   return gpio_config(config);
@@ -12,4 +12,4 @@ esp_err_t gpioRemoveISRHandler(gpio_num_t pin) {
   return gpio_isr_handler_remove(pin);
 }
 
-int64_t gpioGetTimeUs() { return esp_timer_get_time(); }
+int64_t getTimeUs() { return esp_timer_get_time(); }

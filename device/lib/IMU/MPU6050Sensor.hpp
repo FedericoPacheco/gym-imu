@@ -8,7 +8,7 @@
 #include <atomic>
 #include <cstdint>
 #include <memory>
-#include <ports/ESP-IDF/GPIOPort.hpp>
+#include <ports/ESP-IDF/ESPIDFPort.hpp>
 #include <ports/FreeRTOS/FreeRTOSPort.hpp>
 #include <ports/MPU/MPUPort.hpp>
 #include <tuple>

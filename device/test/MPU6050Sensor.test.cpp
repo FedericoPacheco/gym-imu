@@ -6,10 +6,10 @@ extern "C" {
 }
 DEFINE_FFF_GLOBALS;
 
+#include "doubles/ESPIDFDouble.cpp"
+#include "doubles/ESPIDFDouble.hpp"
 #include "doubles/FreeRTOSDouble.cpp"
 #include "doubles/FreeRTOSDouble.hpp"
-#include "doubles/GPIODouble.cpp"
-#include "doubles/GPIODouble.hpp"
 #include "doubles/I2CDouble.hpp"
 #include "doubles/LoggerDouble.hpp"
 #include "doubles/MPUDouble.hpp"
@@ -53,7 +53,7 @@ MPU6050SensorDependencies buildDefaultDependencies() {
   rtosSemaphoreTake_fake.return_val = pdTRUE;
   rtosSemaphoreGive_fake.return_val = pdTRUE;
 
-  resetGPIOPortFakes();
+  resetESPIDFPortFakes();
   gpioSetConfig_fake.return_val = ESP_OK;
   gpioAddISRHandler_fake.return_val = ESP_OK;
 
@@ -81,7 +81,7 @@ MPU6050SensorDependencies buildDefaultDependencies() {
   ON_CALL(*deps.sensor, setInterruptEnabled(_)).WillByDefault(Return(ESP_OK));
 
   // Sensor sampling
-  gpioGetTimeUs_fake.return_val = 123456;
+  getTimeUs_fake.return_val = 123456;
 
   ON_CALL(*deps.sensor, resetFIFO()).WillByDefault(Return(ESP_OK));
   ON_CALL(*deps.sensor, getFIFOCount()).WillByDefault(Return(0));
@@ -285,17 +285,16 @@ TEST(MPU6050Sensor_onReadTaskNotification,
       .WillOnce(Invoke(fillDeterministicFIFOPacket));
   EXPECT_CALL(*pipe, push(_))
       .Times(1)
-      .WillOnce(DoAll(
-          WithArg<0>([](const IMUSample &sample) {
-            EXPECT_FLOAT_EQ(sample.a.x, 1.0f * MPU6050Sensor::g);
-            EXPECT_FLOAT_EQ(sample.a.y, 2.0f * MPU6050Sensor::g);
-            EXPECT_FLOAT_EQ(sample.a.z, 3.0f * MPU6050Sensor::g);
-            EXPECT_FLOAT_EQ(sample.w.roll, 5.0f);
-            EXPECT_FLOAT_EQ(sample.w.pitch, 10.0f);
-            EXPECT_FLOAT_EQ(sample.w.yaw, 15.0f);
-            EXPECT_EQ(sample.t, 123456);
-          }),
-          Return(true)));
+      .WillOnce(DoAll(WithArg<0>([](const IMUSample &sample) {
+                        EXPECT_FLOAT_EQ(sample.a.x, 1.0f * MPU6050Sensor::g);
+                        EXPECT_FLOAT_EQ(sample.a.y, 2.0f * MPU6050Sensor::g);
+                        EXPECT_FLOAT_EQ(sample.a.z, 3.0f * MPU6050Sensor::g);
+                        EXPECT_FLOAT_EQ(sample.w.roll, 5.0f);
+                        EXPECT_FLOAT_EQ(sample.w.pitch, 10.0f);
+                        EXPECT_FLOAT_EQ(sample.w.yaw, 15.0f);
+                        EXPECT_EQ(sample.t, 123456);
+                      }),
+                      Return(true)));
 
   instance->beginAsync();
   runner->notify();

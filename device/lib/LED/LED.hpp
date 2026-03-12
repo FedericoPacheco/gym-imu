@@ -2,7 +2,7 @@
 #include <ErrorMacros.hpp>
 #include <LoggerPort.hpp>
 #include <memory>
-#include <ports/ESP-IDF/GPIOPort.hpp>
+#include <ports/ESP-IDF/ESPIDFPort.hpp>
 #include <ports/FreeRTOS/FreeRTOSPort.hpp>
 class LED {
 public:

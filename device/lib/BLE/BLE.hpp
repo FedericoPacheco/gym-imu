@@ -1,5 +1,4 @@
 #pragma once
-#include "esp_system.h"
 #include "nvs_flash.h"
 #include <Constants.hpp>
 #include <ErrorMacros.hpp>
@@ -11,7 +10,6 @@
 #include <memory>
 #include <ports/FreeRTOS/FreeRTOSPort.hpp>
 #include <ports/NimBLE/NimBLEPort.hpp>
-#include <sys/param.h>
 
 /*
 Overview:

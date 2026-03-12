@@ -1,6 +1,6 @@
 #pragma once
 
-#include <ports/ESP-IDF/ESPCompatibility.hpp>
+#include <ports/ESP-IDF/ESPIDFCompatibility.hpp>
 
 #if defined(UNIT_TEST) && !defined(ESP_PLATFORM)
 

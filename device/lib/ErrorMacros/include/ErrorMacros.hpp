@@ -2,7 +2,7 @@
 
 #include <LoggerPort.hpp>
 #include <cstdio>
-#include <ports/ESP-IDF/ESPCompatibility.hpp>
+#include <ports/ESP-IDF/ESPIDFCompatibility.hpp>
 
 #define RETURN_NULL_ON_ERROR(result, logger, msg)                              \
   if (!checkError((result), (logger), (msg)))                                  \

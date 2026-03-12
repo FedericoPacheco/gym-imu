@@ -3,6 +3,7 @@
 #include <ErrorMacros.hpp>
 #include <IMUSensorPort.hpp>
 #include <LoggerPort.hpp>
+#include <LoopRunner.hpp>
 #include <Pipe.hpp>
 #include <atomic>
 #include <cstdint>
@@ -30,7 +31,6 @@ sending IMU samples.
 information such as device name, appearance, supported services (currently
 notifications, a stream of data sent from the device with no ACK from the
 client), address, connection/discovery mode, etc. Allows only one connection.
-When send() is called with an IMUSample, it adds the sample to a pipe.
 The transmit task waits until there are enough samples in the pipe (based on
 negotiated MTU) and then sends them as a notification to connected
 clients.
@@ -39,7 +39,11 @@ How to use:
 UARTLogger logger((LogLevel::DEBUG));
 std::shared_ptr<Pipe<IMUSample, TRANSMISSION_PIPE_SIZE>> pipe =
     QueuePipe<IMUSample, TRANSMISSION_PIPE_SIZE>::create(&logger);
-unique_ptr<BLE> ble = BLE::getInstance(&logger, pipe);
+auto transmitRunner = std::make_unique<FreeRTOSLoopRunner>(
+  "transmitTask", BLE::TRANSMIT_TASK_STACK_SIZE,
+  BLE::TRANSMIT_TASK_PRIORITY, pdMS_TO_TICKS(100));
+unique_ptr<BLE> ble = BLE::getInstance(&logger, pipe,
+                     std::move(transmitRunner));
 ... if (ble->isConnected()) {
   ble->beginTransmission(); // receives samples from the pipe and sends them to
   the client
@@ -90,7 +94,8 @@ public:
 
   static BLE *
   getInstance(LoggerPort *logger,
-              std::shared_ptr<Pipe<IMUSample, TRANSMISSION_PIPE_SIZE>> pipe);
+              std::shared_ptr<Pipe<IMUSample, TRANSMISSION_PIPE_SIZE>> pipe,
+              std::unique_ptr<LoopRunner> transmitRunner);
   ~BLE();
   bool isConnected();
   void beginTransmission();
@@ -105,7 +110,6 @@ private:
   // Effetive payload = MTU (maximum transmission unit) - 3 bytes for ATT header
   static constexpr int PREFERRED_MTU =
       MIN(sizeof(IMUSample) * PREFERRED_BATCH_SEND_SIZE + 3, 512);
-  static constexpr int TRANSMIT_TASK_SHUTDOWN_DELAY_MS = 250;
   // Time between data exchanges when connected, between 7.5ms and 4s
   static constexpr int CONNECTION_INTERVAL_MIN_MS = 15;
   static constexpr int CONNECTION_INTERVAL_MAX_MS = 30;
@@ -147,7 +151,8 @@ private:
   ble_gatt_chr_def imuCharacteristics[2];
   ble_gatt_svc_def services[2];
 
-  TaskHandle_t bleTaskHandle, transmitTaskHandle;
+  TaskHandle_t bleTaskHandle;
+  std::unique_ptr<LoopRunner> transmitRunner;
   std::atomic<bool> doTransmit;
   std::shared_ptr<Pipe<IMUSample, TRANSMISSION_PIPE_SIZE>> pipe;
 
@@ -156,10 +161,12 @@ private:
   ble_gap_adv_params advertisingConfig;
 
   BLE(LoggerPort *logger,
-      std::shared_ptr<Pipe<IMUSample, TRANSMISSION_PIPE_SIZE>> pipe);
+      std::shared_ptr<Pipe<IMUSample, TRANSMISSION_PIPE_SIZE>> pipe,
+      std::unique_ptr<LoopRunner> transmitRunner);
   static std::unique_ptr<BLE>
   create(LoggerPort *logger,
-         std::shared_ptr<Pipe<IMUSample, TRANSMISSION_PIPE_SIZE>> pipe);
+         std::shared_ptr<Pipe<IMUSample, TRANSMISSION_PIPE_SIZE>> pipe,
+         std::unique_ptr<LoopRunner> transmitRunner);
 
   inline bool initializeFlash();
 
@@ -179,7 +186,7 @@ private:
 
   inline bool initializeTasks();
   static void bleTask(void *arg);
-  static void transmitTask(void *arg);
+  static void transmitLoopFunction(void *arg);
   inline void setDoTransmit(bool value);
   inline bool getDoTransmit();
 

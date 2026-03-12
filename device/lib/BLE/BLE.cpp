@@ -7,10 +7,12 @@
 BLE::InstanceState BLE::instanceState = {};
 
 BLE::BLE(LoggerPort *logger,
-         std::shared_ptr<Pipe<IMUSample, TRANSMISSION_PIPE_SIZE>> pipe)
+         std::shared_ptr<Pipe<IMUSample, TRANSMISSION_PIPE_SIZE>> pipe,
+         std::unique_ptr<LoopRunner> transmitRunner)
     : communicationState{}, logger(logger), imuCharacteristics{}, services{},
-      bleTaskHandle(nullptr), transmitTaskHandle(nullptr), pipe(pipe),
-      primaryAdvertisingPacket{}, scanResponsePacket{}, advertisingConfig{} {
+      bleTaskHandle(nullptr), transmitRunner(std::move(transmitRunner)),
+      pipe(pipe), primaryAdvertisingPacket{}, scanResponsePacket{},
+      advertisingConfig{} {
 
   this->setDoTransmit(false);
 
@@ -24,8 +26,10 @@ BLE::BLE(LoggerPort *logger,
 
 std::unique_ptr<BLE>
 BLE::create(LoggerPort *logger,
-            std::shared_ptr<Pipe<IMUSample, TRANSMISSION_PIPE_SIZE>> pipe) {
-  std::unique_ptr<BLE> ble(new (std::nothrow) BLE(logger, pipe));
+            std::shared_ptr<Pipe<IMUSample, TRANSMISSION_PIPE_SIZE>> pipe,
+            std::unique_ptr<LoopRunner> transmitRunner) {
+  std::unique_ptr<BLE> ble(new (std::nothrow)
+                               BLE(logger, pipe, std::move(transmitRunner)));
 
   if (!ble) {
     if (logger)
@@ -36,6 +40,12 @@ BLE::create(LoggerPort *logger,
   if (!pipe) {
     if (logger)
       logger->error("BLE", "Invalid pipe provided to BLE instance");
+    return nullptr;
+  }
+
+  if (!ble->transmitRunner) {
+    if (logger)
+      logger->error("BLE", "Invalid loop runner provided to BLE instance");
     return nullptr;
   }
 
@@ -72,7 +82,8 @@ BLE::create(LoggerPort *logger,
 
 BLE *BLE::getInstance(
     LoggerPort *logger,
-    std::shared_ptr<Pipe<IMUSample, TRANSMISSION_PIPE_SIZE>> pipe) {
+    std::shared_ptr<Pipe<IMUSample, TRANSMISSION_PIPE_SIZE>> pipe,
+    std::unique_ptr<LoopRunner> transmitRunner) {
 
   // Protect instance creation with a mutex to ensure thread safety
   if (BLE::instanceState.semaphoreHandle == nullptr) {
@@ -91,19 +102,18 @@ BLE *BLE::getInstance(
   if (rtosSemaphoreTake(BLE::instanceState.semaphoreHandle, portMAX_DELAY) ==
       pdTRUE) {
     if (!BLE::instanceState.instance)
-      BLE::instanceState.instance = BLE::create(logger, pipe);
+      BLE::instanceState.instance =
+          BLE::create(logger, pipe, std::move(transmitRunner));
     rtosSemaphoreGive(BLE::instanceState.semaphoreHandle);
   }
   return BLE::instanceState.instance.get();
 }
 
 BLE::~BLE() {
-  // Transmit remaining samples before shutting down
-  if (this->transmitTaskHandle) {
-    this->setDoTransmit(false);
-    rtosTaskDelay(pdMS_TO_TICKS(BLE::TRANSMIT_TASK_SHUTDOWN_DELAY_MS));
-    rtosTaskDelete(this->transmitTaskHandle);
-  }
+  this->setDoTransmit(false);
+
+  if (this->transmitRunner)
+    this->transmitRunner->stop();
 
   nimblePortStop();
 
@@ -223,7 +233,7 @@ bool BLE::initializeGAP() {
 // portENTER_CRITICAL() / portEXIT_CRITICAL():
 // disable/enable interrupts to ensure atomic execution of critical sections.
 // Used here to protect access to communicationState that are written here and
-// read on transmitTask() and send() Reference:
+// read on transmitLoopFunction(). Reference:
 // https://freertos.org/Documentation/02-Kernel/04-API-references/04-RTOS-kernel-control/01-taskENTER_CRITICAL_taskEXIT_CRITICAL
 int BLE::handleGAPEvent(ble_gap_event *event, void *arg) {
   BLE *self = static_cast<BLE *>(arg);
@@ -373,10 +383,8 @@ bool BLE::initializeTasks() {
 
   this->logger->debug("Initializing BLE tasks");
 
-  BaseType_t transmitTaskResult = rtosTaskCreate(
-      BLE::transmitTask, "transmitTask", BLE::TRANSMIT_TASK_STACK_SIZE, this,
-      BLE::TRANSMIT_TASK_PRIORITY, &this->transmitTaskHandle);
-  if (transmitTaskResult != pdPASS) {
+  if (!this->transmitRunner->start(BLE::transmitLoopFunction,
+                                   static_cast<void *>(this))) {
     this->logger->error("Failed to create transmit task");
     return false;
   }
@@ -386,7 +394,7 @@ bool BLE::initializeTasks() {
                      BLE::BLE_TASK_PRIORITY, &this->bleTaskHandle);
   if (bleTaskResult != pdPASS) {
     this->logger->error("Failed to create BLE task");
-    rtosTaskDelete(this->transmitTaskHandle);
+    this->transmitRunner->stop();
     return false;
   }
 
@@ -401,95 +409,80 @@ void BLE::bleTask(void *arg) {
   nimblePortRun();
 }
 
-void BLE::transmitTask(void *arg) {
+void BLE::transmitLoopFunction(void *arg) {
   BLE *self = static_cast<BLE *>(arg);
 
-  self->logger->debug("Transmit task started");
+  if (!self)
+    return;
 
   IMUSample batchSamples[BLE::PREFERRED_BATCH_SEND_SIZE];
   std::optional<IMUSample> optionalBatchSample;
   uint8_t batchCount;
 
-  // Avoid watchdog's false positives: when the connection is not ready or the
-  // transmission enabled, the loop runs without blocking indefinitely. Block
-  // with a delay to allow other tasks to be scheduled
-  constexpr TickType_t idleDelayTicks = pdMS_TO_TICKS(100);
-
   uint16_t characteristicHandle, connectionHandle, currentBatchSize;
   bool isSubscribed;
 
-  while (true) {
-    if (!self->getDoTransmit()) {
-      rtosTaskDelay(idleDelayTicks);
-      continue;
-    }
+  if (!self->getDoTransmit()) {
+    return;
+  }
 
-    // Sincronize access to shared variables
-    rtosPortEnterCritical(&self->communicationState.mux);
-    characteristicHandle =
-        self->communicationState.imuSampleCharacteristicHandle;
-    connectionHandle = self->communicationState.connectionHandle;
-    isSubscribed =
-        self->communicationState.isSubscribedToImuSampleCharacteristic;
-    currentBatchSize = self->communicationState.currentBatchSize;
-    rtosPortExitCritical(&self->communicationState.mux);
+  // Sincronize access to shared variables
+  rtosPortEnterCritical(&self->communicationState.mux);
+  characteristicHandle = self->communicationState.imuSampleCharacteristicHandle;
+  connectionHandle = self->communicationState.connectionHandle;
+  isSubscribed = self->communicationState.isSubscribedToImuSampleCharacteristic;
+  currentBatchSize = self->communicationState.currentBatchSize;
+  rtosPortExitCritical(&self->communicationState.mux);
 
-    if (characteristicHandle == 0) {
-      self->logger->warn(
-          "Can't send data: IMU Sample Characteristic handle is invalid");
-      rtosTaskDelay(idleDelayTicks);
-      continue;
-    }
-    if (connectionHandle == BLE_HS_CONN_HANDLE_NONE) {
-      self->logger->warn("Can't send data: no connected client");
-      rtosTaskDelay(idleDelayTicks);
-      continue;
-    }
-    if (!isSubscribed) {
-      self->logger->warn("Can't send data: client not subscribed to IMU "
-                         "sample Characteristic");
-      rtosTaskDelay(idleDelayTicks);
-      continue;
-    }
+  if (characteristicHandle == 0) {
+    self->logger->warn(
+        "Can't send data: IMU Sample Characteristic handle is invalid");
+    return;
+  }
+  if (connectionHandle == BLE_HS_CONN_HANDLE_NONE) {
+    self->logger->warn("Can't send data: no connected client");
+    return;
+  }
+  if (!isSubscribed) {
+    self->logger->warn("Can't send data: client not subscribed to IMU sample "
+                       "Characteristic");
+    return;
+  }
 
-    if (self->pipe->itemsFilled() < currentBatchSize) {
-      rtosTaskDelay(idleDelayTicks);
-      continue;
-    }
+  if (self->pipe->itemsFilled() < currentBatchSize) {
+    return;
+  }
 
-    while (self->pipe->itemsFilled() >= currentBatchSize) {
-      batchCount = 0;
+  while (self->pipe->itemsFilled() >= currentBatchSize) {
+    batchCount = 0;
+    optionalBatchSample = self->pipe->pop(false);
+    while (batchCount < currentBatchSize &&
+           (optionalBatchSample != std::nullopt)) {
+      batchSamples[batchCount] = optionalBatchSample.value();
       optionalBatchSample = self->pipe->pop(false);
-      while (batchCount < currentBatchSize &&
-             (optionalBatchSample != std::nullopt)) {
-        batchSamples[batchCount] = optionalBatchSample.value();
-        optionalBatchSample = self->pipe->pop(false);
-        batchCount++;
-      }
-
-      struct os_mbuf *nimbleBuffer =
-          nimbleMbufFromFlat(batchSamples, batchCount * sizeof(IMUSample));
-
-      if (nimbleBuffer == NULL) {
-        self->logger->error("Can't send data: no memory available for nimble "
-                            "buffer");
-        rtosTaskDelay(idleDelayTicks);
-        continue;
-      }
-      // Broadcast notification with data to all connected clients. The
-      // buffer's memory is freed by nimble (no os_mbuf_free_chain() needed).
-      // Note: ble_gatts_notify() only notifies the client to later pull the
-      // data from the server, which I think is less efficient and more
-      // complicated than pushing directly
-      if (nimbleGattServerNotifyCustom(connectionHandle, characteristicHandle,
-                                       nimbleBuffer) != 0) {
-        self->logger->error("Failed to send IMU samples notification");
-        rtosTaskDelay(idleDelayTicks);
-      } else {
-        self->logger->debug("Sent notification with %d IMU samples",
-                            batchCount);
-      }
+      batchCount++;
     }
+
+    struct os_mbuf *nimbleBuffer =
+        nimbleMbufFromFlat(batchSamples, batchCount * sizeof(IMUSample));
+
+    if (nimbleBuffer == NULL) {
+      self->logger->error("Can't send data: no memory available for nimble "
+                          "buffer");
+      return;
+    }
+    // Broadcast notification with data to all connected clients. The
+    // buffer's memory is freed by nimble (no os_mbuf_free_chain() needed).
+    // Note: ble_gatts_notify() only notifies the client to later pull the
+    // data from the server, which I think is less efficient and more
+    // complicated than pushing directly
+    if (nimbleGattServerNotifyCustom(connectionHandle, characteristicHandle,
+                                     nimbleBuffer) != 0) {
+      self->logger->error("Failed to send IMU samples notification");
+      return;
+    }
+
+    self->logger->debug("Sent notification with %d IMU samples", batchCount);
   }
 }
 

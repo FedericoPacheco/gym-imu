@@ -7,6 +7,7 @@
 #include <BLE.hpp>
 #include <Button.hpp>
 #include <Constants.hpp>
+#include <FreeRTOSLoopRunner.hpp>
 #include <FreeRTOSRunner.hpp>
 #include <LED.hpp>
 #include <Logger.hpp>
@@ -53,7 +54,11 @@ extern "C" void app_main() {
   }
 
   UARTLogger bleLogger("BLE", LogLevel::INFO);
-  BLE *ble = BLE::getInstance(&bleLogger, samplingPipe);
+  auto bleLoopRunner = std::make_unique<FreeRTOSLoopRunner>(
+      "transmitTask", BLE::TRANSMIT_TASK_STACK_SIZE,
+      BLE::TRANSMIT_TASK_PRIORITY, pdMS_TO_TICKS(100));
+  BLE *ble =
+      BLE::getInstance(&bleLogger, samplingPipe, std::move(bleLoopRunner));
   if (ble == nullptr) {
     bleLogger.error("Failed to initialize BLE");
     return;

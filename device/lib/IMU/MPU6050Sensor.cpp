@@ -402,7 +402,7 @@ MPU6050Sensor::parseSensorData(const uint8_t *data) {
 
   // Explanation:
   // Sensor's buffer stores data in big-endian format (i.e. most significant
-  // byte first). If it's type is "uint8_t", it means each index is one byte.
+  // byte first). If its type is "uint8_t", it means each index is one byte.
   // Since each axis is 2 bytes long, we need to move the first byte left by
   // 1 byte = 8 bits with the bitwise shift left operator <<, and then
   // concatenate it with the second byte using the bitwise OR operator (|).

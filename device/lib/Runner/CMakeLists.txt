@@ -1,1 +1,1 @@
-idf_component_register(SRCS "FreeRTOSRunner.hpp" "DeterministicRunner.hpp" INCLUDE_DIRS ".")
+idf_component_register(SRCS "FreeRTOSRunner.cpp" "FreeRTOSLoopRunner.cpp" INCLUDE_DIRS ".")

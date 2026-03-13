@@ -31,10 +31,10 @@ See the [C4 Context Diagram](docs/diagrams/c4/context.svg) and [C4 Container Dia
 
 Main technologies used:
 
-- Device Hardware: [XIAO ESP32 C3](https://wiki.seeedstudio.com/XIAO_ESP32C3_Getting_Started/), [MPU6050](https://www.invensense.com/products/motion-tracking/6-axis/mpu-6050/)
-- Device Firmware: PlatformIO with [Espressif IoT Development Framework (ESP-IDF)](https://www.espressif.com/en/products/sdks/esp-idf), [FreeRTOS](https://www.freertos.org/Why-FreeRTOS/What-is-FreeRTOS), NimBLE (Bluetooth Low Energy stack), C++20
-- Signal analysis and processing: TBD (likely Python for data analysis and visualization)
-- Mobile App: TBD (likely TypeScript + React Native)
+- **Device Hardware**: [XIAO ESP32 C3](https://wiki.seeedstudio.com/XIAO_ESP32C3_Getting_Started/), [MPU6050](https://www.invensense.com/products/motion-tracking/6-axis/mpu-6050/)
+- **Device Firmware**: PlatformIO with [Espressif IoT Development Framework (ESP-IDF)](https://www.espressif.com/en/products/sdks/esp-idf), [FreeRTOS](https://www.freertos.org/Why-FreeRTOS/What-is-FreeRTOS), NimBLE (Bluetooth Low Energy stack), C++20
+- **Signal analysis and processing**: TBD (likely Python for data analysis and visualization)
+- **Mobile App**: TBD (likely TypeScript + React Native)
 
 Key decisions and their rationale are documented in [Architecture Decision Records (ADRs)](docs/adrs/).
 
@@ -52,7 +52,41 @@ See [setup.md](docs/setup.md) for instructions on setting up the development env
 
 ### Testing
 
-TBD
+The device is tested at multiple levels:
+
+#### Unit
+
+Most relevant classes (e.g. MPU6050Sensor, BLE) are tested in isolation on the host machine, recurring to the depency injection and test seams for device dependencies (FreeRTOS, ESP-IDF, NimBLE, I2C, MPU). They consist of:
+
+- **Ports**: classes/C-interfaces that wrap the device dependencies, expose only the necessary functionality to the rest of the codebase and allow to swap implementations.
+- **Compatibility layers**: using macros, on testing time they define structs, types and constants used by the client code but missing on the host. On production, they import device dependencies directly.
+- **Real adapters**: they forward calls to the actual device dependencies.
+- **Doubles**: fake implementations that use the [Googletest](https://github.com/google/googletest) or [FFF](https://github.com/meekrosoft/fff) libraries and allow to set force return values and verify interactions on tests.
+- **Runners**: they transform tasks that run indefinitely and concurrently in the device into one deterministic thread that can be stepped manually on tests.
+
+Run the tests:
+
+```bash
+pio test -e host
+```
+
+Create line/function coverage report (currently ~50 tests, ~80% coverage):
+
+```bash
+chmod +x gen-lcov-report.sh
+./gen-lcov-report.sh
+```
+
+#### Integration
+
+Currently done manually by flashing the device and:
+
+- Reviewing logs on serial.
+- Measuring continuity or tension with the multimeter.
+- Pressing the record button and physically moving the IMU in simple ways (rotating on one axis and moving along it).
+- Doing BLE operations (e.g. connect, subscribe) with the *nRF Connect* mobile app.
+
+Might consider doing hardware-in-the-loop automated tests in the future.
 
 ## Signal Analysis and Processing
 

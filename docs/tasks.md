@@ -23,14 +23,17 @@ Other rules:
 
 ### In Progress
 
+1. Solder components into perfboard.
+
 ### Next
+
+- Figure out how to make a case for the device by 3D printing.
+- Design case for device.
+- Write final BOM (bill of materials) for the device.
 
 ### Backlog
 
 - Review if error macros work with variable arguments
-- Solder components into perfboard.
-- Figure out how to make a case for the device (3D printing?) and design it.
-- Write final BOM (bill of materials) for the device.
 - Fork I2C and MPU libraries on github and apply changes there. Then include as dependencies in the platformIO file.
 - Remove unnecessary includes to reduce compiled code size.
 - Fine tune transmission parameters to optimize for latency.

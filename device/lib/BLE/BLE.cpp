@@ -133,8 +133,8 @@ bool BLE::initializeFlash() {
   if (error == ESP_ERR_NVS_NO_FREE_PAGES ||
       error == ESP_ERR_NVS_NEW_VERSION_FOUND) {
     ESP_ERROR_CHECK(nvsFlashErase());
-    RETURN_FALSE_ON_ERROR(nvsFlashInit(), this->logger,
-                          "Failed to initialize NVS flash");
+    RETURN_FALSE_ON_ESP_ERROR(nvsFlashInit(), this->logger,
+                              "Failed to initialize NVS flash");
     return true;
   }
 

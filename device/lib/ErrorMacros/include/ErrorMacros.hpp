@@ -5,10 +5,10 @@
 #include <ports/ESP-IDF/ESPIDFCompatibility.hpp>
 #include <ports/NimBLE/NimBLECompatibility.hpp>
 
-#define RETURN_NULL_ON_ERROR(result, logger, msg)                              \
+#define RETURN_NULL_ON_ESP_ERROR(result, logger, msg)                          \
   if (!checkError((result), (logger), (msg)))                                  \
   return nullptr
-#define RETURN_FALSE_ON_ERROR(result, logger, msg)                             \
+#define RETURN_FALSE_ON_ESP_ERROR(result, logger, msg)                         \
   if (!checkError((result), (logger), (msg)))                                  \
   return false
 

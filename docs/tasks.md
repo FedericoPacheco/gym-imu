@@ -23,9 +23,9 @@ Other rules:
 
 ### In Progress
 
-1. Rename RETURN_..._ON_ERROR macros to RETURN_..._ON_ESP_ERROR.
-
 ### Next
+
+- Document testing strategy on README.md
 
 ### Backlog
 
@@ -66,3 +66,4 @@ Other rules:
 - Create host unit tests MPU's readTask logic.
 - Create host unit tests for BLE's initialization logic.
 - Create host unit tests for BLE's transmitTask logic.
+- Rename RETURN_..._ON_ERROR macros to RETURN_..._ON_ESP_ERROR.

@@ -1,16 +1,16 @@
 #include <Logger.hpp>
 
-Logger::Logger(const char *tag, LogLevel level) {
-  snprintf(this->tag, Logger::TAG_MAX_LENGTH, "%s", tag);
+UARTLogger::UARTLogger(const char *tag, LogLevel level) {
+  snprintf(this->tag, UARTLogger::TAG_MAX_LENGTH, "%s", tag);
   this->setLevel(level);
 }
 
-void Logger::log(LogLevel level, const char *formattedMessageStr,
-                 va_list messageArgs) {
+void UARTLogger::log(LogLevel level, const char *formattedMessageStr,
+                     va_list messageArgs) {
   char humanReadableUpTime[32];
   this->getHumanReadableUpTime(humanReadableUpTime);
 
-  char finalStrWithPrefix[Logger::MAX_LOG_MESSAGE_LENGTH];
+  char finalStrWithPrefix[UARTLogger::MAX_LOG_MESSAGE_LENGTH];
   snprintf(finalStrWithPrefix, sizeof(finalStrWithPrefix),
            "[ %s ] [ %s ] [ t=%s ] %s\n", this->mapLevelToString(level),
            this->tag, humanReadableUpTime, formattedMessageStr);
@@ -20,7 +20,7 @@ void Logger::log(LogLevel level, const char *formattedMessageStr,
   esp_log_writev(espLevel, this->tag, finalStrWithPrefix, messageArgs);
 }
 
-void Logger::getHumanReadableUpTime(char *timerBuffer) {
+void UARTLogger::getHumanReadableUpTime(char *timerBuffer) {
   const uint64_t ONE_SECOND_IN_MICROS = 1000000;
   const uint64_t ONE_MINUTE_IN_MICROS = ONE_SECOND_IN_MICROS * 60;
   const uint64_t ONE_HOUR_IN_MICROS = ONE_MINUTE_IN_MICROS * 60;
@@ -43,7 +43,7 @@ void Logger::getHumanReadableUpTime(char *timerBuffer) {
            seconds, micros);
 }
 
-esp_log_level_t Logger::mapToEspLogLevel(LogLevel level) {
+esp_log_level_t UARTLogger::mapToEspLogLevel(LogLevel level) {
   switch (level) {
   case LogLevel::ERROR:
     return ESP_LOG_ERROR;
@@ -57,7 +57,7 @@ esp_log_level_t Logger::mapToEspLogLevel(LogLevel level) {
     return ESP_LOG_INFO;
   }
 }
-const char *Logger::mapLevelToString(LogLevel level) {
+const char *UARTLogger::mapLevelToString(LogLevel level) {
   switch (level) {
   case LogLevel::ERROR:
     return "ERROR";
@@ -72,7 +72,7 @@ const char *Logger::mapLevelToString(LogLevel level) {
   }
 }
 
-void Logger::error(const char *formattedMessageStr, ...) {
+void UARTLogger::error(const char *formattedMessageStr, ...) {
   if (currentLevel < LogLevel::ERROR)
     return;
 
@@ -81,7 +81,7 @@ void Logger::error(const char *formattedMessageStr, ...) {
   this->log(LogLevel::ERROR, formattedMessageStr, messageArgs);
   va_end(messageArgs);
 }
-void Logger::warn(const char *formattedMessageStr, ...) {
+void UARTLogger::warn(const char *formattedMessageStr, ...) {
   if (currentLevel < LogLevel::WARN)
     return;
 
@@ -90,7 +90,7 @@ void Logger::warn(const char *formattedMessageStr, ...) {
   this->log(LogLevel::WARN, formattedMessageStr, messageArgs);
   va_end(messageArgs);
 }
-void Logger::info(const char *formattedMessageStr, ...) {
+void UARTLogger::info(const char *formattedMessageStr, ...) {
   if (currentLevel < LogLevel::INFO)
     return;
 
@@ -99,7 +99,7 @@ void Logger::info(const char *formattedMessageStr, ...) {
   this->log(LogLevel::INFO, formattedMessageStr, messageArgs);
   va_end(messageArgs);
 }
-void Logger::debug(const char *formattedMessageStr, ...) {
+void UARTLogger::debug(const char *formattedMessageStr, ...) {
   if (currentLevel < LogLevel::DEBUG)
     return;
 
@@ -109,4 +109,4 @@ void Logger::debug(const char *formattedMessageStr, ...) {
   va_end(messageArgs);
 }
 
-void Logger::setLevel(LogLevel level) { this->currentLevel = level; }
+void UARTLogger::setLevel(LogLevel level) { this->currentLevel = level; }

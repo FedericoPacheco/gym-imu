@@ -1,10 +1,9 @@
 #pragma once
-#include "driver/gpio.h"
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
 #include <ErrorMacros.hpp>
-#include <Logger.hpp>
+#include <LoggerPort.hpp>
 #include <memory>
+#include <ports/ESP-IDF/ESPIDFPort.hpp>
+#include <ports/FreeRTOS/FreeRTOSPort.hpp>
 
 /*
 Overview:
@@ -39,7 +38,7 @@ Async:
 
 class Button {
 public:
-  std::unique_ptr<Button> static create(Logger *logger,
+  static std::unique_ptr<Button> create(LoggerPort *logger,
                                         gpio_num_t pin = GPIO_NUM_3 /* D1 */,
                                         int asyncQueueSize = 10,
                                         int debouncingDelayMs = 500);
@@ -58,9 +57,9 @@ private:
   QueueHandle_t eventQueue;
   TimerHandle_t debounceTimer;
 
-  Logger *logger;
+  LoggerPort *logger;
 
-  Button(Logger *logger, gpio_num_t pin);
+  Button(LoggerPort *logger, gpio_num_t pin);
 
   static void IRAM_ATTR isrHandler(void *arg);
   static void debounceTimerCallback(TimerHandle_t xTimer);

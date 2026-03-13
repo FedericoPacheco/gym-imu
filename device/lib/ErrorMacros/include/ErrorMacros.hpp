@@ -1,17 +1,18 @@
 #pragma once
-#include "esp_err.h"
-#include "host/ble_hs.h"
-#include <Logger.hpp>
-#include <cstdio>
 
-#define RETURN_NULL_ON_ERROR(result, logger, msg)                              \
+#include <LoggerPort.hpp>
+#include <cstdio>
+#include <ports/ESP-IDF/ESPIDFCompatibility.hpp>
+#include <ports/NimBLE/NimBLECompatibility.hpp>
+
+#define RETURN_NULL_ON_ESP_ERROR(result, logger, msg)                          \
   if (!checkError((result), (logger), (msg)))                                  \
   return nullptr
-#define RETURN_FALSE_ON_ERROR(result, logger, msg)                             \
+#define RETURN_FALSE_ON_ESP_ERROR(result, logger, msg)                         \
   if (!checkError((result), (logger), (msg)))                                  \
   return false
 
-inline bool checkError(esp_err_t err, Logger *logger, const char *msg) {
+inline bool checkError(esp_err_t err, LoggerPort *logger, const char *msg) {
   if (err != ESP_OK) {
     if (logger != nullptr)
       logger->error("%s: %s", msg, esp_err_to_name(err));
@@ -20,7 +21,6 @@ inline bool checkError(esp_err_t err, Logger *logger, const char *msg) {
   return true;
 }
 
-inline const char *nimble_err_to_name(esp_err_t err);
 #define RETURN_NULL_ON_NIMBLE_ERROR(result, logger, msg)                       \
   if (!checkNimbleError((result), (logger), (msg)))                            \
   return nullptr
@@ -28,15 +28,7 @@ inline const char *nimble_err_to_name(esp_err_t err);
   if (!checkNimbleError((result), (logger), (msg)))                            \
   return false
 
-inline bool checkNimbleError(int errorCode, Logger *logger, const char *msg) {
-  if (errorCode != 0) {
-    if (logger != nullptr)
-      logger->error("%s: %s (%d)", msg, nimble_err_to_name(errorCode),
-                    errorCode);
-    return false;
-  }
-  return true;
-}
+#if !defined(UNIT_TEST) || defined(ESP_PLATFORM)
 
 inline const char *nimble_err_to_name(int errorCode) {
   static char messageBuffer[64];
@@ -125,4 +117,25 @@ inline const char *nimble_err_to_name(int errorCode) {
     return "Unknown host error";
   }
   }
+}
+
+#else
+
+inline const char *nimble_err_to_name(int errorCode) {
+  if (errorCode == 0)
+    return "OK";
+  return "NimBLE error";
+}
+
+#endif
+
+inline bool checkNimbleError(int errorCode, LoggerPort *logger,
+                             const char *msg) {
+  if (errorCode != 0) {
+    if (logger != nullptr)
+      logger->error("%s: %s (%d)", msg, nimble_err_to_name(errorCode),
+                    errorCode);
+    return false;
+  }
+  return true;
 }

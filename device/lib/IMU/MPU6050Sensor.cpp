@@ -1,35 +1,52 @@
-#include "freertos/idf_additions.h"
 #include <MPU6050Sensor.hpp>
 
 MPU6050Sensor::InstanceState MPU6050Sensor::instanceState = {};
 
 MPU6050Sensor::MPU6050Sensor(
-    Logger *logger, std::shared_ptr<Pipe<IMUSample, SAMPLING_PIPE_SIZE>> pipe,
-    gpio_num_t INTPin, gpio_num_t SDAPin, gpio_num_t SCLPin,
-    int samplingFrequencyHz)
-    : INTPin(INTPin), SDAPin(SDAPin), SCLPin(SCLPin),
-      samplingFrequencyHz(samplingFrequencyHz), logger(logger), pipe(pipe),
-      bus(I2C_NUM_0) {}
+    LoggerPort *logger,
+    std::shared_ptr<Pipe<IMUSample, SAMPLING_PIPE_SIZE>> pipe,
+    std::unique_ptr<MPUPort> sensor, std::unique_ptr<I2CPort> i2c,
+    std::unique_ptr<NotificationRunner> runner, gpio_num_t INTPin,
+    gpio_num_t SDAPin, gpio_num_t SCLPin, int samplingFrequencyHz)
+    : logger(logger), pipe(pipe), sensor(std::move(sensor)),
+      bus(std::move(i2c)), runner(std::move(runner)), INTPin(INTPin),
+      SDAPin(SDAPin), SCLPin(SCLPin), samplingFrequencyHz(samplingFrequencyHz) {
+}
 
-std::unique_ptr<MPU6050Sensor>
-MPU6050Sensor::create(Logger *logger,
-                      std::shared_ptr<Pipe<IMUSample, SAMPLING_PIPE_SIZE>> pipe,
-                      gpio_num_t INTPin, gpio_num_t SDAPin, gpio_num_t SCLPin,
-                      int samplingFrequencyHz) {
+std::unique_ptr<MPU6050Sensor> MPU6050Sensor::create(
+    LoggerPort *logger,
+    std::shared_ptr<Pipe<IMUSample, SAMPLING_PIPE_SIZE>> pipe,
+    std::unique_ptr<MPUPort> sensor, std::unique_ptr<I2CPort> i2c,
+    std::unique_ptr<NotificationRunner> runner, gpio_num_t INTPin,
+    gpio_num_t SDAPin, gpio_num_t SCLPin, int samplingFrequencyHz) {
 
-  // nothrow: in case of failure, return nullptr instead of throwing
-  std::unique_ptr<MPU6050Sensor> imu(new (std::nothrow) MPU6050Sensor(
-      logger, pipe, INTPin, SDAPin, SCLPin, samplingFrequencyHz));
+  if (!logger)
+    return nullptr;
 
-  if (!imu) {
-    if (logger)
-      logger->error("Failed to allocate MPU6050Sensor");
+  if (!pipe) {
+    logger->error("Pipe pointer is null");
+    return nullptr;
+  }
+  if (!sensor) {
+    logger->error("Sensor adapter pointer is null");
+    return nullptr;
+  }
+  if (!i2c) {
+    logger->error("I2C adapter pointer is null");
+    return nullptr;
+  }
+  if (!runner) {
+    logger->error("Runner pointer is null");
     return nullptr;
   }
 
-  if (!pipe) {
-    if (logger)
-      logger->error("Pipe pointer is null");
+  // nothrow: in case of failure, return nullptr instead of throwing
+  std::unique_ptr<MPU6050Sensor> imu(new (std::nothrow) MPU6050Sensor(
+      logger, pipe, std::move(sensor), std::move(i2c), std::move(runner),
+      INTPin, SDAPin, SCLPin, samplingFrequencyHz));
+
+  if (!imu) {
+    logger->error("Failed to allocate MPU6050Sensor");
     return nullptr;
   }
 
@@ -49,8 +66,10 @@ MPU6050Sensor::create(Logger *logger,
   // Leave everything ready BEFORE enabling interrupts
   if (!imu->setupTask())
     return nullptr;
-  if (!imu->configureInterrupts())
+  if (!imu->configureInterrupts()) {
+    imu->runner->stop();
     return nullptr;
+  }
 
   logger->info("MPU6050 sensor initialized successfully");
 
@@ -58,49 +77,60 @@ MPU6050Sensor::create(Logger *logger,
 }
 
 MPU6050Sensor *MPU6050Sensor::getInstance(
-    Logger *logger, std::shared_ptr<Pipe<IMUSample, SAMPLING_PIPE_SIZE>> pipe,
-    gpio_num_t INTPin, gpio_num_t SDAPin, gpio_num_t SCLPin,
-    int samplingFrequencyHz) {
+    LoggerPort *logger,
+    std::shared_ptr<Pipe<IMUSample, SAMPLING_PIPE_SIZE>> pipe,
+    std::unique_ptr<MPUPort> sensor, std::unique_ptr<I2CPort> i2c,
+    std::unique_ptr<NotificationRunner> runner, gpio_num_t INTPin,
+    gpio_num_t SDAPin, gpio_num_t SCLPin, int samplingFrequencyHz) {
 
   // Protect instance creation with a mutex to ensure thread safety
   if (MPU6050Sensor::instanceState.semaphoreHandle == nullptr) {
-    taskENTER_CRITICAL(&MPU6050Sensor::instanceState.mux);
-    MPU6050Sensor::instanceState.semaphoreHandle = xSemaphoreCreateMutexStatic(
+    rtosTaskEnterCritical(&MPU6050Sensor::instanceState.mux);
+    MPU6050Sensor::instanceState.semaphoreHandle = rtosCreateMutexStatic(
         &MPU6050Sensor::instanceState.semaphoreControlBlock);
     if (MPU6050Sensor::instanceState.semaphoreHandle == nullptr) {
-      if (logger)
-        logger->error("Failed to create mutex for MPU6050Sensor instance");
-      taskEXIT_CRITICAL(&MPU6050Sensor::instanceState.mux);
+      logger->error("Failed to create mutex for MPU6050Sensor instance");
+      rtosTaskExitCritical(&MPU6050Sensor::instanceState.mux);
       return nullptr;
     }
-    taskEXIT_CRITICAL(&MPU6050Sensor::instanceState.mux);
+    rtosTaskExitCritical(&MPU6050Sensor::instanceState.mux);
   }
 
-  if (xSemaphoreTake(MPU6050Sensor::instanceState.semaphoreHandle,
-                     portMAX_DELAY) == pdTRUE) {
+  if (rtosSemaphoreTake(MPU6050Sensor::instanceState.semaphoreHandle,
+                        portMAX_DELAY) == pdTRUE) {
     if (!MPU6050Sensor::instanceState.instance)
       MPU6050Sensor::instanceState.instance = MPU6050Sensor::create(
-          logger, pipe, INTPin, SDAPin, SCLPin, samplingFrequencyHz);
-    xSemaphoreGive(MPU6050Sensor::instanceState.semaphoreHandle);
+          logger, pipe, std::move(sensor), std::move(i2c), std::move(runner),
+          INTPin, SDAPin, SCLPin, samplingFrequencyHz);
+    rtosSemaphoreGive(MPU6050Sensor::instanceState.semaphoreHandle);
   }
   return MPU6050Sensor::instanceState.instance.get();
 }
 
+#if defined(UNIT_TEST) && !defined(ESP_PLATFORM)
+void MPU6050Sensor::resetInstanceForTests() {
+  MPU6050Sensor::instanceState.instance.reset();
+  MPU6050Sensor::instanceState.semaphoreHandle = nullptr;
+  MPU6050Sensor::instanceState.semaphoreControlBlock = {};
+  MPU6050Sensor::instanceState.mux = {};
+}
+#endif
+
 bool MPU6050Sensor::initializeI2CBus() {
   this->logger->debug("Initializing I2C bus");
 
-  RETURN_FALSE_ON_ERROR(
-      this->bus.begin(this->SDAPin, this->SCLPin, GPIO_PULLUP_DISABLE,
-                      GPIO_PULLUP_DISABLE, MPU6050Sensor::BUS_FREQUENCY_HZ),
+  RETURN_FALSE_ON_ESP_ERROR(
+      this->bus->begin(this->SDAPin, this->SCLPin, GPIO_PULLUP_DISABLE,
+                       GPIO_PULLUP_DISABLE, MPU6050Sensor::BUS_FREQUENCY_HZ),
       this->logger, "I2C bus initialization failed");
 
-  this->sensor.setBus(this->bus);
-  RETURN_FALSE_ON_ERROR(this->sensor.lastError(), this->logger,
-                        "Failed to set I2C bus for sensor");
+  this->sensor->setBus(*this->bus);
+  RETURN_FALSE_ON_ESP_ERROR(this->sensor->lastError(), this->logger,
+                            "Failed to set I2C bus for sensor");
 
-  this->sensor.setAddr(mpud::MPU_I2CADDRESS_AD0_LOW);
-  RETURN_FALSE_ON_ERROR(this->sensor.lastError(), this->logger,
-                        "Failed to set I2C address for sensor");
+  this->sensor->setAddr(mpud::MPU_I2CADDRESS_AD0_LOW);
+  RETURN_FALSE_ON_ESP_ERROR(this->sensor->lastError(), this->logger,
+                            "Failed to set I2C address for sensor");
 
   return true;
 }
@@ -108,23 +138,24 @@ bool MPU6050Sensor::initializeI2CBus() {
 bool MPU6050Sensor::resetSensor() {
   this->logger->debug("Performing sensor reset");
 
-  RETURN_FALSE_ON_ERROR(this->sensor.reset(), this->logger, "Reset failed");
-  vTaskDelay(pdMS_TO_TICKS(250));
+  RETURN_FALSE_ON_ESP_ERROR(this->sensor->reset(), this->logger,
+                            "Reset failed");
+  rtosTaskDelay(pdMS_TO_TICKS(250));
 
   return true;
 }
 
 void MPU6050Sensor::performDiagnostics() {
   this->logger->debug("Scanning I2C bus for MPU6050 device");
-  this->bus.scanner();
+  this->bus->scanner();
 
-  uint8_t wai = this->sensor.whoAmI();
+  uint8_t wai = this->sensor->whoAmI();
   this->logger->debug("Retrieved sensor's WHO_AM_I register: 0x%02X", wai);
 
   this->logger->debug("Retrieved sensor's register dump (0x00..0x1F):");
-  this->sensor.registerDump(0x00, 0x1F);
+  this->sensor->registerDump(0x00, 0x1F);
   mpud::selftest_t selfTestResult = 0;
-  esp_err_t serr = this->sensor.selfTest(&selfTestResult);
+  esp_err_t serr = this->sensor->selfTest(&selfTestResult);
   this->logger->info("selfTest result: 0x%X err=%s", selfTestResult,
                      esp_err_to_name(serr));
 }
@@ -134,12 +165,12 @@ bool MPU6050Sensor::testConnection() {
 
   uint8_t attempts = 0;
   uint8_t MAX_CONNECTION_ATTEMPTS = 5;
-  esp_err_t err = this->sensor.testConnection();
+  esp_err_t err = this->sensor->testConnection();
   while (err != ESP_OK && attempts < MAX_CONNECTION_ATTEMPTS) {
     this->logger->error("I2C connection failed: %s (%#X)", esp_err_to_name(err),
                         err);
-    vTaskDelay(pdMS_TO_TICKS(1000));
-    err = this->sensor.testConnection();
+    rtosTaskDelay(pdMS_TO_TICKS(1000));
+    err = this->sensor->testConnection();
     attempts++;
   }
   if (attempts == MAX_CONNECTION_ATTEMPTS) {
@@ -154,8 +185,8 @@ bool MPU6050Sensor::testConnection() {
 bool MPU6050Sensor::initializeSensor() {
   this->logger->debug("Initializing MPU6050 sensor");
 
-  RETURN_FALSE_ON_ERROR(this->sensor.initialize(), this->logger,
-                        "MPU initialization failed");
+  RETURN_FALSE_ON_ESP_ERROR(this->sensor->initialize(), this->logger,
+                            "MPU initialization failed");
 
   return true;
 }
@@ -163,15 +194,16 @@ bool MPU6050Sensor::initializeSensor() {
 bool MPU6050Sensor::configureSettings() {
   this->logger->debug("Configuring sensor settings");
 
-  RETURN_FALSE_ON_ERROR(this->sensor.setSampleRate(this->samplingFrequencyHz),
-                        this->logger, "Failed to set sample rate");
+  RETURN_FALSE_ON_ESP_ERROR(
+      this->sensor->setSampleRate(this->samplingFrequencyHz), this->logger,
+      "Failed to set sample rate");
 
-  RETURN_FALSE_ON_ERROR(
-      this->sensor.setAccelFullScale(MPU6050Sensor::ACCELEROMETER_SCALE),
+  RETURN_FALSE_ON_ESP_ERROR(
+      this->sensor->setAccelFullScale(MPU6050Sensor::ACCELEROMETER_SCALE),
       this->logger, "Failed to set accelerometer scale");
 
-  RETURN_FALSE_ON_ERROR(
-      this->sensor.setGyroFullScale(MPU6050Sensor::GYROSCOPE_SCALE),
+  RETURN_FALSE_ON_ESP_ERROR(
+      this->sensor->setGyroFullScale(MPU6050Sensor::GYROSCOPE_SCALE),
       this->logger, "Failed to set gyroscope scale");
 
   return true;
@@ -180,25 +212,24 @@ bool MPU6050Sensor::configureSettings() {
 bool MPU6050Sensor::setupDMPQueue() {
   this->logger->debug("Setting up DMP FIFO queue on sensor");
 
-  RETURN_FALSE_ON_ERROR(
-      this->sensor.setFIFOConfig(mpud::FIFO_CFG_ACCEL | mpud::FIFO_CFG_GYRO),
+  RETURN_FALSE_ON_ESP_ERROR(
+      this->sensor->setFIFOConfig(mpud::FIFO_CFG_ACCEL | mpud::FIFO_CFG_GYRO),
       this->logger, "Failed to configure FIFO");
 
-  RETURN_FALSE_ON_ERROR(this->sensor.setFIFOEnabled(true), this->logger,
-                        "Failed to enable FIFO");
+  RETURN_FALSE_ON_ESP_ERROR(this->sensor->setFIFOEnabled(true), this->logger,
+                            "Failed to enable FIFO");
 
   return true;
 }
 
 bool MPU6050Sensor::setupTask() {
-  this->logger->debug("Setting up FreeRTOS task for async reading");
+  this->logger->debug("Setting up runner for async reading");
 
   this->setDoRead(false);
-  BaseType_t taskResult = xTaskCreate(
-      readTask, "readTask", MPU6050Sensor::READ_TASK_STACK_SIZE, this,
-      MPU6050Sensor::READ_TASK_PRIORITY, &this->readTaskHandle);
-  if (taskResult != pdPASS) {
-    this->logger->error("Failed to create read task");
+  bool didStart = this->runner->start(MPU6050Sensor::onReadTaskNotification,
+                                      static_cast<void *>(this));
+  if (!didStart) {
+    this->logger->error("Failed to start read runner");
     return false;
   }
 
@@ -212,11 +243,12 @@ bool MPU6050Sensor::configureInterrupts() {
                                 .pull_up_en = GPIO_PULLUP_DISABLE,
                                 .pull_down_en = GPIO_PULLDOWN_ENABLE,
                                 .intr_type = GPIO_INTR_POSEDGE};
-  RETURN_FALSE_ON_ERROR(gpio_config(&pinConfig), this->logger,
-                        "GPIO config failed");
 
-  RETURN_FALSE_ON_ERROR(
-      gpio_isr_handler_add(this->INTPin, MPU6050Sensor::isrHandler, this),
+  RETURN_FALSE_ON_ESP_ERROR(gpioSetConfig(&pinConfig), this->logger,
+                            "GPIO config failed");
+
+  RETURN_FALSE_ON_ESP_ERROR(
+      gpioAddISRHandler(this->INTPin, MPU6050Sensor::isrHandler, this),
       this->logger, "ISR handler add failed");
   const mpud::int_config_t intConfig{.level = mpud::INT_LVL_ACTIVE_HIGH,
                                      .drive = mpud::INT_DRV_PUSHPULL,
@@ -224,11 +256,11 @@ bool MPU6050Sensor::configureInterrupts() {
                                      .clear = mpud::INT_CLEAR_STATUS_REG};
   // gpio_install_isr_service() assumed to be called from app_main()
 
-  RETURN_FALSE_ON_ERROR(this->sensor.setInterruptConfig(intConfig),
-                        this->logger, "Interrupt config failed");
+  RETURN_FALSE_ON_ESP_ERROR(this->sensor->setInterruptConfig(intConfig),
+                            this->logger, "Interrupt config failed");
 
-  RETURN_FALSE_ON_ERROR(
-      this->sensor.setInterruptEnabled(mpud::INT_EN_RAWDATA_READY),
+  RETURN_FALSE_ON_ESP_ERROR(
+      this->sensor->setInterruptEnabled(mpud::INT_EN_RAWDATA_READY),
       this->logger, "Interrupt enable failed");
   return true;
 }
@@ -238,15 +270,13 @@ MPU6050Sensor::~MPU6050Sensor() {
 
   this->setDoRead(false);
 
-  this->logger->debug("Notifying read task to unblock and finish cleanly");
-  if (this->readTaskHandle) {
-    xTaskNotifyGive(this->readTaskHandle);
-    vTaskDelay(1);
-    vTaskDelete(this->readTaskHandle);
+  this->logger->debug("Stopping async runner");
+  if (this->runner) {
+    this->runner->stop();
   }
 
   this->logger->debug("Removing ISR handler");
-  gpio_isr_handler_remove(this->INTPin);
+  gpioRemoveISRHandler(this->INTPin);
 
   this->logger->info("MPU6050 sensor shut down successfully");
 }
@@ -273,61 +303,49 @@ std::optional<IMUSample> MPU6050Sensor::readAsync() {
 
 void IRAM_ATTR MPU6050Sensor::isrHandler(void *arg) {
   MPU6050Sensor *self = static_cast<MPU6050Sensor *>(arg);
-
-  if (!self || !self->readTaskHandle)
-    return;
-
-  // Notify the read task to process the interrupt
-  BaseType_t highPriorityTaskWoken = pdFALSE;
-  vTaskNotifyGiveFromISR(self->readTaskHandle, &highPriorityTaskWoken);
-  if (highPriorityTaskWoken == pdTRUE)
-    portYIELD_FROM_ISR(); // Context switch if needed
+  if (self && self->runner)
+    self->runner->notifyFromISR();
 }
 
-void MPU6050Sensor::readTask(void *arg) {
-  // Get the instance pointer
+void MPU6050Sensor::onReadTaskNotification(void *arg,
+                                           uint32_t notificationValue) {
   MPU6050Sensor *self = static_cast<MPU6050Sensor *>(arg);
+  if (!self)
+    return;
 
-  self->logger->debug("Read task started");
-
-  while (true) {
-    // Block and wait for ISR notification
-    uint32_t notificationValue = ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
-
-    if (!self->getDoRead()) {
-      continue;
-    }
-
-    if (notificationValue > 1) {
-      self->logger->warn(
-          "Read task: multiple notifications received (%d), processing backlog",
-          notificationValue);
-    }
-
-    bool wasCountReadError = self->sensor.lastError() != ESP_OK;
-    if (wasCountReadError) {
-      self->logger->warn("Read task: FIFO count read error");
-      self->sensor.resetFIFO();
-      continue;
-    }
-
-    uint16_t initialFifoCount = self->sensor.getFIFOCount();
-    bool isFifoMisaligned =
-        initialFifoCount % MPU6050Sensor::FIFO_PACKET_SIZE != 0;
-    if (isFifoMisaligned) {
-      self->logger->warn("Read task: FIFO misaligned (count=%d)",
-                         initialFifoCount);
-      self->sensor.resetFIFO();
-      continue;
-    }
-
-    self->batchReadDMPQueue(initialFifoCount);
+  if (!self->getDoRead()) {
+    return;
   }
+
+  if (notificationValue > 1) {
+    self->logger->warn(
+        "Read task: multiple notifications received (%d), processing backlog",
+        notificationValue);
+  }
+
+  uint16_t initialFifoCount = self->sensor->getFIFOCount();
+  bool wasCountReadError = self->sensor->lastError() != ESP_OK;
+  if (wasCountReadError) {
+    self->logger->warn("Read task: FIFO count read error");
+    self->sensor->resetFIFO();
+    return;
+  }
+
+  bool isFifoMisaligned =
+      initialFifoCount % MPU6050Sensor::FIFO_PACKET_SIZE != 0;
+  if (isFifoMisaligned) {
+    self->logger->warn("Read task: FIFO misaligned (count=%d)",
+                       initialFifoCount);
+    self->sensor->resetFIFO();
+    return;
+  }
+
+  self->batchReadDMPQueue(initialFifoCount);
 }
 
 void MPU6050Sensor::batchReadDMPQueue(uint16_t initialFifoCount) {
   bool areManyPacketsAvailable =
-      initialFifoCount > 2 * MPU6050Sensor::FIFO_PACKET_SIZE;
+      initialFifoCount >= 2 * MPU6050Sensor::FIFO_PACKET_SIZE;
   if (areManyPacketsAvailable)
     this->logger->warn("Read task: many packets available (count=%d), "
                        "attempting to process backlog",
@@ -338,14 +356,14 @@ void MPU6050Sensor::batchReadDMPQueue(uint16_t initialFifoCount) {
   int currentFifoCount = (int)initialFifoCount;
   uint8_t sensorBuffer[MPU6050Sensor::FIFO_PACKET_SIZE];
   while (currentFifoCount >= MPU6050Sensor::FIFO_PACKET_SIZE &&
-         packetsProcessed < MPU6050Sensor::READ_TASK_MAX_BATCH) {
+         packetsProcessed < IMU_READ_TASK_MAX_BATCH) {
 
-    wasBufferReadError = this->sensor.readFIFO(MPU6050Sensor::FIFO_PACKET_SIZE,
-                                               sensorBuffer) != ESP_OK;
+    wasBufferReadError = this->sensor->readFIFO(MPU6050Sensor::FIFO_PACKET_SIZE,
+                                                sensorBuffer) != ESP_OK;
     if (wasBufferReadError) {
       this->logger->warn(
           "Read task: FIFO buffer read error during batch processing");
-      this->sensor.resetFIFO();
+      this->sensor->resetFIFO();
       break; // Exit loop on error
     }
 
@@ -368,12 +386,12 @@ void MPU6050Sensor::batchReadDMPQueue(uint16_t initialFifoCount) {
 
   // Reset as fallback to avoid overflow
   areManyPacketsAvailable =
-      currentFifoCount > 2 * MPU6050Sensor::FIFO_PACKET_SIZE;
+      currentFifoCount >= 2 * MPU6050Sensor::FIFO_PACKET_SIZE;
   if (areManyPacketsAvailable) {
     this->logger->warn("Read task: FIFO still overloaded after processing "
                        "(count=%d), resetting",
                        currentFifoCount);
-    this->sensor.resetFIFO();
+    this->sensor->resetFIFO();
   }
 }
 
@@ -383,7 +401,7 @@ MPU6050Sensor::parseSensorData(const uint8_t *data) {
 
   // Explanation:
   // Sensor's buffer stores data in big-endian format (i.e. most significant
-  // byte first). If it's type is "uint8_t", it means each index is one byte.
+  // byte first). If its type is "uint8_t", it means each index is one byte.
   // Since each axis is 2 bytes long, we need to move the first byte left by
   // 1 byte = 8 bits with the bitwise shift left operator <<, and then
   // concatenate it with the second byte using the bitwise OR operator (|).
@@ -410,13 +428,13 @@ IMUSample MPU6050Sensor::toIMUSample(mpud::raw_axes_t aRaw,
                 .y = aGravity.y * MPU6050Sensor::g,
                 .z = aGravity.z * MPU6050Sensor::g},
           .w = {.roll = w.x, .pitch = w.y, .yaw = w.z},
-          .t = esp_timer_get_time()};
+          .t = getTimeUs()};
 }
 
 std::optional<IMUSample> MPU6050Sensor::readSync() {
   mpud::raw_axes_t aRaw, wRaw;
-  sensor.acceleration(&aRaw);
-  sensor.rotation(&wRaw);
+  sensor->acceleration(&aRaw);
+  sensor->rotation(&wRaw);
   IMUSample sample = this->toIMUSample(aRaw, wRaw);
   this->logger->info("Sync read: a=<%.3f, %.3f, %.3f> m/s2, "
                      "w=<%.3f, %.3f, %.3f> deg/s, t=%lld us",
@@ -427,7 +445,7 @@ std::optional<IMUSample> MPU6050Sensor::readSync() {
 
 void MPU6050Sensor::beginAsync() {
   this->logger->info("Starting async reading");
-  sensor.resetFIFO();
+  sensor->resetFIFO();
   while (this->pipe->pop(false) != std::nullopt) {
     // Empty pipe if any samples are left WITHOUT blocking
   }

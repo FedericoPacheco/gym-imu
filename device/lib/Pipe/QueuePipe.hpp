@@ -1,16 +1,15 @@
 #pragma once
-#include "freertos/FreeRTOS.h"
-#include "freertos/queue.h"
-#include <Logger.hpp>
+#include <LoggerPort.hpp>
 #include <Pipe.hpp>
 #include <atomic>
 #include <cstdint>
 #include <memory>
 #include <optional>
+#include <ports/FreeRTOS/FreeRTOSPort.hpp>
 
 template <typename T, uint32_t N> class QueuePipe : public Pipe<T, N> {
 public:
-  static std::shared_ptr<QueuePipe<T, N>> create(Logger *logger) {
+  static std::shared_ptr<QueuePipe<T, N>> create(LoggerPort *logger) {
     std::shared_ptr<QueuePipe<T, N>> queuePipe(new (std::nothrow)
                                                    QueuePipe<T, N>(logger));
 
@@ -91,7 +90,7 @@ public:
   }
 
 private:
-  Logger *logger;
+  LoggerPort *logger;
 
   uint8_t buffer[N * sizeof(T)];
   StaticQueue_t controlBlock;
@@ -101,7 +100,7 @@ private:
   std::atomic<uint32_t> maxDepth;
   std::atomic<uint32_t> currentDepth;
 
-  QueuePipe(Logger *logger)
+  QueuePipe(LoggerPort *logger)
       : logger(logger), drops(0), maxDepth(0), currentDepth(0) {}
 
   // Atomic operation to capture transient max values

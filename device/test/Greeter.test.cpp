@@ -1,4 +1,4 @@
-#include "Greeter.h"
+#include "Greeter.hpp"
 #include <algorithm>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>

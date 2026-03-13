@@ -1,10 +1,10 @@
 #include <Button.hpp>
 
-Button::Button(Logger *logger, gpio_num_t pin) : logger(logger) {
+Button::Button(LoggerPort *logger, gpio_num_t pin) : logger(logger) {
   this->pin = pin;
 }
 
-std::unique_ptr<Button> Button::create(Logger *logger, gpio_num_t pin,
+std::unique_ptr<Button> Button::create(LoggerPort *logger, gpio_num_t pin,
                                        int asyncQueueSize,
                                        int debouncingDelayMs) {
 
@@ -18,13 +18,13 @@ std::unique_ptr<Button> Button::create(Logger *logger, gpio_num_t pin,
     return nullptr;
   }
 
-  RETURN_NULL_ON_ERROR(gpio_reset_pin(button->pin), logger,
-                       "GPIO reset failed");
-  RETURN_NULL_ON_ERROR(gpio_set_direction(button->pin, GPIO_MODE_INPUT), logger,
-                       "GPIO set direction failed");
-  RETURN_NULL_ON_ERROR(gpio_set_pull_mode(button->pin, GPIO_PULLDOWN_ONLY),
-                       logger,
-                       "GPIO set pull mode failed"); // See schematic
+  RETURN_NULL_ON_ESP_ERROR(gpio_reset_pin(button->pin), logger,
+                           "GPIO reset failed");
+  RETURN_NULL_ON_ESP_ERROR(gpio_set_direction(button->pin, GPIO_MODE_INPUT),
+                           logger, "GPIO set direction failed");
+  RETURN_NULL_ON_ESP_ERROR(gpio_set_pull_mode(button->pin, GPIO_PULLDOWN_ONLY),
+                           logger,
+                           "GPIO set pull mode failed"); // See schematic
 
   button->eventQueue = xQueueCreate(asyncQueueSize, sizeof(bool));
   if (button->eventQueue == NULL) {
@@ -60,9 +60,9 @@ Button::~Button() {
 bool Button::isPressedSync() { return gpio_get_level(this->pin) == 1; }
 
 bool Button::enableAsync() {
-  RETURN_FALSE_ON_ERROR(gpio_isr_handler_add(this->pin, isrHandler, this),
-                        this->logger, "Button GPIO ISR handler add failed");
-  RETURN_FALSE_ON_ERROR(
+  RETURN_FALSE_ON_ESP_ERROR(gpio_isr_handler_add(this->pin, isrHandler, this),
+                            this->logger, "Button GPIO ISR handler add failed");
+  RETURN_FALSE_ON_ESP_ERROR(
       gpio_set_intr_type(this->pin, GPIO_INTR_POSEDGE), this->logger,
       "Button GPIO set interrupt type failed"); // Trigger on rising edge
   return true;
@@ -81,10 +81,11 @@ void Button::debounceTimerCallback(TimerHandle_t xTimer) {
 }
 
 bool Button::disableAsync() {
-  RETURN_FALSE_ON_ERROR(gpio_isr_handler_remove(this->pin), this->logger,
-                        "Button GPIO ISR handler remove failed");
-  RETURN_FALSE_ON_ERROR(gpio_set_intr_type(this->pin, GPIO_INTR_DISABLE),
-                        this->logger, "Button GPIO disable interrupt failed");
+  RETURN_FALSE_ON_ESP_ERROR(gpio_isr_handler_remove(this->pin), this->logger,
+                            "Button GPIO ISR handler remove failed");
+  RETURN_FALSE_ON_ESP_ERROR(gpio_set_intr_type(this->pin, GPIO_INTR_DISABLE),
+                            this->logger,
+                            "Button GPIO disable interrupt failed");
   return true;
 }
 

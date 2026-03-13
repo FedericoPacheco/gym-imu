@@ -1,13 +1,11 @@
 #include <LED.hpp>
 
-// -------------------------------------------------------------------------
-
-LED::LED(Logger *logger, gpio_num_t pin) : logger(logger) {
+LED::LED(LoggerPort *logger, gpio_num_t pin) : logger(logger) {
   this->pin = pin;
   this->softwareState = false;
 }
 
-std::unique_ptr<LED> LED::create(Logger *logger, gpio_num_t pin) {
+std::unique_ptr<LED> LED::create(LoggerPort *logger, gpio_num_t pin) {
   logger->info("Initializing LED on pin %d", pin);
 
   std::unique_ptr<LED> led(new (std::nothrow) LED(logger, pin));
@@ -27,10 +25,11 @@ std::unique_ptr<LED> LED::create(Logger *logger, gpio_num_t pin) {
       .pull_down_en = GPIO_PULLDOWN_DISABLE,
       .intr_type = GPIO_INTR_DISABLE};
 
-  RETURN_NULL_ON_ERROR(gpio_config(&config), logger, "LED GPIO config failed");
+  RETURN_NULL_ON_ESP_ERROR(gpio_config(&config), logger,
+                           "LED GPIO config failed");
 
-  RETURN_NULL_ON_ERROR(gpio_set_level(led->pin, led->softwareState), logger,
-                       "LED GPIO initial level set failed");
+  RETURN_NULL_ON_ESP_ERROR(gpio_set_level(led->pin, led->softwareState), logger,
+                           "LED GPIO initial level set failed");
 
   logger->info("LED initialized successfully");
 

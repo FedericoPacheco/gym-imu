@@ -1,19 +1,16 @@
 #pragma once
+
 #include "esp_log.h"
 #include "esp_log_level.h"
 #include "esp_timer.h"
-#include <atomic>
+#include <LoggerPort.hpp>
 #include <cstdarg>
 #include <cstddef>
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
-#include <sys/param.h>
-#include <sys/stat.h>
 
-enum class LogLevel { ERROR, WARN, INFO, DEBUG };
-
-class Logger {
+class UARTLogger : public LoggerPort {
 private:
   static const int MAX_LOG_MESSAGE_LENGTH = 192;
   static constexpr std::size_t TAG_MAX_LENGTH = 16;
@@ -22,15 +19,15 @@ private:
   LogLevel currentLevel;
 
 public:
-  Logger(const char *tag, LogLevel level = LogLevel::INFO);
-  ~Logger() = default;
+  UARTLogger(const char *tag, LogLevel level = LogLevel::INFO);
+  ~UARTLogger() override = default;
 
-  void setLevel(LogLevel level);
+  void setLevel(LogLevel level) override;
 
-  void error(const char *format, ...);
-  void warn(const char *format, ...);
-  void info(const char *format, ...);
-  void debug(const char *format, ...);
+  void error(const char *format, ...) override;
+  void warn(const char *format, ...) override;
+  void info(const char *format, ...) override;
+  void debug(const char *format, ...) override;
 
 private:
   void log(LogLevel level, const char *formattedMessageStr,
@@ -39,3 +36,5 @@ private:
   esp_log_level_t mapToEspLogLevel(LogLevel level);
   const char *mapLevelToString(LogLevel level);
 };
+
+using Logger = UARTLogger;

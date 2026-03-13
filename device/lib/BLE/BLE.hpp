@@ -1,31 +1,18 @@
 #pragma once
-#include "esp_system.h"
-#include "freertos/FreeRTOS.h"
-#include "freertos/idf_additions.h"
-#include "freertos/projdefs.h"
-#include "host/ble_hs.h"
-#include "host/ble_store.h"
-#include "host/ble_uuid.h"
-#include "nimble/ble.h"
-#include "nimble/nimble_port.h"
-#include "nimble/nimble_port_freertos.h"
-#include "nvs_flash.h"
-#include "portmacro.h"
-#include "services/gap/ble_svc_gap.h"
-#include "services/gatt/ble_svc_gatt.h"
-#include "store/config/ble_store_config.h"
 #include <Constants.hpp>
 #include <ErrorMacros.hpp>
-#include <IMUSensor.hpp>
-#include <Logger.hpp>
+#include <IMUSensorPort.hpp>
+#include <LoggerPort.hpp>
+#include <LoopRunner.hpp>
 #include <Pipe.hpp>
+#include <algorithm>
 #include <atomic>
-#include <cstddef>
 #include <cstdint>
-#include <freertos/task.h>
+#include <cstring>
 #include <memory>
-#include <optional>
-#include <sys/param.h>
+#include <ports/ESP-IDF/ESPIDFPort.hpp>
+#include <ports/FreeRTOS/FreeRTOSPort.hpp>
+#include <ports/NimBLE/NimBLEPort.hpp>
 
 /*
 Overview:
@@ -46,23 +33,24 @@ sending IMU samples.
 information such as device name, appearance, supported services (currently
 notifications, a stream of data sent from the device with no ACK from the
 client), address, connection/discovery mode, etc. Allows only one connection.
-When send() is called with an IMUSample, it adds the sample to a pipe.
 The transmit task waits until there are enough samples in the pipe (based on
 negotiated MTU) and then sends them as a notification to connected
 clients.
 
 How to use:
-Logger logger((LogLevel::DEBUG));
+UARTLogger logger((LogLevel::DEBUG));
 std::shared_ptr<Pipe<IMUSample, TRANSMISSION_PIPE_SIZE>> pipe =
     QueuePipe<IMUSample, TRANSMISSION_PIPE_SIZE>::create(&logger);
-unique_ptr<BLE> ble = BLE::getInstance(logger, pipe);
-...
-if (ble->isConnected()) {
+auto transmitRunner = std::make_unique<FreeRTOSLoopRunner>(
+  "transmitTask", BLE::TRANSMIT_TASK_STACK_SIZE,
+  BLE::TRANSMIT_TASK_PRIORITY, pdMS_TO_TICKS(100));
+unique_ptr<BLE> ble = BLE::getInstance(&logger, pipe,
+                     std::move(transmitRunner));
+... if (ble->isConnected()) {
   ble->beginTransmission(); // receives samples from the pipe and sends them to
-the client
+  the client
 }
-...
-ble->stopTransmission();
+... ble->stopTransmission();
 
 Data can be received on the phone with the app nRF Connect.
 
@@ -107,8 +95,14 @@ public:
   static constexpr int TRANSMIT_TASK_STACK_SIZE = 4096;
 
   static BLE *
-  getInstance(Logger *logger,
-              std::shared_ptr<Pipe<IMUSample, TRANSMISSION_PIPE_SIZE>> pipe);
+  getInstance(LoggerPort *logger,
+              std::shared_ptr<Pipe<IMUSample, TRANSMISSION_PIPE_SIZE>> pipe,
+              std::unique_ptr<LoopRunner> transmitRunner);
+
+#if defined(UNIT_TEST) && !defined(ESP_PLATFORM)
+  static void resetInstanceForTests();
+#endif
+
   ~BLE();
   bool isConnected();
   void beginTransmission();
@@ -121,9 +115,8 @@ private:
   // in a single BLE packet
   static constexpr int DEFAULT_MTU = 23;
   // Effetive payload = MTU (maximum transmission unit) - 3 bytes for ATT header
-  static constexpr int PREFERRED_MTU =
-      MIN(sizeof(IMUSample) * PREFERRED_BATCH_SEND_SIZE + 3, 512);
-  static constexpr int TRANSMIT_TASK_SHUTDOWN_DELAY_MS = 250;
+  static constexpr int PREFERRED_MTU = std::min(
+      static_cast<int>(sizeof(IMUSample) * PREFERRED_BATCH_SEND_SIZE + 3), 512);
   // Time between data exchanges when connected, between 7.5ms and 4s
   static constexpr int CONNECTION_INTERVAL_MIN_MS = 15;
   static constexpr int CONNECTION_INTERVAL_MAX_MS = 30;
@@ -160,12 +153,13 @@ private:
     BLEAddress address;
   } communicationState;
 
-  Logger *logger;
+  LoggerPort *logger;
 
   ble_gatt_chr_def imuCharacteristics[2];
   ble_gatt_svc_def services[2];
 
-  TaskHandle_t bleTaskHandle, transmitTaskHandle;
+  TaskHandle_t bleTaskHandle;
+  std::unique_ptr<LoopRunner> transmitRunner;
   std::atomic<bool> doTransmit;
   std::shared_ptr<Pipe<IMUSample, TRANSMISSION_PIPE_SIZE>> pipe;
 
@@ -173,11 +167,13 @@ private:
   ble_hs_adv_fields scanResponsePacket;
   ble_gap_adv_params advertisingConfig;
 
-  BLE(Logger *logger,
-      std::shared_ptr<Pipe<IMUSample, TRANSMISSION_PIPE_SIZE>> pipe);
+  BLE(LoggerPort *logger,
+      std::shared_ptr<Pipe<IMUSample, TRANSMISSION_PIPE_SIZE>> pipe,
+      std::unique_ptr<LoopRunner> transmitRunner);
   static std::unique_ptr<BLE>
-  create(Logger *logger,
-         std::shared_ptr<Pipe<IMUSample, TRANSMISSION_PIPE_SIZE>> pipe);
+  create(LoggerPort *logger,
+         std::shared_ptr<Pipe<IMUSample, TRANSMISSION_PIPE_SIZE>> pipe,
+         std::unique_ptr<LoopRunner> transmitRunner);
 
   inline bool initializeFlash();
 
@@ -197,7 +193,7 @@ private:
 
   inline bool initializeTasks();
   static void bleTask(void *arg);
-  static void transmitTask(void *arg);
+  static void transmitLoopFunction(void *arg);
   inline void setDoTransmit(bool value);
   inline bool getDoTransmit();
 

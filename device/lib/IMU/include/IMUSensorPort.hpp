@@ -1,5 +1,4 @@
 #pragma once
-#include "soc/gpio_num.h"
 #include <optional>
 #include <stdint.h>
 
@@ -23,12 +22,12 @@ struct IMUSample {
   Timestamp t;
 };
 
-class IMUSensor {
+class IMUSensorPort {
 protected:
-  IMUSensor() = default;
+  IMUSensorPort() = default;
 
 public:
-  virtual ~IMUSensor() = default;
+  virtual ~IMUSensorPort() = default;
 
   virtual std::optional<IMUSample> readSync() = 0;
   virtual std::optional<IMUSample> readAsync() = 0;

@@ -55,15 +55,15 @@ Other rules:
 - Implement singleton pattern on `MPU6050Sensor`, matching `BLE`'s pattern. Protect both against races. PR: <https://github.com/FedericoPacheco/gym-imu/pull/2>
 - Document overall system architecture with C4 and PlantUML: context, containers, components. PR: <https://github.com/FedericoPacheco/gym-imu/pull/3>
 - Create basic README for the project: summary, architecture, physical device, next steps, etc. PR: <https://github.com/FedericoPacheco/gym-imu/pull/3>
-- Rework Logger for more flexibility: create a `Logger` interface and inherit from the current class renaming it to `UARTLogger`/`SerialLogger`
-- Create test seams for C-interfaces: FreeRTOS, ESP-IDF, NimBLE.
-- Create test seams for C++ interfaces: I2C, MPU.
-- Create NotificationRunner interface, FreeRTOSNotificationRunner and DeterministicNotificationRunner implementations to simplify testing with multiple FreeRTOS tasks, notifications and ISRs.
-- Create LoopRunner interface, FreeRTOSLoopRunner and DeterministicLoopRunner implementations to simplify testing with multiple FreeRTOS tasks that run freely.
-- Replace all device libraries imports with ports and runners.
-- Create host unit tests for MPU's initialization logic.
-- Create host unit tests MPU's readTask logic.
-- Create host unit tests for BLE's initialization logic.
-- Create host unit tests for BLE's transmitTask logic.
-- Rename RETURN_..._ON_ERROR macros to RETURN_..._ON_ESP_ERROR.
-- Document testing strategy on README.md
+- Rework Logger for more flexibility: create a `Logger` interface and inherit from the current class renaming it to `UARTLogger`/`SerialLogger`. PR: <https://github.com/FedericoPacheco/gym-imu/pull/4>
+- Create test seams for C-interfaces: FreeRTOS, ESP-IDF, NimBLE. PR: <https://github.com/FedericoPacheco/gym-imu/pull/4>
+- Create test seams for C++ interfaces: I2C, MPU. PR: <https://github.com/FedericoPacheco/gym-imu/pull/4>
+- Create NotificationRunner interface, FreeRTOSNotificationRunner and DeterministicNotificationRunner implementations to simplify testing with multiple FreeRTOS tasks, notifications and ISRs. PR: <https://github.com/FedericoPacheco/gym-imu/pull/4>
+- Create LoopRunner interface, FreeRTOSLoopRunner and DeterministicLoopRunner implementations to simplify testing with multiple FreeRTOS tasks that run freely. PR: <https://github.com/FedericoPacheco/gym-imu/pull/4>
+- Replace all device libraries imports with ports and runners. PR: <https://github.com/FedericoPacheco/gym-imu/pull/4>
+- Create host unit tests for MPU's initialization logic. PR: <https://github.com/FedericoPacheco/gym-imu/pull/4>
+- Create host unit tests MPU's readTask logic. PR: <https://github.com/FedericoPacheco/gym-imu/pull/4>
+- Create host unit tests for BLE's initialization logic. PR: <https://github.com/FedericoPacheco/gym-imu/pull/4>
+- Create host unit tests for BLE's transmitTask logic. PR: <https://github.com/FedericoPacheco/gym-imu/pull/4>
+- Rename RETURN_..._ON_ERROR macros to RETURN_..._ON_ESP_ERROR. PR: <https://github.com/FedericoPacheco/gym-imu/pull/4>
+- Document testing strategy on README.md. PR: <https://github.com/FedericoPacheco/gym-imu/pull/4>

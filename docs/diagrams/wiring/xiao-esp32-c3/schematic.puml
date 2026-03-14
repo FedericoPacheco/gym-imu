@@ -30,7 +30,7 @@ end note
 
 ' Microcontroller + IMU
 microcontroller "3V3" -- "VCC" sensor
-microcontroller "D3" -- "INT" sensor
+microcontroller "D0" -- "INT" sensor
 microcontroller "D4" -- "SDA" sensor
 microcontroller "D5" -- "SCL" sensor
 microcontroller "GND" -- "GND" sensor

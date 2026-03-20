@@ -73,7 +73,7 @@ public:
               std::unique_ptr<MPUPort> sensor = nullptr,
               std::unique_ptr<I2CPort> i2c = nullptr,
               std::unique_ptr<NotificationRunner> runner = nullptr,
-              gpio_num_t INTPin = GPIO_NUM_5, gpio_num_t SDAPin = GPIO_NUM_6,
+              gpio_num_t INTPin = GPIO_NUM_2, gpio_num_t SDAPin = GPIO_NUM_6,
               gpio_num_t SCLPin = GPIO_NUM_7, int samplingFrequencyHz = 30);
 
 #if defined(UNIT_TEST) && !defined(ESP_PLATFORM)

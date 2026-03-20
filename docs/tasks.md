@@ -23,12 +23,11 @@ Other rules:
 
 ### In Progress
 
-1. Write BOM (bill of materials) for the device.
+1. Figure out how to make a case for the device by 3D printing.
+
+2. Design case for device.
 
 ### Next
-
-- Figure out how to make a case for the device by 3D printing.
-- Design case for device.
 
 ### Backlog
 
@@ -70,3 +69,4 @@ Other rules:
 - Rename RETURN_..._ON_ERROR macros to RETURN_..._ON_ESP_ERROR. PR: <https://github.com/FedericoPacheco/gym-imu/pull/4>
 - Document testing strategy on README.md. PR: <https://github.com/FedericoPacheco/gym-imu/pull/4>
 - Solder components into perfboard.
+- Write BOM (bill of materials) for the device.

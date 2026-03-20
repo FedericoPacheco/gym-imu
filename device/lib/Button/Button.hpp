@@ -39,7 +39,7 @@ Async:
 class Button {
 public:
   static std::unique_ptr<Button> create(LoggerPort *logger,
-                                        gpio_num_t pin = GPIO_NUM_3 /* D1 */,
+                                        gpio_num_t pin = GPIO_NUM_3,
                                         int asyncQueueSize = 10,
                                         int debouncingDelayMs = 500);
   ~Button();

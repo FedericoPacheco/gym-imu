@@ -23,13 +23,12 @@ Other rules:
 
 ### In Progress
 
-1. Solder components into perfboard.
+1. Write BOM (bill of materials) for the device.
 
 ### Next
 
 - Figure out how to make a case for the device by 3D printing.
 - Design case for device.
-- Write final BOM (bill of materials) for the device.
 
 ### Backlog
 
@@ -70,3 +69,4 @@ Other rules:
 - Create host unit tests for BLE's transmitTask logic. PR: <https://github.com/FedericoPacheco/gym-imu/pull/4>
 - Rename RETURN_..._ON_ERROR macros to RETURN_..._ON_ESP_ERROR. PR: <https://github.com/FedericoPacheco/gym-imu/pull/4>
 - Document testing strategy on README.md. PR: <https://github.com/FedericoPacheco/gym-imu/pull/4>
+- Solder components into perfboard.

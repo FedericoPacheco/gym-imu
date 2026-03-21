@@ -105,3 +105,10 @@
 - <https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/ble/get-started/ble-device-discovery.html>
 - <https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/ble/get-started/ble-connection.html>
 - <https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/ble/get-started/ble-data-exchange.html>
+
+## 3D printing
+
+- <https://www.youtube.com/watch?v=2vFdwz4U1VQ>
+- <https://www.youtube.com/watch?v=Vx0Z6LplaMU>
+- <https://www.youtube.com/watch?v=NtXmLKDJydo>
+- <https://openscad.org/>

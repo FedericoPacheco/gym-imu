@@ -106,9 +106,17 @@
 - <https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/ble/get-started/ble-connection.html>
 - <https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/ble/get-started/ble-data-exchange.html>
 
-## 3D printing
+## 3D printing / CAD / enclosure
 
 - <https://www.youtube.com/watch?v=2vFdwz4U1VQ>
 - <https://www.youtube.com/watch?v=Vx0Z6LplaMU>
 - <https://www.youtube.com/watch?v=NtXmLKDJydo>
 - <https://openscad.org/>
+- <https://www.youtube.com/watch?v=lAjmVMYUelA>
+- <https://www.youtube.com/watch?v=i4oJTfp18eg>
+- <https://www.youtube.com/watch?v=jzs2Zo_mc4c>
+- <https://www.youtube.com/watch?v=LMyhFwJscI0>
+- <https://www.youtube.com/watch?v=sd9RtwkLWwE>
+- <https://en.wikipedia.org/wiki/ISO_metric_screw_thread>
+- <https://www.mcmaster.com/>
+- <https://www.youtube.com/watch?v=vsHpiHhB3RU>

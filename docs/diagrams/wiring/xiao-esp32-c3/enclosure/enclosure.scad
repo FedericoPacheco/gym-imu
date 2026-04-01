@@ -94,8 +94,7 @@ AXIS_LABEL_SIZE = 3;
 AXIS_FONT = "Liberation Sans:style=Bold";
 AXIS_ORIGIN_X = 25;
 AXIS_ORIGIN_Y = 45;
-AXIS_Z_RING_DIAMETER = 2.8;
-AXIS_Z_DOT_DIAMETER = 0.9;
+AXIS_Z_HOLE_DIAMETER = 2;
 
 // -----------------------------
 // Generic modeling tolerances
@@ -324,12 +323,7 @@ module axis_engraving_2d() {
 		]);
 
 		translate([AXIS_ORIGIN_X, AXIS_ORIGIN_Y])
-			difference() {
-				circle(d = AXIS_Z_RING_DIAMETER);
-				circle(d = AXIS_Z_RING_DIAMETER - AXIS_LINE_WIDTH);
-			}
-		translate([AXIS_ORIGIN_X, AXIS_ORIGIN_Y])
-			circle(d = AXIS_Z_DOT_DIAMETER);
+			circle(d = AXIS_Z_HOLE_DIAMETER);
 
 		translate([x_end[0] - 1.2, x_end[1] - 0.3])
 			text("x", size = AXIS_LABEL_SIZE, font = AXIS_FONT, halign = "right", valign = "center");

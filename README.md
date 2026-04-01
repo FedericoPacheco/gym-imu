@@ -42,7 +42,7 @@ Key decisions and their rationale are documented in [Architecture Decision Recor
 
 ### Hardware
 
-The device is built primarily by hand using off-the-shelf components and a custom 3D-printed enclosure. See the [device's schematic](docs/diagrams/schematics/xiao-esp32-c3/schematic.svg), [BOM](docs/diagrams/schematics/xiao-esp32-c3/bom.md) (TBD), and [tools](docs/diagrams/schematics/xiao-esp32-c3/tools.md) (WIP) to build your own device.
+The device is built primarily by hand using off-the-shelf components and a custom 3D-printed enclosure. See the [device's schematic](docs/diagrams/schematics/xiao-esp32-c3/schematic.svg), [BOM](docs/diagrams/wiring/xiao-esp32-c3/bom.md), [tools](docs/diagrams/wiring/xiao-esp32-c3/tools.md) and [enclosure design file](docs/diagrams/wiring/xiao-esp32-c3/enclosure/enclosure.scad) to build your own device.
 
 ### Firmware
 

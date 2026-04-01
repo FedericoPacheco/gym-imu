@@ -92,8 +92,8 @@ AXIS_ARROW_LENGTH = 10;
 AXIS_LINE_WIDTH = 0.9;
 AXIS_LABEL_SIZE = 3;
 AXIS_FONT = "Liberation Sans:style=Bold";
-AXIS_ORIGIN_X = 8;
-AXIS_ORIGIN_Y = 42;
+AXIS_ORIGIN_X = 25;
+AXIS_ORIGIN_Y = 45;
 AXIS_Z_RING_DIAMETER = 2.8;
 AXIS_Z_DOT_DIAMETER = 0.9;
 
@@ -305,22 +305,22 @@ module usb_c_cutout() {
 }
 
 module axis_engraving_2d() {
-	x_end = [AXIS_ORIGIN_X + AXIS_ARROW_LENGTH, AXIS_ORIGIN_Y];
-	y_end = [AXIS_ORIGIN_X, AXIS_ORIGIN_Y + AXIS_ARROW_LENGTH];
+	x_end = [AXIS_ORIGIN_X - AXIS_ARROW_LENGTH, AXIS_ORIGIN_Y];
+	y_end = [AXIS_ORIGIN_X, AXIS_ORIGIN_Y - AXIS_ARROW_LENGTH];
 
 	union() {
 		line_slot_2d([AXIS_ORIGIN_X, AXIS_ORIGIN_Y], x_end, AXIS_LINE_WIDTH);
 		polygon(points = [
 			[x_end[0], x_end[1]],
-			[x_end[0] - 1.8, x_end[1] + 0.9],
-			[x_end[0] - 1.8, x_end[1] - 0.9]
+			[x_end[0] + 1.8, x_end[1] + 0.9],
+			[x_end[0] + 1.8, x_end[1] - 0.9]
 		]);
 
 		line_slot_2d([AXIS_ORIGIN_X, AXIS_ORIGIN_Y], y_end, AXIS_LINE_WIDTH);
 		polygon(points = [
 			[y_end[0], y_end[1]],
-			[y_end[0] - 0.9, y_end[1] - 1.8],
-			[y_end[0] + 0.9, y_end[1] - 1.8]
+			[y_end[0] - 0.9, y_end[1] + 1.8],
+			[y_end[0] + 0.9, y_end[1] + 1.8]
 		]);
 
 		translate([AXIS_ORIGIN_X, AXIS_ORIGIN_Y])
@@ -331,10 +331,10 @@ module axis_engraving_2d() {
 		translate([AXIS_ORIGIN_X, AXIS_ORIGIN_Y])
 			circle(d = AXIS_Z_DOT_DIAMETER);
 
-		translate([AXIS_ORIGIN_X + AXIS_ARROW_LENGTH + 1.2, AXIS_ORIGIN_Y - 0.3])
-			text("x", size = AXIS_LABEL_SIZE, font = AXIS_FONT, halign = "left", valign = "center");
-		translate([AXIS_ORIGIN_X - 0.4, AXIS_ORIGIN_Y + AXIS_ARROW_LENGTH + 1.3])
-			text("y", size = AXIS_LABEL_SIZE, font = AXIS_FONT, halign = "center", valign = "center");
+		translate([x_end[0] - 1.2, x_end[1] - 0.3])
+			text("x", size = AXIS_LABEL_SIZE, font = AXIS_FONT, halign = "right", valign = "center");
+		translate([y_end[0] - 0.2, y_end[1] - 1.4])
+			text("y", size = AXIS_LABEL_SIZE, font = AXIS_FONT, halign = "center", valign = "top");
 		translate([AXIS_ORIGIN_X + 2.8, AXIS_ORIGIN_Y + 2.8])
 			text("z", size = AXIS_LABEL_SIZE, font = AXIS_FONT, halign = "left", valign = "center");
 	}

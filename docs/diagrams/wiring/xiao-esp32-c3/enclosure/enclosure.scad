@@ -220,10 +220,28 @@ module groove_volume() {
 			}
 }
 
-module single_side_handle(center_x) {
+// Keep the case-contact side sharp while preserving rounded free-side corners.
+// sharp_side accepts "POS_X" or "NEG_X" in the local handle profile.
+module handle_profile_2d(size_xy, radius, sharp_side) {
+	safe_radius = max(0, min(radius, (min(size_xy) / 2) - 0.01));
+
+	union() {
+		rounded_rectangle_2d(size_xy, safe_radius);
+
+		if (safe_radius > 0 && sharp_side == "POS_X") {
+			translate([size_xy[0] / 2 - safe_radius, -size_xy[1] / 2])
+				square([safe_radius, size_xy[1]], center = false);
+		} else if (safe_radius > 0 && sharp_side == "NEG_X") {
+			translate([-size_xy[0] / 2, -size_xy[1] / 2])
+				square([safe_radius, size_xy[1]], center = false);
+		}
+	}
+}
+
+module single_side_handle(center_x, case_contact_side) {
 	difference() {
 		translate([center_x, CASE_CENTER_Y])
-			rounded_rectangle_2d([HANDLE_OUTER_DEPTH_X, HANDLE_SPAN_Y], HANDLE_CORNER_RADIUS);
+			handle_profile_2d([HANDLE_OUTER_DEPTH_X, HANDLE_SPAN_Y], HANDLE_CORNER_RADIUS, case_contact_side);
 		translate([center_x, CASE_CENTER_Y])
 			rounded_rectangle_2d([HANDLE_STRAP_CLEARANCE, HANDLE_INNER_SPAN_Y], HANDLE_CORNER_RADIUS / 2);
 	}
@@ -232,8 +250,8 @@ module single_side_handle(center_x) {
 module strap_handles() {
 	linear_extrude(height = HANDLE_THICKNESS_Z)
 		union() {
-			single_side_handle(OUTER_MIN_X - (HANDLE_OUTER_DEPTH_X / 2));
-			single_side_handle(OUTER_MAX_X + (HANDLE_OUTER_DEPTH_X / 2));
+			single_side_handle(OUTER_MIN_X - (HANDLE_OUTER_DEPTH_X / 2), "POS_X");
+			single_side_handle(OUTER_MAX_X + (HANDLE_OUTER_DEPTH_X / 2), "NEG_X");
 		}
 }
 

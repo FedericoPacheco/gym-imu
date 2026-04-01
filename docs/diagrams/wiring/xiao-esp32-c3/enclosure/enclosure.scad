@@ -74,6 +74,7 @@ USB_Z_MIN = 4;
 USB_Z_MAX = 7;
 USB_CUTOUT_DEPTH_Y = 12;
 USB_HOLE_CLEARANCE_X = 0.6;
+USB_CORNER_RADIUS = 1;
 
 // -----------------------------
 // Strap loop handles
@@ -147,6 +148,7 @@ HANDLE_INNER_SPAN_Y = HANDLE_SPAN_Y - (2 * HANDLE_FRAME_THICKNESS);
 SWITCH_HOLE_SIZE_X = SWITCH_SIZE_X + SWITCH_HOLE_CLEARANCE;
 SWITCH_HOLE_SIZE_Y = SWITCH_SIZE_Y + SWITCH_HOLE_CLEARANCE;
 USB_HOLE_SIZE_X = USB_WIDTH_X + USB_HOLE_CLEARANCE_X;
+USB_HOLE_SIZE_Z = USB_Z_MAX - USB_Z_MIN;
 
 MOUNT_POINTS = [
 	[BOARD_HOLE_INSET, BOARD_HOLE_INSET],
@@ -306,14 +308,14 @@ module switch_cutout() {
 }
 
 module usb_c_cutout() {
-	cut_box(
-		USB_CENTER_X - (USB_HOLE_SIZE_X / 2),
-		USB_CENTER_Y - (USB_CUTOUT_DEPTH_Y / 2),
-		USB_Z_MIN,
-		USB_HOLE_SIZE_X,
-		USB_CUTOUT_DEPTH_Y,
-		USB_Z_MAX - USB_Z_MIN
-	);
+	translate([
+		USB_CENTER_X,
+		USB_CENTER_Y - (USB_CUTOUT_DEPTH_Y / 2) - EPS,
+		USB_Z_MIN + (USB_HOLE_SIZE_Z / 2)
+	])
+		rotate([-90, 0, 0])
+			linear_extrude(height = USB_CUTOUT_DEPTH_Y + (2 * EPS))
+				rounded_rectangle_2d([USB_HOLE_SIZE_X, USB_HOLE_SIZE_Z], USB_CORNER_RADIUS);
 }
 
 module axis_engraving_2d() {

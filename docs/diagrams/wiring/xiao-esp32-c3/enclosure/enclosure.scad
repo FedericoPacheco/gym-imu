@@ -6,6 +6,7 @@ $fn = 72;
 VIEW_MODE = "EXPLODED"; // BASE, LID, ASSEMBLED, EXPLODED
 EXPLODED_GAP = 24;
 SHOW_BOARD_REFERENCE = false;
+FLIP_LID_IN_PREVIEW = true;
 
 // -----------------------------
 // Board and coordinate system
@@ -407,6 +408,20 @@ module lid_part() {
 	}
 }
 
+module lid_part_flipped_preview() {
+	translate([0, 2 * CASE_CENTER_Y, LID_TOP_Z])
+		rotate([180, 0, 0])
+			lid_part();
+}
+
+module lid_for_preview() {
+	if (FLIP_LID_IN_PREVIEW) {
+		lid_part_flipped_preview();
+	} else {
+		lid_part();
+	}
+}
+
 module board_reference() {
 	color([0.1, 0.5, 0.1, 0.25])
 		translate([0, 0, -BOARD_THICKNESS])
@@ -423,7 +438,7 @@ module scene() {
 	if (VIEW_MODE == "BASE") {
 		base_part();
 	} else if (VIEW_MODE == "LID") {
-		lid_part();
+		lid_for_preview();
 	} else if (VIEW_MODE == "ASSEMBLED") {
 		color("gainsboro") lid_part();
 		color("lightgray") base_part();
@@ -431,7 +446,7 @@ module scene() {
 		translate([-(OUTER_SIZE_X + EXPLODED_GAP) / 2, 0, 0])
 			color("lightgray") base_part();
 		translate([(OUTER_SIZE_X + EXPLODED_GAP) / 2, 0, 0])
-			color("gainsboro") lid_part();
+			color("gainsboro") lid_for_preview();
 	}
 
 	if (SHOW_BOARD_REFERENCE) {

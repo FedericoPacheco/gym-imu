@@ -85,6 +85,17 @@ HANDLE_FRAME_THICKNESS = 5;
 HANDLE_STRAP_CLEARANCE = 5;
 HANDLE_END_MARGIN = 5;
 HANDLE_CORNER_RADIUS = 2;
+HANDLE_PREVIEW_GAP = 8;
+
+HANDLE_WALL_EXTENSION_X = 4;
+HANDLE_WALL_EXTENSION_Y_MARGIN = 8;
+HANDLE_WALL_EXTENSION_Z_SIZE = 8;
+HANDLE_MOUNT_Z_FROM_BASE_BOTTOM = 5.5;
+HANDLE_BOLT_Y_OFFSET = 10;
+
+HANDLE_INSERT_HOLE_DIAMETER = HEAT_SET_INSERT_HOLE_DIAMETER;
+HANDLE_SCREW_HOLE_DIAMETER = M2_CLEARANCE_DIAMETER;
+HANDLE_MOUNT_BRIDGE_HEIGHT = 6;
 
 // -----------------------------
 // Lid engraving
@@ -145,6 +156,10 @@ GROOVE_INNER_RADIUS = max(0.5, INNER_CORNER_RADIUS - JOINT_CLEARANCE);
 HANDLE_SPAN_Y = OUTER_SIZE_Y - (2 * HANDLE_END_MARGIN);
 HANDLE_OUTER_DEPTH_X = HANDLE_STRAP_CLEARANCE + (2 * HANDLE_FRAME_THICKNESS);
 HANDLE_INNER_SPAN_Y = HANDLE_SPAN_Y - (2 * HANDLE_FRAME_THICKNESS);
+
+HANDLE_MOUNT_Z = BASE_BOTTOM_Z + HANDLE_MOUNT_Z_FROM_BASE_BOTTOM;
+HANDLE_WALL_EXTENSION_Y_SIZE = OUTER_SIZE_Y - (2 * HANDLE_WALL_EXTENSION_Y_MARGIN);
+HANDLE_WALL_EXTENSION_Z_MIN = HANDLE_MOUNT_Z - (HANDLE_WALL_EXTENSION_Z_SIZE / 2);
 
 SWITCH_HOLE_SIZE_X = SWITCH_SIZE_X + SWITCH_HOLE_CLEARANCE;
 SWITCH_HOLE_SIZE_Y = SWITCH_SIZE_Y + SWITCH_HOLE_CLEARANCE;
@@ -240,21 +255,53 @@ module handle_profile_2d(size_xy, radius, sharp_side) {
 	}
 }
 
-module single_side_handle(center_x, case_contact_side) {
+module detached_handle_profile_2d(case_contact_side) {
 	difference() {
-		translate([center_x, CASE_CENTER_Y])
+		union() {
 			handle_profile_2d([HANDLE_OUTER_DEPTH_X, HANDLE_SPAN_Y], HANDLE_CORNER_RADIUS, case_contact_side);
-		translate([center_x, CASE_CENTER_Y])
-			rounded_rectangle_2d([HANDLE_STRAP_CLEARANCE, HANDLE_INNER_SPAN_Y], HANDLE_CORNER_RADIUS / 2);
+			for (y_offset = [-HANDLE_BOLT_Y_OFFSET, HANDLE_BOLT_Y_OFFSET]) {
+				translate([0, y_offset])
+					rounded_rectangle_2d([HANDLE_OUTER_DEPTH_X, HANDLE_MOUNT_BRIDGE_HEIGHT], HANDLE_CORNER_RADIUS / 2);
+			}
+		}
+		rounded_rectangle_2d([HANDLE_STRAP_CLEARANCE, HANDLE_INNER_SPAN_Y], HANDLE_CORNER_RADIUS / 2);
 	}
 }
 
-module strap_handles() {
-	linear_extrude(height = HANDLE_THICKNESS_Z)
-		union() {
-			single_side_handle(OUTER_MIN_X - (HANDLE_OUTER_DEPTH_X / 2), "POS_X");
-			single_side_handle(OUTER_MAX_X + (HANDLE_OUTER_DEPTH_X / 2), "NEG_X");
+module detached_single_handle(case_contact_side) {
+	difference() {
+		linear_extrude(height = HANDLE_THICKNESS_Z)
+			detached_handle_profile_2d(case_contact_side);
+
+		for (y_offset = [-HANDLE_BOLT_Y_OFFSET, HANDLE_BOLT_Y_OFFSET]) {
+			translate([0, y_offset, HANDLE_THICKNESS_Z / 2])
+				rotate([0, 90, 0])
+					cylinder(d = HANDLE_SCREW_HOLE_DIAMETER, h = HANDLE_OUTER_DEPTH_X + (2 * EPS), center = true);
 		}
+	}
+}
+
+module base_handle_support_extensions() {
+	translate([INNER_MIN_X, OUTER_MIN_Y + HANDLE_WALL_EXTENSION_Y_MARGIN, HANDLE_WALL_EXTENSION_Z_MIN])
+		cube([HANDLE_WALL_EXTENSION_X, HANDLE_WALL_EXTENSION_Y_SIZE, HANDLE_WALL_EXTENSION_Z_SIZE], center = false);
+	translate([INNER_MAX_X - HANDLE_WALL_EXTENSION_X, OUTER_MIN_Y + HANDLE_WALL_EXTENSION_Y_MARGIN, HANDLE_WALL_EXTENSION_Z_MIN])
+		cube([HANDLE_WALL_EXTENSION_X, HANDLE_WALL_EXTENSION_Y_SIZE, HANDLE_WALL_EXTENSION_Z_SIZE], center = false);
+}
+
+module base_handle_insert_holes() {
+	hole_length = HANDLE_WALL_EXTENSION_X + WALL_THICKNESS + (2 * EPS);
+
+	for (y_offset = [-HANDLE_BOLT_Y_OFFSET, HANDLE_BOLT_Y_OFFSET]) {
+		y_pos = CASE_CENTER_Y + y_offset;
+
+		translate([OUTER_MIN_X - EPS, y_pos, HANDLE_MOUNT_Z])
+			rotate([0, 90, 0])
+				cylinder(d = HANDLE_INSERT_HOLE_DIAMETER, h = hole_length, center = false);
+
+		translate([OUTER_MAX_X + EPS, y_pos, HANDLE_MOUNT_Z])
+			rotate([0, -90, 0])
+				cylinder(d = HANDLE_INSERT_HOLE_DIAMETER, h = hole_length, center = false);
+	}
 }
 
 // -----------------------------
@@ -375,28 +422,27 @@ module base_part() {
 			}
 			tongue_ring();
 			mounting_posts();
+			base_handle_support_extensions();
 		}
 
 		mount_holes(HEAT_SET_INSERT_HOLE_DIAMETER, BASE_BOTTOM_Z - EPS, TONGUE_HEIGHT + EPS);
+		base_handle_insert_holes();
 	}
 }
 
 module lid_part() {
 	difference() {
-		union() {
-			difference() {
-				rounded_prism([OUTER_SIZE_X, OUTER_SIZE_Y], 0, LID_TOP_Z, EXTERNAL_CORNER_RADIUS);
-				cut_box(
-					INNER_MIN_X,
-					INNER_MIN_Y,
-					-EPS,
-					INNER_SIZE_X,
-					INNER_SIZE_Y,
-					COMPONENT_SIDE_CLEARANCE + EPS
-				);
-				groove_volume();
-			}
-			strap_handles();
+		difference() {
+			rounded_prism([OUTER_SIZE_X, OUTER_SIZE_Y], 0, LID_TOP_Z, EXTERNAL_CORNER_RADIUS);
+			cut_box(
+				INNER_MIN_X,
+				INNER_MIN_Y,
+				-EPS,
+				INNER_SIZE_X,
+				INNER_SIZE_Y,
+				COMPONENT_SIDE_CLEARANCE + EPS
+			);
+			groove_volume();
 		}
 
 		mount_holes(M2_CLEARANCE_DIAMETER, -EPS, LID_TOP_Z + EPS);
@@ -443,10 +489,20 @@ module scene() {
 		color("gainsboro") lid_part();
 		color("lightgray") base_part();
 	} else {
-		translate([-(OUTER_SIZE_X + EXPLODED_GAP) / 2, 0, 0])
+		base_preview_x = -(OUTER_SIZE_X + EXPLODED_GAP) / 2;
+		lid_preview_x = (OUTER_SIZE_X + EXPLODED_GAP) / 2;
+		handles_left_x_1 = base_preview_x - (OUTER_SIZE_X / 2) - HANDLE_PREVIEW_GAP - (HANDLE_OUTER_DEPTH_X / 2);
+		handles_left_x_2 = handles_left_x_1 - HANDLE_OUTER_DEPTH_X - HANDLE_PREVIEW_GAP;
+
+		translate([base_preview_x, 0, 0])
 			color("lightgray") base_part();
-		translate([(OUTER_SIZE_X + EXPLODED_GAP) / 2, 0, 0])
+		translate([lid_preview_x, 0, 0])
 			color("gainsboro") lid_for_preview();
+
+		translate([handles_left_x_1, CASE_CENTER_Y, 0])
+			color("silver") detached_single_handle("POS_X");
+		translate([handles_left_x_2, CASE_CENTER_Y, 0])
+			color("silver") detached_single_handle("NEG_X");
 	}
 
 	if (SHOW_BOARD_REFERENCE) {

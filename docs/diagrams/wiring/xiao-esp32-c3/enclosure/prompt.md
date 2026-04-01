@@ -24,7 +24,7 @@ The prototype has the following features:
 * Component dimensions (width × length × height):
   * Button: 12 mm × 12 mm x 12 mm (unpressed), 1mm diameter
   * LED: 5 mm diameter
-  * Switch: 21 mm × 15 mm
+  * Switch: 15 mm (x axis, short side) × 21 mm (y axis, long side)
   * IMU, microcontroller, and battery: not relevant
 
 Requirements for the enclosure design:
@@ -34,7 +34,7 @@ Requirements for the enclosure design:
 * The board will be secured to the base with supporting square posts with holes for heat-set inserts. The holes will pass through the whole base, being visible from the outside. The screws that hold the lid will also go through the board and into the same inserts, so the mounting holes must be precisely aligned. The lid will not have posts. The posts may be integrated with the corner walls of the base.
 * The button will remain inside. The lid should include a U-shaped slot with rounded corners that is parallel to the y axis and opens to the top (increasing y values), and the bottom of the U matches the button's position and diameter. The intent is for the material to be bent to actuate the button indirectly. Leave a space of 1 mm between the slot and the rest of the lid. Leave a minimal clearance of at most 1-2 mm to ensure the button can be pressed without excessive force.
 * Provide a circular hole on the lid for the LED so it is visible from the outside.
-* Provide a rectangular cutout on the lid for the switch so it can be toggled from the outside.
+* Provide a rectangular cutout on the lid for the switch so it can be toggled from the outside. The cutout must have its long side parallel to the y axis and short side parallel to the x axis.
 * Include a cutout for the USB-C port centered at x = 34 mm, y = 50 mm, spanning z from 4 mm to 7 mm. USB-C approximate dimensions: 8.5 mm x 3 mm.
 * Wall thickness should be of at least 3 mm to provide basic rigidity and resist small impacts.
 * Round external corners and edges with a radius of around 2 mm.

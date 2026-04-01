@@ -50,10 +50,10 @@ POST_SIZE = 7;
 BUTTON_CENTER_X = 13;
 BUTTON_CENTER_Y = 12;
 BUTTON_BODY_SIZE = 12;
-BUTTON_ACTUATOR_DIAMETER = 1;
+BUTTON_PRESS_DIAMETER = 12;
 BUTTON_SLOT_GAP = 1;
-BUTTON_SLOT_ARM_LENGTH = 16;
-BUTTON_SLOT_BOTTOM_DIAMETER = BUTTON_BODY_SIZE;
+BUTTON_SLOT_ARM_LENGTH = 12.5;
+BUTTON_SLOT_BOTTOM_DIAMETER = BUTTON_PRESS_DIAMETER;
 
 LED_CENTER_X = 25;
 LED_CENTER_Y = 12;
@@ -258,15 +258,28 @@ module strap_handles() {
 // Lid cutouts and engravings
 // -----------------------------
 module button_u_slot_2d() {
-	left_bottom = [BUTTON_CENTER_X - (BUTTON_SLOT_BOTTOM_DIAMETER / 2), BUTTON_CENTER_Y];
-	right_bottom = [BUTTON_CENTER_X + (BUTTON_SLOT_BOTTOM_DIAMETER / 2), BUTTON_CENTER_Y];
-	left_top = [left_bottom[0], left_bottom[1] + BUTTON_SLOT_ARM_LENGTH];
-	right_top = [right_bottom[0], right_bottom[1] + BUTTON_SLOT_ARM_LENGTH];
+	bend_radius = BUTTON_SLOT_BOTTOM_DIAMETER / 2;
+	bend_outer_radius = bend_radius + (BUTTON_SLOT_GAP / 2);
+	bend_inner_radius = max(0.01, bend_radius - (BUTTON_SLOT_GAP / 2));
+	bend_center = [BUTTON_CENTER_X, BUTTON_CENTER_Y];
+	left_bottom = [bend_center[0] - bend_radius, bend_center[1]];
+	right_bottom = [bend_center[0] + bend_radius, bend_center[1]];
+	left_top = [left_bottom[0], bend_center[1] + BUTTON_SLOT_ARM_LENGTH];
+	right_top = [right_bottom[0], bend_center[1] + BUTTON_SLOT_ARM_LENGTH];
 
 	union() {
-		line_slot_2d(left_bottom, right_bottom, BUTTON_SLOT_GAP);
 		line_slot_2d(left_bottom, left_top, BUTTON_SLOT_GAP);
 		line_slot_2d(right_bottom, right_top, BUTTON_SLOT_GAP);
+
+		translate(bend_center)
+			intersection() {
+				difference() {
+					circle(r = bend_outer_radius);
+					circle(r = bend_inner_radius);
+				}
+				translate([-bend_outer_radius, -bend_outer_radius])
+					square([2 * bend_outer_radius, bend_outer_radius], center = false);
+			}
 	}
 }
 

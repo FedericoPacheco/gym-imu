@@ -3,10 +3,8 @@ $fn = 72;
 // -----------------------------
 // Display controls
 // -----------------------------
-VIEW_MODE = "ASSEMBLED"; // ASSEMBLED, EXPLODED
-EXPLODED_GAP = 24;
-SHOW_BOARD_REFERENCE = false;
-FLIP_LID_IN_PREVIEW = true;
+VIEW_MODE = "EXPLODED"; // ASSEMBLED, EXPLODED
+EXPLODED_GAP = 25;
 
 // -----------------------------
 // Board and coordinate system
@@ -487,18 +485,10 @@ module lid_part() {
 	}
 }
 
-module lid_part_flipped_preview() {
+module lid_for_preview() {
 	translate([0, 2 * CASE_CENTER_Y, LID_TOP_Z])
 		rotate([180, 0, 0])
 			lid_part();
-}
-
-module lid_for_preview() {
-	if (FLIP_LID_IN_PREVIEW) {
-		lid_part_flipped_preview();
-	} else {
-		lid_part();
-	}
 }
 
 module board_reference() {
@@ -525,6 +515,7 @@ module scene() {
 		color("gainsboro") lid_part();
 		color("lightgray") base_part();
 		assembled_handles();
+		board_reference();
 	} else {
 		base_preview_x = -(OUTER_SIZE_X + EXPLODED_GAP) / 2;
 		lid_preview_x = (OUTER_SIZE_X + EXPLODED_GAP) / 2;
@@ -540,10 +531,6 @@ module scene() {
 			color("silver") detached_single_handle("POS_X");
 		translate([handles_left_x_2, CASE_CENTER_Y, 0])
 			color("silver") detached_single_handle("NEG_X");
-	}
-
-	if (SHOW_BOARD_REFERENCE) {
-		board_reference();
 	}
 }
 

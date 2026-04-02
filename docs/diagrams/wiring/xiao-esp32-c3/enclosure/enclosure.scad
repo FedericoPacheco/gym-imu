@@ -3,7 +3,7 @@ $fn = 72;
 // -----------------------------
 // Display controls
 // -----------------------------
-VIEW_MODE = "EXPLODED"; // ASSEMBLED, EXPLODED
+VIEW_MODE = "ASSEMBLED"; // ASSEMBLED, EXPLODED
 EXPLODED_GAP = 25;
 
 // -----------------------------
@@ -78,7 +78,7 @@ USB_CORNER_RADIUS = 1;
 // -----------------------------
 // Strap loop handles
 // -----------------------------
-HANDLE_THICKNESS_Z = 5;
+HANDLE_THICKNESS_Z = 9;
 HANDLE_FRAME_THICKNESS = 5;
 HANDLE_STRAP_CLEARANCE = 5;
 HANDLE_END_MARGIN = 10;

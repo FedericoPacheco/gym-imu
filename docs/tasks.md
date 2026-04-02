@@ -34,7 +34,6 @@ Other rules:
 - Review if error macros work with variable arguments
 - Fork I2C and MPU libraries on github and apply changes there. Then include as dependencies in the platformIO file.
 - Remove unnecessary includes to reduce compiled code size.
-- Fine tune transmission parameters to optimize for latency.
 - Get raw, real world data from gym exercises: pull ups, dips.
 - Learn about filters (complementary, Kalman, etc.) and create a jupyter notebook to experiment with them on fake data.
 - Apply filters to real data on jupyter notebook and evaluate results.
@@ -45,10 +44,17 @@ Other rules:
 - Review numerical integration/ODE solving methods and and test them on jupyter notebook with fake data.
 - Apply numerical integration/ODE solving methods to real data on jupyter notebook and evaluate results.
 - Extract control logic from `src/main.cpp` to separate class.
-- Review and update current tasks priorities and ISR behaviors to optimize for latency and responsiveness.
 - Read EPS-IDF docs (<https://docs.espressif.com/projects/esp-idf/en/stable/esp32/api-guides/ble/index.html#security>) and add basic security to BLE class.
 - Move class docs to separate markdown files (documentation as code).
 - Create hardware-in-the-loop tests sending commands to the device through serial and verifying readings transmitted through BLE.
+- Avoid dynamic memory allocation to better address memory usage on the device.
+- Generate linker map file to address ways to reduce code size on the device.
+- Address ways to avoid floating-point operations on the device (ESP32-C3 has no FPU).
+- Try out ways to reduce power comsumption on the device: microcontroller sleep, turning off IMU sensor, reducing processor frequency, configure unused IO lines, etc.
+- Fine tune transmission parameters to optimize for latency.
+- Fine tune pipe sizes to optimize for optimize for data preservation.
+- Fine tune tasks priorities and ISR behaviors to optimize for latency and responsiveness.
+- Fine tune IMU parameters to optimize for throughput.
 
 ### Done
 

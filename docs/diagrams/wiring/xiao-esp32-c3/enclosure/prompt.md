@@ -15,7 +15,7 @@ The prototype has the following features:
 
 * Protoboard size: 50 mm × 70 mm × 1 mm, with 2 mm diameter mounting holes at each corner. Each hole's center is located at 2.5 mm from each adjacent board edge.
 * The side with the copper traces requires a clearance of at least 7 mm between the board and the case for wiring.
-* All electronic components sit on the opposite side of the board (positive z) and require a clearance of at least 14 mm between the board and the case.
+* All electronic components sit on the opposite side of the board (positive z) and require a clearance of at least 12 mm between the board and the case.
 * Components center with respect to the origin:
   * Button: x = 13 mm, y = 12 mm
   * LED: x = 25 mm, y = 12 mm

@@ -3,7 +3,7 @@ $fn = 72;
 // -----------------------------
 // Display controls
 // -----------------------------
-VIEW_MODE = "EXPLODED"; // BASE, LID, ASSEMBLED, EXPLODED
+VIEW_MODE = "ASSEMBLED"; // ASSEMBLED, EXPLODED
 EXPLODED_GAP = 24;
 SHOW_BOARD_REFERENCE = false;
 FLIP_LID_IN_PREVIEW = true;
@@ -161,6 +161,7 @@ HANDLE_INNER_SPAN_Y = HANDLE_SPAN_Y - (2 * HANDLE_FRAME_THICKNESS);
 HANDLE_SCREW_RADIUS = HANDLE_SCREW_PASS_DIAMETER / 2;
 
 HANDLE_INSERT_Z = BASE_BOTTOM_Z + HANDLE_INSERT_Z_OFFSET_FROM_BASE;
+HANDLE_ATTACHED_Z = HANDLE_INSERT_Z - (HANDLE_THICKNESS_Z / 2);
 SIDE_SUPPORT_Y_START = BOARD_HOLE_INSET - (POST_SIZE / 2);
 SIDE_SUPPORT_Y_SIZE = BOARD_SIZE_Y - (2 * BOARD_HOLE_INSET) + POST_SIZE;
 SIDE_SUPPORT_Z_START = BASE_BOTTOM_Z;
@@ -512,14 +513,18 @@ module board_reference() {
 		}
 }
 
+module assembled_handles() {
+	translate([OUTER_MIN_X - (HANDLE_OUTER_DEPTH_X / 2), CASE_CENTER_Y, HANDLE_ATTACHED_Z])
+		color("silver") detached_single_handle("POS_X");
+	translate([OUTER_MAX_X + (HANDLE_OUTER_DEPTH_X / 2), CASE_CENTER_Y, HANDLE_ATTACHED_Z])
+		color("silver") detached_single_handle("NEG_X");
+}
+
 module scene() {
-	if (VIEW_MODE == "BASE") {
-		base_part();
-	} else if (VIEW_MODE == "LID") {
-		lid_for_preview();
-	} else if (VIEW_MODE == "ASSEMBLED") {
+	if (VIEW_MODE == "ASSEMBLED") {
 		color("gainsboro") lid_part();
 		color("lightgray") base_part();
+		assembled_handles();
 	} else {
 		base_preview_x = -(OUTER_SIZE_X + EXPLODED_GAP) / 2;
 		lid_preview_x = (OUTER_SIZE_X + EXPLODED_GAP) / 2;

@@ -100,14 +100,14 @@ HANDLE_SCREW_TO_END_MARGIN_Y = 1.0;
 // -----------------------------
 // Lid engraving
 // -----------------------------
-AXIS_ENGRAVE_DEPTH = 1;
+AXIS_ENGRAVE_DEPTH = 1.5;
 AXIS_ARROW_LENGTH = 10;
-AXIS_LINE_WIDTH = 0.9;
-AXIS_LABEL_SIZE = 3;
+AXIS_LINE_WIDTH = 1;
+AXIS_LABEL_SIZE = 5;
 AXIS_FONT = "Liberation Sans:style=Bold";
 AXIS_ORIGIN_X = 25;
 AXIS_ORIGIN_Y = 45;
-AXIS_Z_HOLE_DIAMETER = 2;
+AXIS_Z_HOLE_DIAMETER = 3.6;
 
 // -----------------------------
 // Generic modeling tolerances
@@ -404,17 +404,19 @@ module axis_engraving_2d() {
 
 	union() {
 		line_slot_2d([AXIS_ORIGIN_X, AXIS_ORIGIN_Y], x_end, AXIS_LINE_WIDTH);
+
 		polygon(points = [
-			[x_end[0], x_end[1]],
-			[x_end[0] + 1.8, x_end[1] + 0.9],
-			[x_end[0] + 1.8, x_end[1] - 0.9]
+			[x_end[0] - 1, x_end[1]],
+			[x_end[0] + 1.8, x_end[1] + 1.8],
+			[x_end[0] + 1.8, x_end[1] - 1.8]
 		]);
 
 		line_slot_2d([AXIS_ORIGIN_X, AXIS_ORIGIN_Y], y_end, AXIS_LINE_WIDTH);
+
 		polygon(points = [
-			[y_end[0], y_end[1]],
-			[y_end[0] - 0.9, y_end[1] + 1.8],
-			[y_end[0] + 0.9, y_end[1] + 1.8]
+			[y_end[0], y_end[1] - 1],
+			[y_end[0] - 1.8, y_end[1] + 1.8],
+			[y_end[0] + 1.8, y_end[1] + 1.8]
 		]);
 
 		translate([AXIS_ORIGIN_X, AXIS_ORIGIN_Y])

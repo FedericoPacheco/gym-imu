@@ -3,8 +3,8 @@ $fn = 72;
 // -----------------------------
 // Display controls
 // -----------------------------
-VIEW_MODE = "ASSEMBLED"; // ASSEMBLED, EXPLODED
-EXPLODED_GAP = 25;
+SHOW_ASSEMBLED = false;
+PARTS_GAP = 25;
 
 // -----------------------------
 // Board and coordinate system
@@ -83,7 +83,6 @@ HANDLE_FRAME_THICKNESS = 5;
 HANDLE_STRAP_CLEARANCE = 5;
 HANDLE_END_MARGIN = 10;
 HANDLE_CORNER_RADIUS = 2;
-HANDLE_PREVIEW_GAP = 8;
 HANDLE_SHORT_SIDE_EXTRA_THICKNESS = 1.5;
 
 SIDE_SUPPORT_X_SIZE = POST_SIZE - 1;
@@ -165,6 +164,7 @@ assert(HANDLE_INNER_SPAN_Y_EFFECTIVE > 0, "Handle short-side extra thickness is 
 
 HANDLE_INSERT_Z = BASE_BOTTOM_Z + HANDLE_INSERT_Z_OFFSET_FROM_BASE;
 HANDLE_ATTACHED_Z = HANDLE_INSERT_Z - (HANDLE_THICKNESS_Z / 2);
+BASE_PREVIEW_Z = -BASE_BOTTOM_Z;
 HANDLE_INSERT_Y_OFFSET = (HANDLE_SPAN_Y / 2) - (HANDLE_SHORT_SIDE_WALL_THICKNESS / 2);
 SIDE_SUPPORT_Y_START = BOARD_HOLE_INSET - (POST_SIZE / 2);
 SIDE_SUPPORT_Y_SIZE = BOARD_SIZE_Y - (2 * BOARD_HOLE_INSET) + POST_SIZE;
@@ -519,18 +519,19 @@ module assembled_handles() {
 }
 
 module scene() {
-	if (VIEW_MODE == "ASSEMBLED") {
+	if (SHOW_ASSEMBLED) {
 		color("gainsboro") lid_part();
 		color("lightgray") base_part();
 		assembled_handles();
 		board_reference();
 	} else {
-		base_preview_x = -(OUTER_SIZE_X + EXPLODED_GAP) / 2;
-		lid_preview_x = (OUTER_SIZE_X + EXPLODED_GAP) / 2;
-		handles_left_x_1 = base_preview_x - (OUTER_SIZE_X / 2) - HANDLE_PREVIEW_GAP - (HANDLE_OUTER_DEPTH_X / 2);
-		handles_left_x_2 = handles_left_x_1 - HANDLE_OUTER_DEPTH_X - HANDLE_PREVIEW_GAP;
+		base_preview_x = -(OUTER_SIZE_X + PARTS_GAP) / 2;
+		lid_preview_x = (OUTER_SIZE_X + PARTS_GAP) / 2;
+		base_preview_left_x = base_preview_x + OUTER_MIN_X;
+		handles_left_x_1 = base_preview_left_x - PARTS_GAP - HANDLE_OUTER_DEPTH_X / 2;
+		handles_left_x_2 = handles_left_x_1 - HANDLE_OUTER_DEPTH_X - PARTS_GAP / 4;
 
-		translate([base_preview_x, 0, 0])
+		translate([base_preview_x, 0, BASE_PREVIEW_Z])
 			color("lightgray") base_part();
 		translate([lid_preview_x, 0, 0])
 			color("gainsboro") lid_for_preview();

@@ -121,3 +121,6 @@
 - <https://www.mcmaster.com/>
 - <https://www.youtube.com/watch?v=vsHpiHhB3RU>
 - <https://www.youtube.com/watch?v=yEQYirGvWCs>
+- <https://www.youtube.com/watch?v=QhZTc1x1-pM>
+- <https://www.youtube.com/watch?v=rnTwT-ifLkU>
+- <https://www.youtube.com/watch?v=3NOc-h0P_e8>

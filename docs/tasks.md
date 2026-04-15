@@ -23,8 +23,8 @@ Other rules:
 
 ### In Progress
 
-- Update prototype photos with case and strap.
 - Write minimal physical assembly instructions.
+- Write down first iteration learnings and improvements for second iteration.
 
 ### Next
 
@@ -86,3 +86,4 @@ Other rules:
 - Assemble first iteration of the prototype with case and strap.
 - Buy additional tooling for second iteration: manual drill, tweezer set, screwdrivers, calipers, heat-set inserts + soldering iron tip to install them.  
 - Update tools and BOM.
+- Update prototype photos with case and strap.

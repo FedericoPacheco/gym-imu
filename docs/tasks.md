@@ -23,18 +23,16 @@ Other rules:
 
 ### In Progress
 
-1. Figure out where to buy heat-set inserts and strap, and order them.
-2. Figure out where to 3d print the case and get it printed.
+- Update prototype photos with case and strap.
+- Write minimal physical assembly instructions.
 
 ### Next
 
-- Assemble final device with case and strap.
-- Write minimal physical assembly instructions and update BOM.
+- Create python script to receive exercise execution data through BLE and save it to a file for later analysis.
+- Get raw, real world data from gym exercises: pull ups, dips.
 
 ### Backlog
 
-- Create python script to receive exercise execution data through BLE and save it to a file for later analysis.
-- Get raw, real world data from gym exercises: pull ups, dips.
 - Review if error macros work with variable arguments
 - Fork I2C and MPU libraries on github and apply changes there. Then include as dependencies in the platformIO file.
 - Remove unnecessary includes to reduce compiled code size.
@@ -81,3 +79,10 @@ Other rules:
 - Write BOM (bill of materials) for the device.
 - Figure out how to make a case for the device by 3D printing.
 - Design case for device.
+- Figure out how to work around not finding heat-set inserts locally, and buy needed materials.
+- Figure out where to get a strap.
+- Figure out where to 3d print the case and get it printed.
+- Attempt to correct first iteration case design mistakes with the drill, sandpaper and glue.
+- Assemble first iteration of the prototype with case and strap.
+- Buy additional tooling for second iteration: manual drill, tweezer set, screwdrivers, calipers, heat-set inserts + soldering iron tip to install them.  
+- Update tools and BOM.

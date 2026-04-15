@@ -3,16 +3,15 @@
 ## Main ones
 
 - Soldering iron with temperature control (must cover 350-400°C range)
-- Solder (63/37 tin/lead or lead-free, roughly 0.8mm diameter)
 - Brass tip cleaner
 - Desoldering pump and/or desoldering wick (fix almost innevitable mistakes)
 - Wire strippers and/or cutter
-- Isopropyl alcohol and brush (clean flux residue)
+- Small brush
 - Magnifying glass (inspect joins)
 - Tweezers (grab and hold small components)
 - Hot glue gun (securing components and adding mechanical relief to wires)
-- Needle nose pliers (optional)
-- Small drill (optional, for drilling holes in the board if needed)
+- Manual drill or small electric drill (improve 3d printed case holes) + M3.25 drill bit
+- Relatively thick needle (sew strap to case handles)
 
 ## Safety
 

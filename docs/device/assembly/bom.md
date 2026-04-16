@@ -8,13 +8,18 @@
 - 1x button
 - 1x 3.7V LiPo battery (e.g. 600mAh)
 - 1x LED
-- >30cm of thin wire (copper solid core)
+- At least 30cm of thin wire (copper solid core)
 - 1x 5cmx7cm protoboard
 - 1x PETG 3D printed case (see `enclosure.stl`)
 - 1x Strap long enough to wrap around torso
-- >50cm of solder (63/37 tin/lead or lead-free, roughly 0.8mm diameter)
-- >1-2ml of epoxy glue
-- >2 hot glue bars
-- >30cm of nylon/polyester thread (note: NOT cotton, as it probably won't withstand mechanical stress)
+- At least 50cm of solder (63/37 tin/lead or lead-free, roughly 0.8mm diameter)
+- At least 1-2ml of epoxy glue
+- At least 2 hot glue bars
+- At least 50cm of nylon/polyester thread (note: NOT cotton, as it probably won't withstand mechanical stress)
 - 1x Sandpaper (glue surface preparation)
-- >50ml of isopropyl alcohol and brush (clean flux residues and clean surfaces before gluing)
+- At least 50ml of isopropyl alcohol and brush (clean flux residues and clean surfaces before gluing)
+- 4x M3 x 3cm machine screws
+- 4x M3 x 4cm machine screws
+- 8x M3 washers
+- 8x M3 nuts
+- 4x M3 heat-set inserts (optional but recommended)

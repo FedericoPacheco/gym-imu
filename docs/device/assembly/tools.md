@@ -12,6 +12,8 @@
 - Hot glue gun (securing components and adding mechanical relief to wires)
 - Manual drill or small electric drill (improve 3d printed case holes) + M3.25 drill bit
 - Relatively thick needle (sew strap to case handles)
+- Caliper (measure components for case design)
+- Heat-set insert installation tool + small screwdriver (optional, but recommended)
 
 ## Safety
 

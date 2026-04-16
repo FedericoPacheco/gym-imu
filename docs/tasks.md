@@ -23,8 +23,6 @@ Other rules:
 
 ### In Progress
 
-- Write minimal physical assembly instructions.
-
 ### Next
 
 - Create python script to receive exercise execution data through BLE and save it to a file for later analysis.
@@ -87,3 +85,4 @@ Other rules:
 - Update tools and BOM.
 - Update prototype photos with case and strap.
 - Write down first iteration learnings and improvements for second iteration.
+- Write (relatively minimal) physical assembly instructions.

@@ -24,7 +24,6 @@ Other rules:
 ### In Progress
 
 - Write minimal physical assembly instructions.
-- Write down first iteration learnings and improvements for second iteration.
 
 ### Next
 
@@ -87,3 +86,4 @@ Other rules:
 - Buy additional tooling for second iteration: manual drill, tweezer set, screwdrivers, calipers, heat-set inserts + soldering iron tip to install them.  
 - Update tools and BOM.
 - Update prototype photos with case and strap.
+- Write down first iteration learnings and improvements for second iteration.

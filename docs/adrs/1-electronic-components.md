@@ -38,7 +38,7 @@ Buy:
 
 - Small-ish LiPo battery (600 mAh) + TP4056 charging circuit + MT3608 step up voltage regulator (use 5V's ESP32 pin) + 2 pin switch: small size, good enough capacity, stable system operation (not guaranteed when feeding directly from battery), prevents backfeed to battery when powered from ESP32 USB.
 
-The schematic is available at: [esp32-c3-supermini schematic](../schematics/esp32-c3-supermini.puml).
+The schematic is available at: [esp32-c3-supermini schematic](../diagrams/schematics/it1(esp32-c3-supermini)/schematic.puml).
 
 ## Consequences
 

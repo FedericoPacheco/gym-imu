@@ -2,7 +2,7 @@
 
 Generate an enclosure for a wearable IMU device that has already been assembled.
 
-Refer to the schematics at: docs/diagrams/wiring/xiao-esp32-c3/schematic.puml
+Refer to the schematic at: ../../diagrams/schematics/it2(xiao-esp32-c3)/schematic.puml
 
 Considering the coordinate system:
 
@@ -70,4 +70,4 @@ If you identify potential issues, stop early and point them out before proceedin
 
 Output:
 
-Save the generated OpenSCAD code to: docs/diagrams/wiring/xiao-esp32-c3/enclosure/enclosure.scad and iterate by rendering and adjusting the design until it meets the requirements.
+Save the generated OpenSCAD code to: enclosure.scad and iterate by rendering and adjusting the design until it meets the requirements.

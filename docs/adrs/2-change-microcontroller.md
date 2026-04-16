@@ -16,7 +16,7 @@ I've found another variant of the ESP32 C3: XIAO by seeedstudio, which includes 
 
 Switch microcontrollers to the XIAO ESP32 C3 variant by seeedstudio and drop MT3608 + TP4056 + ESP32 C3 supermini.
 
-The schematic is available at: [xiao-esp32-c3 schematic](../schematics/xiao-esp32-c3.puml).
+The schematic is available at: [xiao-esp32-c3 schematic](../diagrams/schematics/it2(xiao-esp32-c3)/schematic.puml).
 
 ## Consequences
 

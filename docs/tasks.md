@@ -53,6 +53,7 @@ Other rules:
 - Fine tune pipe sizes to optimize for optimize for data preservation.
 - Fine tune tasks priorities and ISR behaviors to optimize for latency and responsiveness.
 - Fine tune IMU parameters to optimize for throughput.
+- Improve setup documentation aiming for easy reproducibility by others.
 
 ### Done
 

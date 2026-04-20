@@ -10,7 +10,8 @@
 	"settings": {
 		"chat.tools.terminal.autoApprove": {
 			"platformio": true,
-			"pio": true
+			"pio": true,
+			"/snap/bin/openscad-nightly": true
 		}
 	}
 }

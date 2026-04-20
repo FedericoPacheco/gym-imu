@@ -7,7 +7,7 @@
 class LED {
 public:
   static std::unique_ptr<LED> create(LoggerPort *logger,
-                                     gpio_num_t pin = GPIO_NUM_4); // D2
+                                     gpio_num_t pin = GPIO_NUM_9);
 
   bool toggle();
   bool turnOn();

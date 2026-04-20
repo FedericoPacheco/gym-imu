@@ -30,7 +30,7 @@ end note
 
 ' Microcontroller + IMU
 microcontroller "3V3" -- "VCC" sensor
-microcontroller "D3" -- "INT" sensor
+microcontroller "D0" -- "INT" sensor
 microcontroller "D4" -- "SDA" sensor
 microcontroller "D5" -- "SCL" sensor
 microcontroller "GND" -- "GND" sensor
@@ -40,7 +40,7 @@ microcontroller "GND" -- "GND" sensor
 button "(+)"-right- "3V3" microcontroller
 button "(-)" -right- "D1" microcontroller
 microcontroller "D1" -- "GND" microcontroller: 10kΩ resistor
-led "(+)" -right- "D2" microcontroller: 220Ω resistor
+led "(+)" -right- "D9" microcontroller: 220Ω resistor
 led "(-)" -right- "GND" microcontroller
 
 note top of button

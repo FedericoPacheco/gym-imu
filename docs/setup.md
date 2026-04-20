@@ -1,4 +1,8 @@
-# IMU setup (Linux Ubuntu)
+# Setup
+
+OS: Linux Ubuntu 24.04
+
+## Firmware Development Environment
 
 1. Install python:
 
@@ -169,3 +173,19 @@
     5.2. Open PlatformIO > device > General:
      - Build
      - Upload / Upload and Monitor
+
+## Enclosure
+
+1. Install OpenSCAD:
+
+    ```bash
+        snap install openscad-nightly
+    ```
+
+2. Install the BOSL2 library (tools, shapes, and helpers to make OpenScad easier to use): <https://github.com/BelfrySCAD/BOSL2/?tab=readme-ov-file#installation>
+
+3. Install NopSCADlib (parts for 3D printsrs and enclosures for electronics): <https://github.com/nophead/NopSCADlib/blob/master/docs/usage.md#installation>
+
+4. Install VS Code Extension: OpenSCAD Language Support
+
+5. Inside OpenSCAD, check "Design" > "Automatic Reload and Preview"

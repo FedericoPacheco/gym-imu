@@ -42,7 +42,19 @@ Key decisions and their rationale are documented in [Architecture Decision Recor
 
 ### Hardware
 
-The device is built primarily by hand using off-the-shelf components and a custom 3D-printed enclosure. See the [device's schematic](docs/diagrams/schematics/xiao-esp32-c3/schematic.svg), [BOM](docs/diagrams/schematics/xiao-esp32-c3/bom.md) (TBD), and [tools](docs/diagrams/schematics/xiao-esp32-c3/tools.md) (WIP) to build your own device.
+The device is built primarily by hand using off-the-shelf components and a custom 3D-printed enclosure. See the [assembly instructions](docs/device/assembly/instructions.md) for details on how to build your own device. Other resources:
+
+- [Schematic](docs/diagrams/schematics/it2(xiao-esp32-c3)/schematic.svg)
+- [Bill of materials](docs/device/assembly/bom.md)
+- [Tools](docs/device/assembly/tools.md)
+- [Enclosure design](docs/device/enclosure/enclosure.scad) and [STL](docs/device/enclosure/enclosure.stl)
+
+First prototype photos:
+
+<img src="docs/device/prototype-photos/2-protoboard/front.jpg" alt="Board front" width="300" height="400">
+<img src="docs/device/prototype-photos/2-protoboard/back.jpg" alt="Board back" width="300" height="400">
+<img src="docs/device/prototype-photos/3-case/up.jpg" alt="Enclosure top" width="500" height="300">
+<img src="docs/device/prototype-photos/3-case/front.jpg" alt="Enclosure front" width="300" height="300">
 
 ### Firmware
 

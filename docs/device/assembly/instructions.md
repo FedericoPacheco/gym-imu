@@ -5,7 +5,7 @@
 3. If necessary, machine the protoboard to insert the switch, enlarge or make holes on the corners for screws, or reduce the board size.
 4. Solder the components into the perfboard as shown in the [schematic](../diagrams/schematics/it2(xiao-esp32-c3)/schematic.svg). Also follow insights from [lessons learned](lessons.md) to avoid common pitfalls. The general order of assembly is as follows:
 
-    4.1. Cut and bend two pieces of copper wire to solder to the back of the microcontroller that will pass through the protoboard holes. These will act as pins for the battery connection later.
+    4.1. Cut and bend two pieces of copper wire to solder to the back of the microcontroller that will pass through the protoboard holes. These will act as pins for the battery connection later. Solder them and later add mechanical relief with hot glue.
     4.2. Place the microcontroller at the center and only solder the pins that are unused on this project.
     4.3. Place the IMU sensor to one side and only solder the pins that are unused on this project.
     4.4. Place short wires touching the necessary pins of the microcontroller and the sensor and solder them in one stroke. Leave the power and ground pins untouched.
@@ -17,7 +17,7 @@
     4.10. Flash the device and while plugged test it briefly. Review logs.
     4.11. Turn it on unplugged and test it briefly.
 
-5. Measure the button, switch and LED placement with a caliper and change the 3D model of the case if necessary. Print the case.
+5. Measure the button, switch and LED placement with a caliper and change the 3D model of the case if necessary. Print the case. Make sure to not use PLA.
 
 6. Review the printed case and address if it needs any adjustments. If necessary:
 

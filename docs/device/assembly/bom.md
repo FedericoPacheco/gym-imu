@@ -17,7 +17,7 @@
 - At least 2 hot glue bars
 - At least 50cm of nylon/polyester thread (note: NOT cotton, as it probably won't withstand mechanical stress)
 - 1x Sandpaper (glue surface preparation)
-- At least 50ml of isopropyl alcohol and brush (clean flux residues and clean surfaces before gluing)
+- At least 50ml of isopropyl alcohol and brush (clean flux residues and surfaces before gluing)
 - 4x M3 x 3cm machine screws
 - 4x M3 x 4cm machine screws
 - 8x M3 washers

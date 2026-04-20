@@ -189,3 +189,19 @@ OS: Linux Ubuntu 24.04
 4. Install VS Code Extension: OpenSCAD Language Support
 
 5. Inside OpenSCAD, check "Design" > "Automatic Reload and Preview"
+
+## Signal reception, analysis and processing
+
+1. Activate virtual environment:
+
+    ```bash
+    source venv/bin/activate
+    ```
+
+2. Install dependencies:
+
+    ```bash
+    pip install -r requirements.txt
+    ```
+
+3. Install Python formatter extension: Black Formatter by Microsoft

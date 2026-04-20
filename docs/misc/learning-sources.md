@@ -124,3 +124,14 @@
 - <https://www.youtube.com/watch?v=QhZTc1x1-pM>
 - <https://www.youtube.com/watch?v=rnTwT-ifLkU>
 - <https://www.youtube.com/watch?v=3NOc-h0P_e8>
+
+## Python quirks
+
+## Asyncio
+
+- <https://www.youtube.com/watch?v=Qb9s3UiMSTA>
+- <https://docs.python.org/3/library/asyncio.html>
+
+## Bleak (BLE client)
+
+- <https://bleak.readthedocs.io/en/latest/usage.html>

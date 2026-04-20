@@ -23,20 +23,26 @@ Other rules:
 
 ### In Progress
 
+- Create python script to receive exercise execution data through BLE, display basic real-time graphs, and save it to a file for later analysis.
+- Reevaluate neccessary minimum sampling frequency considering the sampling theorem and other factors.
+
 ### Next
 
-- Create python script to receive exercise execution data through BLE and save it to a file for later analysis.
-- Get raw, real world data from gym exercises: pull ups, dips.
+- Get raw, real world data from gym exercises: pull ups, dips, 90° push ups, front-lever pulls (straight arms).
 
 ### Backlog
 
+- Fine tune transmission parameters to optimize for latency.
+- Fine tune pipe sizes to optimize for optimize for data preservation.
+- Fine tune tasks priorities and ISR behaviors to optimize for latency and responsiveness.
+- Fine tune IMU parameters to optimize for throughput.
 - Review if error macros work with variable arguments
 - Fork I2C and MPU libraries on github and apply changes there. Then include as dependencies in the platformIO file.
 - Remove unnecessary includes to reduce compiled code size.
 - Learn about filters (complementary, Kalman, etc.) and create a jupyter notebook to experiment with them on fake data.
 - Apply filters to real data on jupyter notebook and evaluate results.
-- Figure out how to correct drift.
 - Figure out how to calibrate the device.
+- Figure out how to correct drift.
 - Implement all math operations on jupyter notebook: from raw data to sanitized velocity signals.
 - Implement all math operations on the device: from raw data to sanitized velocity signals.
 - Review numerical integration/ODE solving methods and and test them on jupyter notebook with fake data.
@@ -49,10 +55,6 @@ Other rules:
 - Generate linker map file to address ways to reduce code size on the device.
 - Address ways to avoid floating-point operations on the device (ESP32-C3 has no FPU).
 - Try out ways to reduce power comsumption on the device: microcontroller sleep, turning off IMU sensor, reducing processor frequency, configure unused IO lines, etc.
-- Fine tune transmission parameters to optimize for latency.
-- Fine tune pipe sizes to optimize for optimize for data preservation.
-- Fine tune tasks priorities and ISR behaviors to optimize for latency and responsiveness.
-- Fine tune IMU parameters to optimize for throughput.
 - Improve setup documentation aiming for easy reproducibility by others.
 
 ### Done

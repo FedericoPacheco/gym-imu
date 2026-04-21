@@ -22,9 +22,9 @@ IMU_SAMPLE_STRUCT = struct.Struct("<ffffffq")  # 6 floats, 1 int64_t timestamp
 IMU_SAMPLE_SIZE_BYTES = IMU_SAMPLE_STRUCT.size
 
 # TIMING PARAMETERS
-DEVICE_SCAN_TIMEOUT_SECONDS = 30.0
-FIRST_SAMPLE_TIMEOUT = 15.0
-LISTEN_DURATION_SECONDS = 90.0
+DEVICE_SCAN_TIMEOUT_SECONDS = 60.0
+FIRST_SAMPLE_TIMEOUT = 30.0
+LISTEN_DURATION_SECONDS = 30.0
 
 # MISCELLANEOUS
 LOGGING_PERIOD_IN_NOTIFICATIONS = 10
@@ -57,6 +57,8 @@ async def main() -> None:
 
 
 async def listenForSamples() -> None:
+    global receivedFirstSampleEvent
+
     target = await findTargetDevice()
 
     print("Connecting to device...")
@@ -82,11 +84,11 @@ async def listenForSamples() -> None:
 
         subscribed = False
         try:
+            # Create the event before subscribing to avoid missing the very first notification
+            receivedFirstSampleEvent = asyncio.Event()
             await client.start_notify(IMU_CHARACTERISTIC_UUID, onImuNotification)
             subscribed = True
             print("Subscribed to IMU notifications")
-
-            receivedFirstSampleEvent = asyncio.Event()
             print(
                 "Press the wearable button now to start transmission. "
                 "Waiting for first sample..."

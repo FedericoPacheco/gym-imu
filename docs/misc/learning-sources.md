@@ -127,11 +127,17 @@
 
 ## Python quirks
 
-## Asyncio
+### Asyncio
 
 - <https://www.youtube.com/watch?v=Qb9s3UiMSTA>
 - <https://docs.python.org/3/library/asyncio.html>
 
-## Bleak (BLE client)
+### Bleak (BLE client)
 
 - <https://bleak.readthedocs.io/en/latest/usage.html>
+
+### Bytes, structs, arrays
+
+- <https://docs.python.org/3/library/stdtypes.html#binary-sequence-types-bytes-bytearray-memoryview>
+- <https://docs.python.org/3/library/struct.html>
+- <https://docs.python.org/3/library/array.html>

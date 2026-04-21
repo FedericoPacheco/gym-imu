@@ -196,7 +196,8 @@ OS: Linux Ubuntu 24.04
 
     ```bash
     python -m venv venv
-    source venv/bin/activate
+    source venv/bin/activate    # Linux
+    .\venv\Scripts\activate.ps1 # Windows
     ```
 
 2. Install dependencies:

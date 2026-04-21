@@ -192,9 +192,10 @@ OS: Linux Ubuntu 24.04
 
 ## Signal reception, analysis and processing
 
-1. Activate virtual environment:
+1. Create and activate virtual environment:
 
     ```bash
+    python -m venv venv
     source venv/bin/activate
     ```
 

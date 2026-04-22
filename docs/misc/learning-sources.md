@@ -141,3 +141,8 @@
 - <https://docs.python.org/3/library/stdtypes.html#binary-sequence-types-bytes-bytearray-memoryview>
 - <https://docs.python.org/3/library/struct.html>
 - <https://docs.python.org/3/library/array.html>
+
+## IMU calibration
+
+- <https://www.researchgate.net/publication/230959638_An_enhanced_multi-position_calibration_method_for_consumer-grade_inertial_measurement_units_applied_and_tested>
+- <https://home.uia.no/geirh/PDF/C52.pdf>

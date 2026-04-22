@@ -23,12 +23,13 @@ Other rules:
 
 ### In Progress
 
-- Create python script to receive exercise execution data through BLE, display basic real-time graphs, and save it to a file for later analysis.
-- Reevaluate neccessary minimum sampling frequency considering the sampling theorem and other factors.
+- Perform six-position test (statiationary measurements + statistical analysis) to later correct bias, scale and axis misalignment.
+- Implement first step of the transformer filter: correct bias, scale and axis misalignment.
+- Get raw, real world data from gym exercises: pull ups, dips, 90° push ups, front-lever pulls (straight arms).
 
 ### Next
 
-- Get raw, real world data from gym exercises: pull ups, dips, 90° push ups, front-lever pulls (straight arms).
+- Reevaluate neccessary minimum sampling frequency considering the sampling theorem and other factors.
 
 ### Backlog
 
@@ -41,7 +42,6 @@ Other rules:
 - Remove unnecessary includes to reduce compiled code size.
 - Learn about filters (complementary, Kalman, etc.) and create a jupyter notebook to experiment with them on fake data.
 - Apply filters to real data on jupyter notebook and evaluate results.
-- Figure out how to calibrate the device.
 - Figure out how to correct drift.
 - Implement all math operations on jupyter notebook: from raw data to sanitized velocity signals.
 - Implement all math operations on the device: from raw data to sanitized velocity signals.
@@ -89,3 +89,4 @@ Other rules:
 - Update prototype photos with case and strap.
 - Write down first iteration learnings and improvements for second iteration.
 - Write (relatively minimal) physical assembly instructions.
+- Create python script to receive exercise execution data through BLE, display basic real-time graphs, and save it to a file for later analysis.

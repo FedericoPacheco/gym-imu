@@ -1,2 +1,3 @@
 venv
-signal-utils/src/signal_utils/__pycache__/
+__pycache__/
+*.pyc

@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "signal-utils"
+version = "0.1.0"
+description = "Utilities for receiving and working with Gym-IMU signal data"
+requires-python = ">=3.12"
+dependencies = [
+    "bleak==3.0.1",
+    "matplotlib==3.10.8",
+]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]

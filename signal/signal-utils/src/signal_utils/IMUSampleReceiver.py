@@ -4,7 +4,6 @@ import contextlib
 import struct
 from typing import Any
 
-import matplotlib.pyplot as plt
 from bleak import BleakClient, BleakScanner
 
 
@@ -33,6 +32,9 @@ class IMUSampleReceiver:
     ) -> None:
         self.listenDurationSeconds = listenDurationSeconds
         self.client = None
+
+    def isConnected(self) -> bool:
+        return self.client is not None and self.client.is_connected
 
     async def connect(self) -> None:
         target = await self._findTargetDevice()
@@ -89,7 +91,8 @@ class IMUSampleReceiver:
         return hasMatchingName or hasMatchingService
 
     async def disconnect(self) -> None:
-        if self.client and self.client.is_connected:
+        if self.isConnected():
+            assert self.client is not None
             await self.client.disconnect()
             print("Disconnected from the device")
 
@@ -107,8 +110,9 @@ class IMUSampleReceiver:
         }
 
     async def _listenForNotifications(self):
-        if self.client is None or not self.client.is_connected:
+        if not self.isConnected():
             raise RuntimeError("Device not connected")
+        assert self.client is not None
 
         # Prefer C-typed arrays over Python lists/dictionaries for better performance and lower memory overhead
         self.ax = array("f")

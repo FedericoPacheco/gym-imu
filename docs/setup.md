@@ -206,4 +206,7 @@ OS: Linux Ubuntu 24.04
     pip install -r requirements.txt
     ```
 
-3. Install Python formatter extension: Black Formatter by Microsoft
+    This also installs the local `signal-utils` package in editable mode.
+
+3. Install extension: Black Formatter by Microsoft
+4. Install extension: Jupyter by Microsoft

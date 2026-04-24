@@ -1,7 +1,7 @@
 import asyncio
 import matplotlib.pyplot as plt
 
-from IMUSampleReceiver import IMUSampleReceiver
+from signal_utils import IMUSampleReceiver
 
 
 async def main() -> None:

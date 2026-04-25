@@ -8,7 +8,7 @@ class IMUSampleTimeSeriesPlotter:
             print("No samples available to plot")
             return
 
-        tSeconds = [t / 1000000.0 for t in motionData["t"]]  # type: ignore
+        tSeconds = [(t - motionData["t"][0]) / 1000000.0 for t in motionData["t"]]  # type: ignore
 
         fig, axes = plt.subplots(3, 2, figsize=(12, 8))
 

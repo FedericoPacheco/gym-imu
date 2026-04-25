@@ -142,12 +142,16 @@
 - <https://docs.python.org/3/library/struct.html>
 - <https://docs.python.org/3/library/array.html>
 
-## IMU calibration
-
-- <https://www.researchgate.net/publication/230959638_An_enhanced_multi-position_calibration_method_for_consumer-grade_inertial_measurement_units_applied_and_tested>
-- <https://home.uia.no/geirh/PDF/C52.pdf>
-
-# Stats
+### Stats
 
 - <https://docs.python.org/3/library/statistics.html>
 - <https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.hist.html>
+
+## IMU calibration
+
+- <https://www.researchgate.net/publication/230959638_An_enhanced_multi-position_calibration_method_for_consumer-grade_inertial_measurement_units_applied_and_tested>
+- <https://www.cl.cam.ac.uk/techreports/UCAM-CL-TR-696.pdf>
+- <https://miis.maths.ox.ac.uk/633/1/p5_mms.pdf> (!)
+- <https://cookierobotics.com/061/> (!)
+- <https://www.youtube.com/watch?v=AheaTd_l5Is>
+- <https://www.youtube.com/watch?v=MODiqfW-ibQ>

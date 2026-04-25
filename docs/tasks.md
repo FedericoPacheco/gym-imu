@@ -23,7 +23,6 @@ Other rules:
 
 ### In Progress
 
-- Perform six-position test (statiationary measurements + statistical analysis) to later correct bias, scale and axis misalignment.
 - Implement first step of the transformer filter: correct bias, scale and axis misalignment.
 - Get raw, real world data from gym exercises: pull ups, dips, 90° push ups, front-lever pulls (straight arms).
 
@@ -90,3 +89,4 @@ Other rules:
 - Write down first iteration learnings and improvements for second iteration.
 - Write (relatively minimal) physical assembly instructions.
 - Create python script to receive exercise execution data through BLE, display basic real-time graphs, and save it to a file for later analysis.
+- Perform six-position test (statiationary measurements + statistical analysis + offline corrections computation) to later correct bias, scale and axis misalignment on the device.

@@ -5,8 +5,7 @@ from pathlib import Path
 
 class IMUSampleReader:
 
-    @staticmethod
-    def read(inputFile: str) -> dict[str, array | dict[str, array]]:
+    def read(self, inputFile: str) -> dict[str, array | dict[str, array]]:
         filePath = Path(inputFile)
         if not filePath.exists():
             raise FileNotFoundError(f"Capture file not found: {filePath}")

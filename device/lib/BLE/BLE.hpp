@@ -42,8 +42,8 @@ UARTLogger logger((LogLevel::DEBUG));
 std::shared_ptr<Pipe<IMUSample, TRANSMISSION_PIPE_SIZE>> pipe =
     QueuePipe<IMUSample, TRANSMISSION_PIPE_SIZE>::create(&logger);
 auto transmitRunner = std::make_unique<FreeRTOSLoopRunner>(
-  "transmitTask", BLE::TRANSMIT_TASK_STACK_SIZE,
-  BLE::TRANSMIT_TASK_PRIORITY, pdMS_TO_TICKS(100));
+  "transmitTask", TRANSMIT_TASK_STACK_SIZE,
+  TRANSMIT_TASK_PRIORITY, pdMS_TO_TICKS(100));
 unique_ptr<BLE> ble = BLE::getInstance(&logger, pipe,
                      std::move(transmitRunner));
 ... if (ble->isConnected()) {
@@ -88,11 +88,6 @@ public:
   static constexpr ble_uuid128_t IMU_SAMPLE_CHARACTERISTIC_UUID =
       BLE_UUID128_INIT(0x3a, 0x7c, 0xd6, 0x9e, 0x6f, 0x71, 0x20, 0xab, 0xa2,
                        0x4d, 0x31, 0xf2, 0x0b, 0x34, 0x1c, 0xc2);
-
-  static constexpr int BLE_TASK_PRIORITY = 4;
-  static constexpr int BLE_TASK_STACK_SIZE = 4096;
-  static constexpr int TRANSMIT_TASK_PRIORITY = 4;
-  static constexpr int TRANSMIT_TASK_STACK_SIZE = 4096;
 
   static BLE *
   getInstance(LoggerPort *logger,

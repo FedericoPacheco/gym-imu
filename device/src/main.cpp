@@ -75,8 +75,8 @@ extern "C" void app_main() {
 
   UARTLogger bleLogger("BLE", LogLevel::INFO);
   auto bleLoopRunner = std::make_unique<FreeRTOSLoopRunner>(
-      "transmitTask", BLE::TRANSMIT_TASK_STACK_SIZE,
-      BLE::TRANSMIT_TASK_PRIORITY, pdMS_TO_TICKS(100));
+      "transmitTask", TRANSMIT_TASK_STACK_SIZE, TRANSMIT_TASK_PRIORITY,
+      pdMS_TO_TICKS(100));
   BLE *ble =
       BLE::getInstance(&bleLogger, transmissionPipe, std::move(bleLoopRunner));
   if (ble == nullptr) {

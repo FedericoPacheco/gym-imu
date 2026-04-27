@@ -49,7 +49,7 @@ void FreeRTOSNotificationRunner::runOneStep() {
   // Not applicable
 }
 
-void FreeRTOSNotificationRunner::notifyFromISR() {
+void IRAM_ATTR FreeRTOSNotificationRunner::notifyFromISR() {
   if (this->taskHandle) {
     BaseType_t highPriorityTaskWoken = pdFALSE;
     rtosTaskNotifyGiveFromISR(this->taskHandle, &highPriorityTaskWoken);

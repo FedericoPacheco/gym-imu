@@ -4,6 +4,10 @@
 
 #include <cstdint>
 
+#ifndef IRAM_ATTR
+#define IRAM_ATTR
+#endif
+
 typedef int BaseType_t;
 typedef unsigned int UBaseType_t;
 typedef uint32_t TickType_t;

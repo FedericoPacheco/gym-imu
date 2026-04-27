@@ -9,22 +9,16 @@
 #include <Constants.hpp>
 #include <FreeRTOSLoopRunner.hpp>
 #include <FreeRTOSNotificationRunner.hpp>
+#include <IMUSignalProcessor.hpp>
 #include <LED.hpp>
 #include <Logger.hpp>
+#include <MPU6050AffineCalibrator.hpp>
 #include <MPU6050Sensor.hpp>
 #include <QueuePipe.hpp>
 #include <memory>
 
 extern "C" void app_main() {
   gpio_install_isr_service(ESP_INTR_FLAG_IRAM);
-
-  UARTLogger samplingPipeLogger("SamplingPipe", LogLevel::WARN);
-  std::shared_ptr<Pipe<IMUSample, SAMPLING_PIPE_SIZE>> samplingPipe =
-      QueuePipe<IMUSample, SAMPLING_PIPE_SIZE>::create(&samplingPipeLogger);
-  if (!samplingPipe) {
-    samplingPipeLogger.error("Failed to create pipe");
-    return;
-  }
 
   UARTLogger ledLogger("LED", LogLevel::WARN);
   std::unique_ptr<LED> led = LED::create(&ledLogger);
@@ -40,7 +34,23 @@ extern "C" void app_main() {
     return;
   }
 
-  UARTLogger imuLogger("IMU", LogLevel::DEBUG);
+  UARTLogger samplingPipeLogger("SamplingPipe", LogLevel::WARN);
+  std::shared_ptr<Pipe<IMUSample, SAMPLING_PIPE_SIZE>> samplingPipe =
+      QueuePipe<IMUSample, SAMPLING_PIPE_SIZE>::create(&samplingPipeLogger);
+  if (!samplingPipe) {
+    samplingPipeLogger.error("Failed to create sampling pipe");
+    return;
+  }
+  UARTLogger transmissionPipeLogger("TransmissionPipe", LogLevel::WARN);
+  std::shared_ptr<Pipe<IMUSample, TRANSMISSION_PIPE_SIZE>> transmissionPipe =
+      QueuePipe<IMUSample, TRANSMISSION_PIPE_SIZE>::create(
+          &transmissionPipeLogger);
+  if (!transmissionPipe) {
+    transmissionPipeLogger.error("Failed to create transmission pipe");
+    return;
+  }
+
+  UARTLogger imuLogger("IMU", LogLevel::INFO);
   auto imuMPUPort = std::make_unique<MPUReal>();
   auto imuI2CPort = std::make_unique<I2CReal>();
   auto imuRunner = std::make_unique<FreeRTOSNotificationRunner>(
@@ -53,12 +63,22 @@ extern "C" void app_main() {
     return;
   }
 
+  UARTLogger processorLogger("Processor", LogLevel::DEBUG);
+  auto processorRunner = std::make_unique<FreeRTOSLoopRunner>(
+      "processTask", PROCESS_TASK_STACK_SIZE, PROCESS_TASK_PRIORITY,
+      pdMS_TO_TICKS(25));
+  std::unique_ptr<IMUCalibrator> calibrator =
+      std::make_unique<MPU6050AffineCalibrator>();
+  IMUSignalProcessor processor(samplingPipe, transmissionPipe,
+                               std::move(processorRunner), &processorLogger,
+                               std::move(calibrator));
+
   UARTLogger bleLogger("BLE", LogLevel::INFO);
   auto bleLoopRunner = std::make_unique<FreeRTOSLoopRunner>(
       "transmitTask", BLE::TRANSMIT_TASK_STACK_SIZE,
       BLE::TRANSMIT_TASK_PRIORITY, pdMS_TO_TICKS(100));
   BLE *ble =
-      BLE::getInstance(&bleLogger, samplingPipe, std::move(bleLoopRunner));
+      BLE::getInstance(&bleLogger, transmissionPipe, std::move(bleLoopRunner));
   if (ble == nullptr) {
     bleLogger.error("Failed to initialize BLE");
     return;
@@ -66,6 +86,7 @@ extern "C" void app_main() {
 
   bool doSample = false;
   button->enableAsync();
+  processor.beginProcessing();
   while (true) {
     vTaskDelay(pdMS_TO_TICKS(1000));
 
@@ -81,5 +102,6 @@ extern "C" void app_main() {
       }
     }
   }
+  processor.stopProcessing();
   button->disableAsync();
 }

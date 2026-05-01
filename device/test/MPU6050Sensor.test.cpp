@@ -138,13 +138,6 @@ TEST(MPU6050Sensor_getInstance, ReturnsNullWhenSettingAddressToSensorFails) {
   EXPECT_EQ(getInstanceWith(std::move(deps)), nullptr);
 }
 
-TEST(MPU6050Sensor_getInstance, ReturnsNullWhenResetSensorFails) {
-  auto deps = buildDefaultDependencies();
-  EXPECT_CALL(*deps.sensor, reset()).WillOnce(Return(ESP_FAIL));
-
-  EXPECT_EQ(getInstanceWith(std::move(deps)), nullptr);
-}
-
 TEST(MPU6050Sensor_getInstance,
      ReturnsNullWhenConnectionTestFailsAfterMaxRetries) {
   auto deps = buildDefaultDependencies();

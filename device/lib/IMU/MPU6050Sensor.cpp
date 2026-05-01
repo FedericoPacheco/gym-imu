@@ -52,8 +52,7 @@ std::unique_ptr<MPU6050Sensor> MPU6050Sensor::create(
 
   if (!imu->initializeI2CBus())
     return nullptr;
-  if (!imu->resetSensor())
-    return nullptr;
+  // imu->resetSensor()
   // imu->performDiagnostics();
   if (!imu->testConnection())
     return nullptr;

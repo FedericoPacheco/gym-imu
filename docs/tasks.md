@@ -23,28 +23,35 @@ Other rules:
 
 ### In Progress
 
-- Get raw, real world data from gym exercises: pull ups, dips, 90° push ups, front-lever pulls (straight arms).
+- Perform simple analysis on a jupyter notebook of sampling jitter on recorded data. Provide a recomendation to fix samples timestamps (e.g. estimation, sequence numbers, etc.) and fix already recorded data if possible.
 
 ### Next
 
-- Reevaluate neccessary minimum sampling frequency considering the sampling theorem and other factors.
+- Fix `MPU6050Sensor` timestamps. Currently, each sample stores dequeue time instead of the acquisition time (wrong, and worse on batch reads).
 
 ### Backlog
 
+- Evaluate on a jupyter notebook low-pass and high-pass filter candidates on real captures, comparing noise reduction, phase lag, and peak distortion.
+- Implement on a jupyter notebook simple sensor fusion via a complementary filter and evaluate it on real captures, comparing it against the raw IMU data. Address whether a more complex filter (e.g. Kalman, Madgwick) is needed.
+- Implement on a jupyter notebook a simple gravity removal strategy.
+- Implement on a jupyter notebook a simple rep-counting mechanism and evaluate it on real captures, comparing it against video references.
+- Implement on a jupyter notebook a drift-control strategy (e.g. detrending, zero velocity update each rep).
+- Compare a small set of integration methods/ODE solving methods for velocity estimation, trading off accuracy and computational cost/time.
+- Validate the complete signal processing pipeline on a jupyter notebook: filtering, gravity removal, rep-counting, drift control, velocity estimation. Document errors and limitations. Use external video references.
+- Implement complementary filter on the device and test for performance.
+- Implement gravity removal strategy on the device and test for performance.
+- Implement simple rep-counting mechanism on the device and test for performance.
+- Implement drift-control strategy on the device and test for performance.
+- Implement velocity estimation on the device and test for performance.
+- Perform spectral analysis to diagnose aliasing and noise on recorded captures. Provide a recommendation of minimum sampling frequency and filter cutoffs.
 - Fine tune transmission parameters to optimize for latency.
-- Fine tune pipe sizes to optimize for optimize for data preservation.
+- Fine tune pipe sizes to optimize for data preservation.
 - Fine tune tasks priorities and ISR behaviors to optimize for latency and responsiveness.
 - Fine tune IMU parameters to optimize for throughput.
+
 - Review if error macros work with variable arguments
 - Fork I2C and MPU libraries on github and apply changes there. Then include as dependencies in the platformIO file.
 - Remove unnecessary includes to reduce compiled code size.
-- Learn about filters (complementary, Kalman, etc.) and create a jupyter notebook to experiment with them on fake data.
-- Apply filters to real data on jupyter notebook and evaluate results.
-- Figure out how to correct drift.
-- Implement all math operations on jupyter notebook: from raw data to sanitized velocity signals.
-- Implement all math operations on the device: from raw data to sanitized velocity signals.
-- Review numerical integration/ODE solving methods and and test them on jupyter notebook with fake data.
-- Apply numerical integration/ODE solving methods to real data on jupyter notebook and evaluate results.
 - Extract control logic from `src/main.cpp` to separate class.
 - Read EPS-IDF docs (<https://docs.espressif.com/projects/esp-idf/en/stable/esp32/api-guides/ble/index.html#security>) and add basic security to BLE class.
 - Move class docs to separate markdown files (documentation as code).
@@ -90,3 +97,4 @@ Other rules:
 - Create python script to receive exercise execution data through BLE, display basic real-time graphs, and save it to a file for later analysis.
 - Perform six-position test (statiationary measurements + statistical analysis + offline corrections computation) to later correct bias, scale and axis misalignment on the device.
 - Implement first step of the transformer filter: correct bias, scale and axis misalignment.
+- Get raw, real world data from gym exercises: pull ups, dips, 90° push ups.

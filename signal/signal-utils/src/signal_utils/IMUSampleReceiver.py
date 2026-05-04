@@ -225,7 +225,10 @@ class IMUSampleReceiver:
                     lost.append(self.seq[i - 1] + j)
 
         print(
-            f"Lost samples: {lost[:]}\nTotal: {total} ({total*100.0/len(self.seq):.2f}%)"
+            "SAMPLE LOSS ANALYSIS:\n"
+            f"Sequence numbers: {','.join(map(str, lost))}\n"
+            f"Periodicity: {','.join(str(lost[i] - lost[i - 1]) for i in range(1, len(lost)))}\n"
+            f"Total: {total} ({total*100.0/len(self.seq):.2f}%)"
         )
 
     def _export(self, fileName: str) -> None:

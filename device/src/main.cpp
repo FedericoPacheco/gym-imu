@@ -99,7 +99,7 @@ extern "C" void app_main() {
   processor.beginProcessing();
   while (true) {
     vTaskDelay(pdMS_TO_TICKS(1000));
-
+    // Toggle sampling when user commands via button press
     if (button->wasPressedAsync() && ble->isConnected()) {
       doSample = !doSample;
       led->toggle();
@@ -110,6 +110,13 @@ extern "C" void app_main() {
         imu->stopAsync();
         ble->stopTransmission();
       }
+    }
+    // Stop sampling if BLE gets disconnected
+    if (doSample && !ble->isConnected()) {
+      doSample = false;
+      led->turnOff();
+      imu->stopAsync();
+      ble->stopTransmission();
     }
   }
   processor.stopProcessing();

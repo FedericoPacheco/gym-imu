@@ -210,3 +210,4 @@ OS: Linux Ubuntu 24.04
 
 3. Install extension: Black Formatter by Microsoft
 4. Install extension: Jupyter by Microsoft
+5. Install extension: Edit CSV by janisdd

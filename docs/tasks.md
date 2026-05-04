@@ -23,11 +23,9 @@ Other rules:
 
 ### In Progress
 
-- Perform simple analysis on a jupyter notebook of sampling jitter on recorded data. Provide a recomendation to fix samples timestamps (e.g. estimation, sequence numbers, etc.) and fix already recorded data if possible.
+- Fix `MPU6050Sensor` timestamps. Currently, each sample stores dequeue time instead of the acquisition time (wrong, and worse on batch reads).
 
 ### Next
-
-- Fix `MPU6050Sensor` timestamps. Currently, each sample stores dequeue time instead of the acquisition time (wrong, and worse on batch reads).
 
 ### Backlog
 
@@ -98,3 +96,4 @@ Other rules:
 - Perform six-position test (statiationary measurements + statistical analysis + offline corrections computation) to later correct bias, scale and axis misalignment on the device.
 - Implement first step of the transformer filter: correct bias, scale and axis misalignment.
 - Get raw, real world data from gym exercises: pull ups, dips, 90° push ups.
+- Perform simple analysis of sampling jitter on recorded data. Provide a recomendation to fix samples timestamps (e.g. estimation, sequence numbers, etc.) and fix already recorded data if possible. Result: dirac-delta-like distribution (almost constant processing time), with a small amount of samples possibly lost. Simplest solution is to use sequence numbers and detect losses with non-consecutive samples, then later at most interpolate lost samples if needed.

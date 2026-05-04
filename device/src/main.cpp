@@ -18,7 +18,17 @@
 #include <memory>
 
 extern "C" void app_main() {
-  gpio_install_isr_service(ESP_INTR_FLAG_IRAM);
+  /* Note:
+   Do NOT use the ESP_INTR_FLAG_IRAM here. Depending on timing, it produces the
+   watchdog to panic and restart the system indefinitively. The flag enables
+   ISRs to run when flash operations (write/erase) are in progress, but it also
+   prevents the use of any code that lives in flash from within the ISR, which
+   effectively prevents me from using the Runner abstractions I've built (not
+   IRAM-safe). Tradeoff: slight delays or misses in rare cases that may make me
+   lose some samples (acceptable due to soft real-time requirements and mission
+   criticality) vs. more complex, less flexible, code.
+  */
+  gpio_install_isr_service(0);
 
   UARTLogger ledLogger("LED", LogLevel::WARN);
   std::unique_ptr<LED> led = LED::create(&ledLogger);
@@ -50,7 +60,7 @@ extern "C" void app_main() {
     return;
   }
 
-  UARTLogger imuLogger("IMU", LogLevel::INFO);
+  UARTLogger imuLogger("IMU", LogLevel::DEBUG);
   auto imuMPUPort = std::make_unique<MPUReal>();
   auto imuI2CPort = std::make_unique<I2CReal>();
   auto imuRunner = std::make_unique<FreeRTOSNotificationRunner>(
@@ -73,7 +83,7 @@ extern "C" void app_main() {
                                std::move(processorRunner), &processorLogger,
                                std::move(calibrator));
 
-  UARTLogger bleLogger("BLE", LogLevel::INFO);
+  UARTLogger bleLogger("BLE", LogLevel::DEBUG);
   auto bleLoopRunner = std::make_unique<FreeRTOSLoopRunner>(
       "transmitTask", TRANSMIT_TASK_STACK_SIZE, TRANSMIT_TASK_PRIORITY,
       pdMS_TO_TICKS(100));

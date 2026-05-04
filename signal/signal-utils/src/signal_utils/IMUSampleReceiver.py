@@ -17,7 +17,7 @@ class IMUSampleReceiver:
     # DATA FORMAT
     # Device sends batches of IMU samples within each BLE notification as raw bytes in little-endian format.
     # Refer to IMUSensorPort.hpp for the exact C++ struct.
-    IMU_SAMPLE_STRUCT = struct.Struct("<ffffffq")  # 6 floats, 1 int64_t timestamp
+    IMU_SAMPLE_STRUCT = struct.Struct("<ffffffI")  # 6 floats, 1 unsigned int
 
     # TIMING PARAMETERS
     DEVICE_SCAN_TIMEOUT_SECONDS = 90.0
@@ -101,12 +101,13 @@ class IMUSampleReceiver:
     ) -> dict[str, array | dict[str, array]]:
 
         await self._listenForNotifications()
+        self._computeLostSamples()
         self._export(exportedFileName)
 
         return {
             "a": {"x": self.ax[:], "y": self.ay[:], "z": self.az[:]},
             "w": {"roll": self.roll[:], "pitch": self.pitch[:], "yaw": self.yaw[:]},
-            "t": self.tMicroseconds[:],
+            "seq": self.seq[:],
         }
 
     async def _listenForNotifications(self):
@@ -115,13 +116,13 @@ class IMUSampleReceiver:
         assert self.client is not None
 
         # Prefer C-typed arrays over Python lists/dictionaries for better performance and lower memory overhead
+        self.seq = array("I")
         self.ax = array("f")
         self.ay = array("f")
         self.az = array("f")
         self.roll = array("f")
         self.pitch = array("f")
         self.yaw = array("f")
-        self.tMicroseconds = array("q")
 
         self.notificationCount = 0
         self.totalNotificationCount = 0
@@ -181,7 +182,7 @@ class IMUSampleReceiver:
             sampleRoll,
             samplePitch,
             sampleYaw,
-            sampleT,
+            sampleSeq,
         ) in self.IMU_SAMPLE_STRUCT.iter_unpack(payload):
             self.ax.append(sampleAx)
             self.ay.append(sampleAy)
@@ -189,7 +190,7 @@ class IMUSampleReceiver:
             self.roll.append(sampleRoll)
             self.pitch.append(samplePitch)
             self.yaw.append(sampleYaw)
-            self.tMicroseconds.append(sampleT)
+            self.seq.append(sampleSeq)
 
         self.totalNotificationCount += 1
         self.notificationCount += 1
@@ -204,15 +205,35 @@ class IMUSampleReceiver:
                 f"Notification #{self.totalNotificationCount}, sample from batch: "
                 f"ax: {self.ax[-1]}, ay: {self.ay[-1]}, az: {self.az[-1]}, "
                 f"roll: {self.roll[-1]}, pitch: {self.pitch[-1]}, yaw: {self.yaw[-1]}, "
-                f"timestamp: {self.tMicroseconds[-1]}"
+                f"sequence: {self.seq[-1]}"
             )
             self.notificationCount = 0
 
+    def _computeLostSamples(self) -> None:
+        if len(self.seq) == 0:
+            print("No samples received, skipping lost sample computation.")
+            return
+
+        diff = 0
+        total = 0
+        lost = array("I")
+        for i in range(1, len(self.seq)):
+            diff = self.seq[i] - self.seq[i - 1]
+            if diff > 1:
+                total += diff - 1
+                for j in range(1, diff):
+                    lost.append(self.seq[i - 1] + j)
+
+        print(
+            f"Lost samples: {lost[:]}\nTotal: {total} ({total*100.0/len(self.seq):.2f}%)"
+        )
+
     def _export(self, fileName: str) -> None:
         with open(fileName, "w", encoding="utf-8") as f:
-            f.write("t_us,ax,ay,az,roll,pitch,yaw\n")
+            FIELDS = "seq,ax,ay,az,roll,pitch,yaw"
+            f.write(f"{FIELDS}\n")
             for (
-                sampleT,
+                sampleSeq,
                 sampleAx,
                 sampleAy,
                 sampleAz,
@@ -220,7 +241,7 @@ class IMUSampleReceiver:
                 samplePitch,
                 sampleYaw,
             ) in zip(
-                self.tMicroseconds,
+                self.seq,
                 self.ax,
                 self.ay,
                 self.az,
@@ -229,6 +250,6 @@ class IMUSampleReceiver:
                 self.yaw,
             ):
                 f.write(
-                    f"{sampleT},{sampleAx},{sampleAy},{sampleAz},{sampleRoll},{samplePitch},{sampleYaw}\n"
+                    f"{sampleSeq},{sampleAx},{sampleAy},{sampleAz},{sampleRoll},{samplePitch},{sampleYaw}\n"
                 )
         print(f"Motion data saved to {fileName}")

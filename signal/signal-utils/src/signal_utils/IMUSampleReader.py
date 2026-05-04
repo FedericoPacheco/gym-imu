@@ -4,6 +4,7 @@ from pathlib import Path
 
 
 class IMUSampleReader:
+    FIELDS = ["seq", "ax", "ay", "az", "roll", "pitch", "yaw"]
 
     def read(self, inputFile: str) -> dict[str, array | dict[str, array]]:
         filePath = Path(inputFile)
@@ -13,19 +14,18 @@ class IMUSampleReader:
         motionData = {
             "a": {"x": array("f"), "y": array("f"), "z": array("f")},
             "w": {"roll": array("f"), "pitch": array("f"), "yaw": array("f")},
-            "t": array("q"),
+            "seq": array("I"),
         }
 
         with open(filePath, "r", encoding="utf-8", newline="") as csvFile:
             reader = csv.DictReader(csvFile)
-            expectedFieldNames = ["t_us", "ax", "ay", "az", "roll", "pitch", "yaw"]
-            if reader.fieldnames != expectedFieldNames:
+            if reader.fieldnames != self.FIELDS:
                 raise ValueError(
                     f"Unexpected CSV header in {filePath}: {reader.fieldnames}"
                 )
 
             for row in reader:
-                motionData["t"].append(int(row["t_us"]))
+                motionData["seq"].append(int(row["seq"]))
                 motionData["a"]["x"].append(float(row["ax"]))
                 motionData["a"]["y"].append(float(row["ay"]))
                 motionData["a"]["z"].append(float(row["az"]))

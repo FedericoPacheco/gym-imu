@@ -38,7 +38,7 @@ TEST(IMUSignalProcessor_processingLoopFunction,
                               .pitch = 0,
                               .yaw = 0,
                           },
-                      .t = 0};
+                      .seq = 0};
 
   EXPECT_CALL(*inputPipe, pop(_))
       .WillOnce(Return(std::optional<IMUSample>(sample)));

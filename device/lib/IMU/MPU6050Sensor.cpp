@@ -291,9 +291,9 @@ std::optional<IMUSample> MPU6050Sensor::readAsync() {
   std::optional<IMUSample> sample = this->pipe->pop();
   if (sample) {
     this->logger->info("Async read: a=<%.3f, %.3f, %.3f> m/s2, "
-                       "w=<%.3f, %.3f, %.3f> deg/s, t=%lld us",
+                       "w=<%.3f, %.3f, %.3f> deg/s, seq=%u",
                        sample->a.x, sample->a.y, sample->a.z, sample->w.roll,
-                       sample->w.pitch, sample->w.yaw, sample->t);
+                       sample->w.pitch, sample->w.yaw, sample->seq);
     return sample;
   }
   this->logger->warn("Async read: failed");
@@ -369,10 +369,10 @@ void MPU6050Sensor::batchReadDMPQueue(uint16_t initialFifoCount) {
     auto [aRaw, wRaw] = this->parseSensorData(sensorBuffer);
     IMUSample sample = this->toIMUSample(aRaw, wRaw);
     this->logger->debug("Read task: processing packet %d: a=<%.3f, %.3f, "
-                        "%.3f> m/s2, w=<%.3f, %.3f, %.3f> deg/s, t=%lld us",
+                        "%.3f> m/s2, w=<%.3f, %.3f, %.3f> deg/s, seq=%u",
                         packetsProcessed + 1, sample.a.x, sample.a.y,
                         sample.a.z, sample.w.roll, sample.w.pitch, sample.w.yaw,
-                        sample.t);
+                        sample.seq);
 
     if (!this->pipe->push(sample)) {
       this->logger->warn("Read task: failed to push sample");
@@ -423,11 +423,20 @@ IMUSample MPU6050Sensor::toIMUSample(mpud::raw_axes_t aRaw,
   mpud::float_axes_t w =
       mpud::math::gyroDegPerSec(wRaw, MPU6050Sensor::GYROSCOPE_SCALE);
 
-  return {.a = {.x = aGravity.x * MPU6050Sensor::g,
-                .y = aGravity.y * MPU6050Sensor::g,
-                .z = aGravity.z * MPU6050Sensor::g},
-          .w = {.roll = w.x, .pitch = w.y, .yaw = w.z},
-          .t = getTimeUs()};
+  IMUSample sample = {.a = {.x = aGravity.x * MPU6050Sensor::g,
+                            .y = aGravity.y * MPU6050Sensor::g,
+                            .z = aGravity.z * MPU6050Sensor::g},
+                      .w = {.roll = w.x, .pitch = w.y, .yaw = w.z},
+                      .seq = this->getNextSeq()};
+  this->setNextSeq();
+
+  return sample;
+}
+inline void MPU6050Sensor::setNextSeq() {
+  this->nextSeq.fetch_add(1, std::memory_order_relaxed);
+}
+inline uint32_t MPU6050Sensor::getNextSeq() {
+  return this->nextSeq.load(std::memory_order_relaxed);
 }
 
 std::optional<IMUSample> MPU6050Sensor::readSync() {
@@ -436,9 +445,9 @@ std::optional<IMUSample> MPU6050Sensor::readSync() {
   sensor->rotation(&wRaw);
   IMUSample sample = this->toIMUSample(aRaw, wRaw);
   this->logger->info("Sync read: a=<%.3f, %.3f, %.3f> m/s2, "
-                     "w=<%.3f, %.3f, %.3f> deg/s, t=%lld us",
+                     "w=<%.3f, %.3f, %.3f> deg/s, seq=%lld",
                      sample.a.x, sample.a.y, sample.a.z, sample.w.roll,
-                     sample.w.pitch, sample.w.yaw, sample.t);
+                     sample.w.pitch, sample.w.yaw, sample.seq);
   return sample;
 }
 

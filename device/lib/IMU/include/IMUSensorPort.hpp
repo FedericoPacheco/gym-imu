@@ -15,11 +15,11 @@ struct AngularVelocitySample {
   float yaw;
 };
 // us (microseconds)
-typedef int64_t Timestamp;
+typedef uint32_t SequenceNumber;
 struct IMUSample {
   AccelerationSample a;
   AngularVelocitySample w;
-  Timestamp t;
+  SequenceNumber seq;
 };
 
 class IMUSensorPort {

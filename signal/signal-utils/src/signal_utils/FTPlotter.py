@@ -6,7 +6,7 @@ class FTPlotter:
     def plotPolar(self, x, t, X, f):
         XMag = np.abs(X)
         XPhase = np.angle(X)
-        XPhaseUnwrapped = np.unwrap(np.angle(X))
+        XPhaseUnwrapped = np.unwrap(XPhase)
 
         fig, axes = plt.subplots(1, 3, figsize=(12, 4))
         axes[0].plot(t, x)

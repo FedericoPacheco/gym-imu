@@ -147,6 +147,14 @@
 - <https://docs.python.org/3/library/statistics.html>
 - <https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.hist.html>
 
+### Scipy signal processing / numpy
+
+- <https://docs.scipy.org/doc/scipy/reference/signal.html>
+- <https://docs.scipy.org/doc/scipy/tutorial/signal.html>
+- <https://docs.scipy.org/doc/scipy/reference/fft.html>
+- <https://docs.scipy.org/doc/scipy/tutorial/fft.html>
+- <https://numpy.org/doc/stable/reference/routines.array-creation.html>
+
 ## IMU calibration
 
 - <https://www.researchgate.net/publication/230959638_An_enhanced_multi-position_calibration_method_for_consumer-grade_inertial_measurement_units_applied_and_tested>

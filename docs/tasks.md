@@ -23,13 +23,13 @@ Other rules:
 
 ### In Progress
 
-- Fix `MPU6050Sensor` timestamps. Currently, each sample stores dequeue time instead of the acquisition time (wrong, and worse on batch reads).
+- Familiarize myself with scipy's signal processing capabilities.
+- Evaluate on a jupyter notebook low-pass and high-pass filter candidates on real captures, comparing noise reduction, phase lag, and peak distortion.
 
 ### Next
 
 ### Backlog
 
-- Evaluate on a jupyter notebook low-pass and high-pass filter candidates on real captures, comparing noise reduction, phase lag, and peak distortion.
 - Implement on a jupyter notebook simple sensor fusion via a complementary filter and evaluate it on real captures, comparing it against the raw IMU data. Address whether a more complex filter (e.g. Kalman, Madgwick) is needed.
 - Implement on a jupyter notebook a simple gravity removal strategy.
 - Implement on a jupyter notebook a simple rep-counting mechanism and evaluate it on real captures, comparing it against video references.
@@ -97,3 +97,4 @@ Other rules:
 - Implement first step of the transformer filter: correct bias, scale and axis misalignment.
 - Get raw, real world data from gym exercises: pull ups, dips, 90° push ups.
 - Perform simple analysis of sampling jitter on recorded data. Provide a recomendation to fix samples timestamps (e.g. estimation, sequence numbers, etc.) and fix already recorded data if possible. Result: dirac-delta-like distribution (almost constant processing time), with a small amount of samples possibly lost. Simplest solution is to use sequence numbers and detect losses with non-consecutive samples, then later at most interpolate lost samples if needed.
+- Fix `MPU6050Sensor` timestamps. Currently, each sample stores dequeue time instead of the acquisition time (wrong, and worse on batch reads).

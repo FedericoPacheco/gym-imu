@@ -146,6 +146,7 @@
 
 - <https://docs.python.org/3/library/statistics.html>
 - <https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.hist.html>
+- <https://docs.scipy.org/doc/scipy/reference/stats.html>
 
 ### Scipy signal processing / numpy
 

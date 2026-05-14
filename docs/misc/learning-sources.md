@@ -164,3 +164,11 @@
 - <https://cookierobotics.com/061/> (!)
 - <https://www.youtube.com/watch?v=AheaTd_l5Is>
 - <https://www.youtube.com/watch?v=MODiqfW-ibQ>
+
+## Sensor fusion
+
+- <https://www.youtube.com/watch?v=6AoJ8wr8G6A>
+- <http://www.geekmomprojects.com/gyroscopes-and-accelerometers-on-a-chip/>
+- <https://www.analog.com/en/resources/app-notes/an-1057.html>
+- <https://www.geekmomprojects.com/wp-content/uploads/2022/03/filter.pdf>
+- <https://ocw.mit.edu/courses/16-333-aircraft-stability-and-control-fall-2004/9bc94307e01f85dbdfee05e87851361a_lecture_15.pdf>

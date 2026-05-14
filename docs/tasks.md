@@ -23,24 +23,23 @@ Other rules:
 
 ### In Progress
 
-- Evaluate on a jupyter notebook low-pass and high-pass filter candidates on real captures, comparing noise reduction, phase lag, and peak distortion.
+- Implement on a jupyter notebook simple sensor fusion via a complementary filter and evaluate it on real captures.
+- Evaluate on a jupyter notebook low-pass filters candidates on real captures.
 
 ### Next
 
 ### Backlog
 
-- Implement on a jupyter notebook simple sensor fusion via a complementary filter and evaluate it on real captures, comparing it against the raw IMU data. Address whether a more complex filter (e.g. Kalman, Madgwick) is needed.
 - Implement on a jupyter notebook a simple gravity removal strategy.
 - Implement on a jupyter notebook a drift-control strategy (e.g. detrending, zero velocity update on stationary periods).
 - Compare a small set of integration methods/ODE solving methods for velocity estimation, trading off accuracy and computational cost/time.
-- Validate the complete signal processing pipeline on a jupyter notebook: filtering, gravity removal, rep-counting, drift control, velocity estimation. Document errors and limitations. Use external video references.
+- Validate the complete signal processing pipeline on a jupyter notebook. Document errors and limitations. Use external video references.
 - Implement complementary filter on the device and test for performance.
 - Implement gravity removal strategy on the device and test for performance.
-- Implement simple rep-counting mechanism on the device and test for performance.
-- Implement drift-control strategy on the device and test for performance.
-- Implement velocity estimation on the device and test for performance.
+- Implement velocity estimation with drift-control on the device and test for performance.
 - Perform spectral analysis to diagnose aliasing and noise on recorded captures. Provide a recommendation of minimum sampling frequency and filter cutoffs.
 - Implement on a jupyter notebook a simple rep-counting mechanism and evaluate it on real captures, comparing it against video references.
+- Implement simple rep-counting mechanism on the device and test for performance.
 - Fine tune transmission parameters to optimize for latency.
 - Fine tune pipe sizes to optimize for data preservation.
 - Fine tune tasks priorities and ISR behaviors to optimize for latency and responsiveness.

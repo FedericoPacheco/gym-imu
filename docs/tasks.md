@@ -23,7 +23,6 @@ Other rules:
 
 ### In Progress
 
-- Familiarize myself with scipy's signal processing capabilities.
 - Evaluate on a jupyter notebook low-pass and high-pass filter candidates on real captures, comparing noise reduction, phase lag, and peak distortion.
 
 ### Next
@@ -32,8 +31,7 @@ Other rules:
 
 - Implement on a jupyter notebook simple sensor fusion via a complementary filter and evaluate it on real captures, comparing it against the raw IMU data. Address whether a more complex filter (e.g. Kalman, Madgwick) is needed.
 - Implement on a jupyter notebook a simple gravity removal strategy.
-- Implement on a jupyter notebook a simple rep-counting mechanism and evaluate it on real captures, comparing it against video references.
-- Implement on a jupyter notebook a drift-control strategy (e.g. detrending, zero velocity update each rep).
+- Implement on a jupyter notebook a drift-control strategy (e.g. detrending, zero velocity update on stationary periods).
 - Compare a small set of integration methods/ODE solving methods for velocity estimation, trading off accuracy and computational cost/time.
 - Validate the complete signal processing pipeline on a jupyter notebook: filtering, gravity removal, rep-counting, drift control, velocity estimation. Document errors and limitations. Use external video references.
 - Implement complementary filter on the device and test for performance.
@@ -42,6 +40,7 @@ Other rules:
 - Implement drift-control strategy on the device and test for performance.
 - Implement velocity estimation on the device and test for performance.
 - Perform spectral analysis to diagnose aliasing and noise on recorded captures. Provide a recommendation of minimum sampling frequency and filter cutoffs.
+- Implement on a jupyter notebook a simple rep-counting mechanism and evaluate it on real captures, comparing it against video references.
 - Fine tune transmission parameters to optimize for latency.
 - Fine tune pipe sizes to optimize for data preservation.
 - Fine tune tasks priorities and ISR behaviors to optimize for latency and responsiveness.
@@ -98,3 +97,4 @@ Other rules:
 - Get raw, real world data from gym exercises: pull ups, dips, 90° push ups.
 - Perform simple analysis of sampling jitter on recorded data. Provide a recomendation to fix samples timestamps (e.g. estimation, sequence numbers, etc.) and fix already recorded data if possible. Result: dirac-delta-like distribution (almost constant processing time), with a small amount of samples possibly lost. Simplest solution is to use sequence numbers and detect losses with non-consecutive samples, then later at most interpolate lost samples if needed.
 - Fix `MPU6050Sensor` timestamps. Currently, each sample stores dequeue time instead of the acquisition time (wrong, and worse on batch reads).
+- Familiarize myself with scipy's signal processing capabilities.

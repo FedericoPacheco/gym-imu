@@ -172,3 +172,7 @@
 - <https://www.analog.com/en/resources/app-notes/an-1057.html>
 - <https://www.geekmomprojects.com/wp-content/uploads/2022/03/filter.pdf>
 - <https://ocw.mit.edu/courses/16-333-aircraft-stability-and-control-fall-2004/9bc94307e01f85dbdfee05e87851361a_lecture_15.pdf>
+
+# Human motion
+
+- <https://valdperformance.com/news/sampling-frequency-how-much-is-enough>

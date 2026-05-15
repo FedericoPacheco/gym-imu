@@ -1,4 +1,5 @@
 #include "MPUReal.hpp"
+#include "esp_err.h"
 
 void MPUReal::setBus(I2CPort &bus) {
   auto &realBus = static_cast<I2CReal &>(bus);
@@ -37,6 +38,10 @@ esp_err_t MPUReal::setAccelFullScale(mpud::accel_fs_t fsr) {
 
 esp_err_t MPUReal::setGyroFullScale(mpud::gyro_fs_t fsr) {
   return this->sensor.setGyroFullScale(fsr);
+}
+
+esp_err_t MPUReal::setDigitalLowPassFilter(mpud::dlpf_t cfg) {
+  return this->sensor.setDigitalLowPassFilter(cfg);
 }
 
 esp_err_t MPUReal::setInterruptConfig(mpud::int_config_t config) {

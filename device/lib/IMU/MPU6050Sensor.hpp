@@ -92,7 +92,7 @@ private:
       mpud::ACCEL_FS_2G;
   static constexpr mpud::types::gyro_fs_t GYROSCOPE_SCALE =
       mpud::GYRO_FS_250DPS;
-  static constexpr mpud::types::dlpf_cfg_t DLPF_CONFIG = mpud::DLPF_42HZ;
+  static constexpr mpud::dlpf_t DLPF_CONFIG = mpud::DLPF_42HZ;
   static constexpr int BUS_FREQUENCY_HZ = 400000; // 400kHz, short wires (<10cm)
   // static constexpr int BUS_FREQUENCY_HZ = 100000; // 100kHz, long wires
 

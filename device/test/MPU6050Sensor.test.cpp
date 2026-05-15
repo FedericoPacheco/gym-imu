@@ -73,6 +73,8 @@ MPU6050SensorDependencies buildDefaultDependencies() {
   ON_CALL(*deps.sensor, setSampleRate(_)).WillByDefault(Return(ESP_OK));
   ON_CALL(*deps.sensor, setAccelFullScale(_)).WillByDefault(Return(ESP_OK));
   ON_CALL(*deps.sensor, setGyroFullScale(_)).WillByDefault(Return(ESP_OK));
+  ON_CALL(*deps.sensor, setDigitalLowPassFilter(_))
+      .WillByDefault(Return(ESP_OK));
 
   ON_CALL(*deps.sensor, setFIFOConfig(_)).WillByDefault(Return(ESP_OK));
   ON_CALL(*deps.sensor, setFIFOEnabled(_)).WillByDefault(Return(ESP_OK));
@@ -169,6 +171,14 @@ TEST(MPU6050Sensor_getInstance, ReturnsNullWhenSettingAccelerationScaleFails) {
 TEST(MPU6050Sensor_getInstance, ReturnsNullWhenSettingGyroscopeScaleFails) {
   auto deps = buildDefaultDependencies();
   EXPECT_CALL(*deps.sensor, setGyroFullScale(_)).WillOnce(Return(ESP_FAIL));
+
+  EXPECT_EQ(getInstanceWith(std::move(deps)), nullptr);
+}
+
+TEST(MPU6050Sensor_getInstance, ReturnsNullWhenSettingLowPassFilterFails) {
+  auto deps = buildDefaultDependencies();
+  EXPECT_CALL(*deps.sensor, setDigitalLowPassFilter(mpud::DLPF_42HZ))
+      .WillOnce(Return(ESP_FAIL));
 
   EXPECT_EQ(getInstanceWith(std::move(deps)), nullptr);
 }

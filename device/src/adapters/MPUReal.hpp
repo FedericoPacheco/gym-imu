@@ -22,6 +22,7 @@ public:
   esp_err_t setSampleRate(uint16_t rate) override;
   esp_err_t setAccelFullScale(mpud::accel_fs_t fsr) override;
   esp_err_t setGyroFullScale(mpud::gyro_fs_t fsr) override;
+  esp_err_t setDigitalLowPassFilter(mpud::dlpf_cfg_t cfg) override;
 
   esp_err_t setInterruptConfig(mpud::int_config_t config) override;
   esp_err_t setInterruptEnabled(mpud::int_en_t mask) override;

@@ -20,6 +20,8 @@ public:
   MOCK_METHOD(esp_err_t, setSampleRate, (uint16_t rate), (override));
   MOCK_METHOD(esp_err_t, setAccelFullScale, (mpud::accel_fs_t fsr), (override));
   MOCK_METHOD(esp_err_t, setGyroFullScale, (mpud::gyro_fs_t fsr), (override));
+  MOCK_METHOD(esp_err_t, setDigitalLowPassFilter, (mpud::dlpf_cfg_t cfg),
+              (override));
 
   MOCK_METHOD(esp_err_t, setInterruptConfig, (mpud::int_config_t config),
               (override));

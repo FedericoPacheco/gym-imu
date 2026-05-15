@@ -205,6 +205,10 @@ bool MPU6050Sensor::configureSettings() {
       this->sensor->setGyroFullScale(MPU6050Sensor::GYROSCOPE_SCALE),
       this->logger, "Failed to set gyroscope scale");
 
+  RETURN_FALSE_ON_ESP_ERROR(
+      this->sensor->setDigitalLowPassFilter(MPU6050Sensor::DLPF_CONFIG),
+      this->logger, "Failed to set digital low pass filter");
+
   return true;
 }
 

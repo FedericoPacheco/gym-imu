@@ -15,6 +15,7 @@ using mpu_addr_handle_t = mpu_i2caddr_t;
 
 typedef enum { GYRO_FS_250DPS = 0 } gyro_fs_t;
 typedef enum { ACCEL_FS_2G = 0 } accel_fs_t;
+typedef enum { DLPF_42HZ = 0 } dlpf_cfg_t;
 
 using selftest_t = uint32_t;
 

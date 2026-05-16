@@ -34,6 +34,7 @@ Pygments==2.20.0
 pyparsing==3.3.2
 python-dateutil==2.9.0.post0
 pyzmq==27.1.0
+scipy==1.17.1
 six==1.17.0
 stack-data==0.6.3
 tornado==6.5.5

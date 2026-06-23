@@ -172,8 +172,13 @@
 - <https://www.analog.com/en/resources/app-notes/an-1057.html>
 - <https://www.geekmomprojects.com/wp-content/uploads/2022/03/filter.pdf>
 - <https://ocw.mit.edu/courses/16-333-aircraft-stability-and-control-fall-2004/9bc94307e01f85dbdfee05e87851361a_lecture_15.pdf>
-- <https://www.youtube.com/watch?v=whSw42XddsU>>
+- <https://www.youtube.com/watch?v=whSw42XddsU>
+- <https://en.wikipedia.org/wiki/Rotation_matrix>
+- <https://en.wikipedia.org/wiki/Quaternions_and_spatial_rotation>
+- <https://en.wikipedia.org/wiki/Euler%27s_rotation_theorem>
+- <https://en.wikipedia.org/wiki/Euler_angles>
+- <https://web.mit.edu/2.05/www/Handout/HO2.PDF>
 
-# Human motion
+## Human motion
 
 - <https://valdperformance.com/news/sampling-frequency-how-much-is-enough>

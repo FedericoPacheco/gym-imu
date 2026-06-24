@@ -173,11 +173,27 @@
 - <https://www.geekmomprojects.com/wp-content/uploads/2022/03/filter.pdf>
 - <https://ocw.mit.edu/courses/16-333-aircraft-stability-and-control-fall-2004/9bc94307e01f85dbdfee05e87851361a_lecture_15.pdf>
 - <https://www.youtube.com/watch?v=whSw42XddsU>
+
+## Orientantion in 3D space
+
+### Euler angles
+
 - <https://en.wikipedia.org/wiki/Rotation_matrix>
-- <https://en.wikipedia.org/wiki/Quaternions_and_spatial_rotation>
 - <https://en.wikipedia.org/wiki/Euler%27s_rotation_theorem>
 - <https://en.wikipedia.org/wiki/Euler_angles>
+- <https://en.wikipedia.org/wiki/Gimbal_lock>
 - <https://web.mit.edu/2.05/www/Handout/HO2.PDF>
+- <https://www.youtube.com/watch?v=2Cwa6hfn2K0>
+- <https://www.youtube.com/watch?v=gzliGOj9P7w>
+- <https://www.youtube.com/watch?v=zc8b2Jo7mno>
+- <https://www.youtube.com/watch?v=WzLJDjfm2Xo>
+- <https://www.youtube.com/watch?v=SrLcvAw1iW4>
+
+### Quaternions
+
+- <https://en.wikipedia.org/wiki/Quaternions_and_spatial_rotation>
+- <https://www.youtube.com/watch?v=d4EgbgTm0Bg>
+- <https://www.youtube.com/watch?v=zjMuIxRvygQ>
 
 ## Human motion
 

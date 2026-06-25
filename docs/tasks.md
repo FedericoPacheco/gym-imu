@@ -23,14 +23,12 @@ Other rules:
 
 ### In Progress
 
-- Implement on a jupyter notebook simple sensor fusion via a complementary filter and evaluate it on real captures.
-- Evaluate on a jupyter notebook low-pass filters candidates on real captures.
+- Implement on a jupyter notebook a simple gravity removal strategy.
 
 ### Next
 
 ### Backlog
 
-- Implement on a jupyter notebook a simple gravity removal strategy.
 - Implement on a jupyter notebook a drift-control strategy (e.g. detrending, zero velocity update on stationary periods).
 - Compare a small set of integration methods/ODE solving methods for velocity estimation, trading off accuracy and computational cost/time.
 - Validate the complete signal processing pipeline on a jupyter notebook. Document errors and limitations. Use external video references.
@@ -97,3 +95,5 @@ Other rules:
 - Perform simple analysis of sampling jitter on recorded data. Provide a recomendation to fix samples timestamps (e.g. estimation, sequence numbers, etc.) and fix already recorded data if possible. Result: dirac-delta-like distribution (almost constant processing time), with a small amount of samples possibly lost. Simplest solution is to use sequence numbers and detect losses with non-consecutive samples, then later at most interpolate lost samples if needed.
 - Fix `MPU6050Sensor` timestamps. Currently, each sample stores dequeue time instead of the acquisition time (wrong, and worse on batch reads).
 - Familiarize myself with scipy's signal processing capabilities.
+- Evaluate on a jupyter notebook low-pass filters candidates on real captures.
+- Implement on a jupyter notebook simple sensor fusion via a complementary filter and evaluate it on real captures.

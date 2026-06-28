@@ -233,7 +233,7 @@ class IMUSampleReceiver:
 
     def _export(self, fileName: str) -> None:
         with open(fileName, "w", encoding="utf-8") as f:
-            FIELDS = "seq,ax,ay,az,roll,pitch,yaw"
+            FIELDS = "seq,ax,ay,az,wroll,wpitch,wyaw"
             f.write(f"{FIELDS}\n")
             for (
                 sampleSeq,

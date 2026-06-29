@@ -5,11 +5,11 @@ import math
 
 class IMUStationaryChecker:
     TOL_STD_DEVIATIONS = 6
-    G = 9.80665  # m/s^2
 
     def __init__(self):
         self.reader = IMUSampleReader()
         self.tol = -1.0
+        self.g = -1.0
 
     def computeTolerance(self, capturePaths: list[str]):
         if not capturePaths:
@@ -26,6 +26,7 @@ class IMUStationaryChecker:
 
         accelNormsMean = np.mean(accelNorms)
         accelNormsStdev = np.std(accelNorms)
+        self.g = accelNormsMean
         self.tol = self.TOL_STD_DEVIATIONS * accelNormsStdev
         print(
             f"Accel norms: mean={accelNormsMean:.6f}, stdev={accelNormsStdev:.6f}\nStationary tol = {self.tol:.6f}"
@@ -35,7 +36,7 @@ class IMUStationaryChecker:
         if self.tol < 0:
             raise ValueError("Tolerance not computed. Call computeTolerance() first.")
 
-        return bool(abs(math.sqrt(ax**2 + ay**2 + az**2) - self.G) <= self.tol)
+        return bool(abs(math.sqrt(ax**2 + ay**2 + az**2) - self.g) <= self.tol)
 
     def areStationarySamples(self, a: np.ndarray) -> np.ndarray:
         if self.tol < 0:
@@ -45,7 +46,7 @@ class IMUStationaryChecker:
         ay = a[:, 1]
         az = a[:, 2]
         accelNorms = np.sqrt(ax**2 + ay**2 + az**2)
-        return np.abs(accelNorms - self.G) <= self.tol
+        return np.abs(accelNorms - self.g) <= self.tol
 
     def findStationaryIntervals(self, inputFile: str) -> list[tuple[int, int]]:
         seq, a, _ = self.reader.readRaw(inputFile)

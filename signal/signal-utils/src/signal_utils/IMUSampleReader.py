@@ -60,10 +60,22 @@ class IMUSampleReader:
         np.ndarray,
         np.ndarray,
         np.ndarray,
+        np.ndarray,
     ]:
         filePath = self._checkFileExists(inputFile)
 
-        headers = ["seq", "ax", "ay", "az", "roll", "pitch", "yaw"]
+        headers = [
+            "seq",
+            "ax",
+            "ay",
+            "az",
+            "wroll",
+            "wpitch",
+            "wyaw",
+            "roll",
+            "pitch",
+            "yaw",
+        ]
         self._checkHeaders(filePath, headers)
 
         data = np.loadtxt(filePath, delimiter=",", skiprows=1, dtype=np.float32)
@@ -71,9 +83,10 @@ class IMUSampleReader:
 
         seq = data[:, 0].astype(np.uint32, copy=False)
         a = data[:, 1:4]
-        angle = data[:, 4:7]
+        w = data[:, 4:7]
+        angle = data[:, 7:10]
 
-        return (seq, a, angle)
+        return (seq, a, w, angle)
 
     def _checkFileExists(self, inputFile: str) -> Path:
         filePath = Path(inputFile)

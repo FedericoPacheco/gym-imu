@@ -81,9 +81,9 @@ class IMUStationaryChecker:
 
         return areAccelStationary & areGyroStationary
 
-    def findStationaryIntervals(self, inputFile: str) -> list[tuple[int, int]]:
-        seq, a, w = self.reader.readRaw(inputFile)
-
+    def findStationaryIntervals(
+        self, seq: np.ndarray, a: np.ndarray, w: np.ndarray
+    ) -> list[tuple[int, int]]:
         checks = self.areStationarySamples(a, w)
         wasStationary = True
         lastLowerBound = int(seq[0])

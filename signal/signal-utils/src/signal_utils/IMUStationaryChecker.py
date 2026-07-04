@@ -4,7 +4,8 @@ import math
 
 
 class IMUStationaryChecker:
-    ACCEL_STD = 6
+    # https://en.wikipedia.org/wiki/68%E2%80%9395%E2%80%9399.7_rule#Table_of_numerical_values
+    ACCEL_STD = 5
     GYRO_STD = 3
 
     def __init__(self):

@@ -4,10 +4,8 @@ import math
 
 
 class IMUStationaryChecker:
-    # https://en.wikipedia.org/wiki/68%E2%80%9395%E2%80%9399.7_rule#Table_of_numerical_values
     ACCEL_STD = 5
     GYRO_STD = 3
-    # EDGE_COUNT = 3
 
     def __init__(self):
         self.reader = IMUSampleReader()
@@ -50,7 +48,6 @@ class IMUStationaryChecker:
             f"\nGyro norms: stdev = {gyroNormsStdev:.6f}\n Stationary tol = {self.gyroTol:.6f}"
         )
 
-    # Assumes it's called repeatedly on sequential samples
     def isStationarySample(
         self, ax: float, ay: float, az: float, wroll: float, wpitch: float, wyaw: float
     ) -> bool:
@@ -64,27 +61,9 @@ class IMUStationaryChecker:
             math.sqrt(wroll**2 + wpitch**2 + wyaw**2) <= self.gyroTol
         )
 
-        # if isAccelStationary and isGyroStationary:
-        #     self.sampleCount = min(self.sampleCount + 1, self.EDGE_COUNT)
-        #     if self.sampleCount == self.EDGE_COUNT:
-        #         return True
-        # else:
-        #     self.sampleCount = max(self.sampleCount - 1, 0)
-        #     if self.sampleCount > 0:
-        #         return True
-        # return False
-
         return isAccelStationary and isGyroStationary
 
     def areStationarySamples(self, a: np.ndarray, w: np.ndarray) -> np.ndarray:
-        # self.sampleCount = 0
-        # results = np.zeros(a.shape[0], dtype=bool)
-        # for i in range(len(a)):
-        #     results[i] = self.isStationarySample(
-        #         a[i, 0], a[i, 1], a[i, 2], w[i, 0], w[i, 1], w[i, 2]
-        #     )
-        # return results
-
         if self.accelTol < 0:
             raise ValueError("Tolerance not computed. Call computeTolerances() first.")
 

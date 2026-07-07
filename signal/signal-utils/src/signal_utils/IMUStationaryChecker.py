@@ -44,8 +44,8 @@ class IMUStationaryChecker:
         self.gyroTol = self.GYRO_STD * gyroNormsStdev
 
         print(
-            f"Accel norms: mean = {accelNormsMean:.6f}, stdev = {accelNormsStdev:.6f}\n Stationary tol = {self.accelTol:.6f}"
-            f"\nGyro norms: stdev = {gyroNormsStdev:.6f}\n Stationary tol = {self.gyroTol:.6f}"
+            f"Acceleration norms:\tMean = {accelNormsMean:.6f}\n\tStdev = {accelNormsStdev:.6f}\n\tStationary tol = {self.accelTol:.6f}"
+            f"\nGyroscope norms: \tStdev = {gyroNormsStdev:.6f}\n\tStationary tol = {self.gyroTol:.6f}"
         )
 
     def isStationarySample(

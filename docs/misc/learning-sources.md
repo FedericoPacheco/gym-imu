@@ -199,3 +199,9 @@
 ## Human motion
 
 - <https://valdperformance.com/news/sampling-frequency-how-much-is-enough>
+
+## Stats
+
+- <https://www.youtube.com/watch?v=k7IctLRiZmo>
+- <https://www.youtube.com/watch?v=XV_W1w4Nwoc>
+- <https://en.wikipedia.org/wiki/Ranking>

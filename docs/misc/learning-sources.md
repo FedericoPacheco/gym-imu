@@ -8,6 +8,8 @@
 - C++ Reference: <https://en.cppreference.com/index.html>
 - Cplusplus Reference: <https://cplusplus.com/reference/>
 - YT series on C++: <https://www.youtube.com/playlist?list=PLlrATfBNZ98dudnM48yfGUldqGD0S4FFb>
+- Numpy Reference: <https://numpy.org/doc/stable/reference/>
+- Scipy Reference: <https://docs.scipy.org/doc/scipy/reference/>
 
 ## ESP32 variants
 
@@ -205,3 +207,7 @@
 - <https://www.youtube.com/watch?v=k7IctLRiZmo>
 - <https://www.youtube.com/watch?v=XV_W1w4Nwoc>
 - <https://en.wikipedia.org/wiki/Ranking>
+
+## Signals
+
+- <https://www.youtube.com/watch?v=L6YJqhbsuFY>

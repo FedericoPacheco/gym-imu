@@ -23,19 +23,20 @@ Other rules:
 
 ### In Progress
 
-- Implement on a jupyter notebook a simple gravity removal strategy.
+- Compare a small set of integration methods/ODE solving methods for velocity estimation, trading off accuracy and computational cost/time.
 
 ### Next
 
+- Implement on a jupyter notebook a drift-control strategy (e.g. detrending, zero velocity update on stationary periods).
+
 ### Backlog
 
-- Implement on a jupyter notebook a drift-control strategy (e.g. detrending, zero velocity update on stationary periods).
-- Compare a small set of integration methods/ODE solving methods for velocity estimation, trading off accuracy and computational cost/time.
 - Validate the complete signal processing pipeline on a jupyter notebook. Document errors and limitations. Use external video references.
+- Perform spectral analysis to diagnose aliasing. Provide a recommendation of minimum sampling frequency.
+- Perform spectral analysis with the hardware low-pass filter configured with different cutoff frequencies to understand its behavior. Analyze both stationary and moving captures. Identify whether I need a software low-pass filter in addition to the hardware one.
 - Implement complementary filter on the device and test for performance.
 - Implement gravity removal strategy on the device and test for performance.
 - Implement velocity estimation with drift-control on the device and test for performance.
-- Perform spectral analysis to diagnose aliasing and noise on recorded captures. Provide a recommendation of minimum sampling frequency and filter cutoffs.
 - Implement on a jupyter notebook a simple rep-counting mechanism and evaluate it on real captures, comparing it against video references.
 - Implement simple rep-counting mechanism on the device and test for performance.
 - Fine tune transmission parameters to optimize for latency.
@@ -96,4 +97,5 @@ Other rules:
 - Fix `MPU6050Sensor` timestamps. Currently, each sample stores dequeue time instead of the acquisition time (wrong, and worse on batch reads).
 - Familiarize myself with scipy's signal processing capabilities.
 - Evaluate on a jupyter notebook low-pass filters candidates on real captures.
-- Implement on a jupyter notebook simple sensor fusion via a complementary filter and evaluate it on real captures.
+- Implement on a jupyter notebook simple sensor fusion for the orientation via a complementary filter and evaluate it on real captures.
+- Implement on a jupyter notebook a simple gravity removal strategy with Euler angles and rotation matrices and evaluate it on real captures.

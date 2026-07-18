@@ -14,6 +14,7 @@ class IMUStationaryChecker:
         self.g = -1.0
         self.sampleCount = 0
 
+    # Assumes captures with no compensation for gravity, and that the device was stationary during them.
     def computeTolerances(self, capturePaths: list[str]):
         if not capturePaths:
             raise ValueError("No capture paths provided for tolerance computation.")
@@ -49,21 +50,32 @@ class IMUStationaryChecker:
         )
 
     def isStationarySample(
-        self, ax: float, ay: float, az: float, wroll: float, wpitch: float, wyaw: float
+        self,
+        ax: float,
+        ay: float,
+        az: float,
+        wroll: float,
+        wpitch: float,
+        wyaw: float,
+        isFiltered: bool = False,
     ) -> bool:
         if self.accelTol < 0:
             raise ValueError("Tolerance not computed. Call computeTolerances() first.")
 
-        isAccelStationary = bool(
-            abs(math.sqrt(ax**2 + ay**2 + az**2) - self.g) <= self.accelTol
-        )
-        isGyroStationary = bool(
-            math.sqrt(wroll**2 + wpitch**2 + wyaw**2) <= self.gyroTol
-        )
+        accelNorm = math.sqrt(ax**2 + ay**2 + az**2)
+        gyroNorm = math.sqrt(wroll**2 + wpitch**2 + wyaw**2)
+
+        if isFiltered:
+            isAccelStationary = bool(accelNorm <= self.accelTol)
+        else:
+            isAccelStationary = bool(abs(accelNorm - self.g) <= self.accelTol)
+        isGyroStationary = bool(gyroNorm <= self.gyroTol)
 
         return isAccelStationary and isGyroStationary
 
-    def areStationarySamples(self, a: np.ndarray, w: np.ndarray) -> np.ndarray:
+    def areStationarySamples(
+        self, a: np.ndarray, w: np.ndarray, areFiltered: bool = False
+    ) -> np.ndarray:
         if self.accelTol < 0:
             raise ValueError("Tolerance not computed. Call computeTolerances() first.")
 
@@ -77,15 +89,18 @@ class IMUStationaryChecker:
         wyaw = w[:, 2]
         gyroNorms = np.sqrt(wroll**2 + wpitch**2 + wyaw**2)
 
-        areAccelStationary = np.abs(accelNorms - self.g) <= self.accelTol
+        if areFiltered:
+            areAccelStationary = accelNorms <= self.accelTol
+        else:
+            areAccelStationary = np.abs(accelNorms - self.g) <= self.accelTol
         areGyroStationary = gyroNorms <= self.gyroTol
 
         return areAccelStationary & areGyroStationary
 
     def findStationaryIntervals(
-        self, seq: np.ndarray, a: np.ndarray, w: np.ndarray
+        self, seq: np.ndarray, a: np.ndarray, w: np.ndarray, areFiltered: bool = False
     ) -> list[tuple[int, int]]:
-        checks = self.areStationarySamples(a, w)
+        checks = self.areStationarySamples(a, w, areFiltered)
         wasStationary = checks[0]
         lastLowerBound = int(seq[0])
         stationaryIntervals = []

@@ -23,17 +23,16 @@ Other rules:
 
 ### In Progress
 
-- Compare a small set of integration methods/ODE solving methods for velocity estimation, trading off accuracy and computational cost/time.
+- On the existing calibration notebook, implement online gyro bias corrections and compare against the offline calibration results.
 
 ### Next
 
-- Implement on a jupyter notebook a drift-control strategy (e.g. detrending, zero velocity update on stationary periods).
+- Implement simple and fast noise-reduction/low-pass filter on gravity-free acceleration to improve velocity estimation.
+- Perform spectral analysis with the hardware low-pass filter configured with different cutoff frequencies to understand its behavior. Analyze both stationary and moving captures. Identify whether I need a software low-pass filter in addition to the hardware one.
 
 ### Backlog
 
-- Validate the complete signal processing pipeline on a jupyter notebook. Document errors and limitations. Use external video references.
 - Perform spectral analysis to diagnose aliasing. Provide a recommendation of minimum sampling frequency.
-- Perform spectral analysis with the hardware low-pass filter configured with different cutoff frequencies to understand its behavior. Analyze both stationary and moving captures. Identify whether I need a software low-pass filter in addition to the hardware one.
 - Implement complementary filter on the device and test for performance.
 - Implement gravity removal strategy on the device and test for performance.
 - Implement velocity estimation with drift-control on the device and test for performance.
@@ -99,3 +98,6 @@ Other rules:
 - Evaluate on a jupyter notebook low-pass filters candidates on real captures.
 - Implement on a jupyter notebook simple sensor fusion for the orientation via a complementary filter and evaluate it on real captures.
 - Implement on a jupyter notebook a simple gravity removal strategy with Euler angles and rotation matrices and evaluate it on real captures.
+- Compare a small set of integration methods/ODE solving methods for velocity estimation, trading off accuracy and computational cost/time.
+- Analyze velocity estimation for stationary, simple rotations and real exercise captures. Compare drift-control strategies (e.g. detrending, zero velocity update on stationary periods) against raw integration.
+- Validate the complete signal processing pipeline. Document errors and limitations. Use external video references.

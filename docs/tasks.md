@@ -23,7 +23,7 @@ Other rules:
 
 ### In Progress
 
-- On the existing calibration notebook, implement online gyro bias corrections and compare against the offline calibration results.
+- Reduce residual acceleration on stationary captures after calibration by improving the affine transformation matrix and adding online bias correction after gravity removal.  
 
 ### Next
 
@@ -101,3 +101,4 @@ Other rules:
 - Compare a small set of integration methods/ODE solving methods for velocity estimation, trading off accuracy and computational cost/time.
 - Analyze velocity estimation for stationary, simple rotations and real exercise captures. Compare drift-control strategies (e.g. detrending, zero velocity update on stationary periods) against raw integration.
 - Validate the complete signal processing pipeline. Document errors and limitations. Use external video references.
+- On the existing calibration notebook, implement online gyro bias corrections and compare against the offline calibration results.

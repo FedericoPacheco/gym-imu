@@ -51,14 +51,6 @@ extern "C" void app_main() {
     samplingPipeLogger.error("Failed to create sampling pipe");
     return;
   }
-  UARTLogger transmissionPipeLogger("TransmissionPipe", LogLevel::WARN);
-  std::shared_ptr<Pipe<IMUSample, TRANSMISSION_PIPE_SIZE>> transmissionPipe =
-      QueuePipe<IMUSample, TRANSMISSION_PIPE_SIZE>::create(
-          &transmissionPipeLogger);
-  if (!transmissionPipe) {
-    transmissionPipeLogger.error("Failed to create transmission pipe");
-    return;
-  }
 
   UARTLogger imuLogger("IMU", LogLevel::DEBUG);
   auto imuMPUPort = std::make_unique<MPUReal>();
@@ -70,6 +62,16 @@ extern "C" void app_main() {
       std::move(imuRunner));
   if (imu == nullptr) {
     imuLogger.error("Failed to initialize MPU6050 sensor");
+    return;
+  }
+
+#ifdef PROCESS_SIGNAL
+  UARTLogger transmissionPipeLogger("TransmissionPipe", LogLevel::WARN);
+  std::shared_ptr<Pipe<IMUSample, TRANSMISSION_PIPE_SIZE>> transmissionPipe =
+      QueuePipe<IMUSample, TRANSMISSION_PIPE_SIZE>::create(
+          &transmissionPipeLogger);
+  if (!transmissionPipe) {
+    transmissionPipeLogger.error("Failed to create transmission pipe");
     return;
   }
 
@@ -93,10 +95,24 @@ extern "C" void app_main() {
     bleLogger.error("Failed to initialize BLE");
     return;
   }
+#else
+  UARTLogger bleLogger("BLE", LogLevel::DEBUG);
+  auto bleLoopRunner = std::make_unique<FreeRTOSLoopRunner>(
+      "transmitTask", TRANSMIT_TASK_STACK_SIZE, TRANSMIT_TASK_PRIORITY,
+      pdMS_TO_TICKS(100));
+  BLE *ble =
+      BLE::getInstance(&bleLogger, samplingPipe, std::move(bleLoopRunner));
+  if (ble == nullptr) {
+    bleLogger.error("Failed to initialize BLE");
+    return;
+  }
+#endif
 
   bool doSample = false;
   button->enableAsync();
+#ifdef PROCESS_SIGNAL
   processor.beginProcessing();
+#endif
   while (true) {
     vTaskDelay(pdMS_TO_TICKS(1000));
     // Toggle sampling when user commands via button press
@@ -119,6 +135,8 @@ extern "C" void app_main() {
       ble->stopTransmission();
     }
   }
+#ifdef PROCESS_SIGNAL
   processor.stopProcessing();
+#endif
   button->disableAsync();
 }

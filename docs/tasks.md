@@ -55,6 +55,7 @@ Other rules:
 - Address ways to avoid floating-point operations on the device (ESP32-C3 has no FPU).
 - Try out ways to reduce power comsumption on the device: microcontroller sleep, turning off IMU sensor, reducing processor frequency, configure unused IO lines, etc.
 - Improve setup documentation aiming for easy reproducibility by others.
+- Add license to project.
 
 ### Done
 

@@ -5,7 +5,7 @@ import math
 
 class IMUStationaryChecker:
     ACCEL_STD = 5
-    GYRO_STD = 3
+    GYRO_STD = 5
 
     def __init__(self):
         self.reader = IMUSampleReader()

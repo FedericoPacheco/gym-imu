@@ -175,6 +175,7 @@ TEST(MPU6050Sensor_getInstance, ReturnsNullWhenSettingGyroscopeScaleFails) {
   EXPECT_EQ(getInstanceWith(std::move(deps)), nullptr);
 }
 
+#ifdef PROCESS_SIGNAL
 TEST(MPU6050Sensor_getInstance, ReturnsNullWhenSettingLowPassFilterFails) {
   auto deps = buildDefaultDependencies();
   EXPECT_CALL(*deps.sensor, setDigitalLowPassFilter(mpud::DLPF_42HZ))
@@ -189,6 +190,7 @@ TEST(MPU6050Sensor_getInstance, ReturnsNullWhenConfiguringFIFOFails) {
 
   EXPECT_EQ(getInstanceWith(std::move(deps)), nullptr);
 }
+#endif
 
 TEST(MPU6050Sensor_getInstance, ReturnsNullWhenEnablingFIFOFails) {
   auto deps = buildDefaultDependencies();

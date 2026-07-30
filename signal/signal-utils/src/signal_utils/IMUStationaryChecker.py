@@ -3,7 +3,7 @@ import numpy as np
 import math
 
 """
-IMPORT CAVEAT:
+IMPORTANT:
 Be careful with the captures provided to computeTolerances(). 
 Stationality detection changes after each processing step.
 Why? Because the mean and standard deviation meaningfully change, 
@@ -55,8 +55,16 @@ class IMUStationaryChecker:
         self.gyroTol = self.GYRO_STD * gyroNormsStdev
 
         print(
-            f"Acceleration norms:\n\tMean = {self.accelMean:.6f}\n\tStdev = {accelNormsStdev:.6f}\n\tStationary tol = {self.accelTol:.6f}"
-            f"\nGyroscope norms:\n\tMean = {self.gyroMean:.6f}\n\tStdev = {gyroNormsStdev:.6f}\n\tStationary tol = {self.gyroTol:.6f}"
+            f"Acceleration norms:"
+            f"\n\tMean = {self.accelMean:.6f}"
+            f"\n\tStdev = {accelNormsStdev:.6f}"
+            f"\n\tInterval = [{self.accelMean - self.accelTol:.6f}, {self.accelMean + self.accelTol:.6f}]"
+        )
+        print(
+            f"Gyroscope norms:"
+            f"\n\tMean = {self.gyroMean:.6f}"
+            f"\n\tStdev = {gyroNormsStdev:.6f}"
+            f"\n\tInterval = [{self.gyroMean - self.gyroTol:.6f}, {self.gyroMean + self.gyroTol:.6f}]"
         )
 
     def isStationarySample(

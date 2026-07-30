@@ -2,19 +2,29 @@ from signal_utils.IMUSampleReader import IMUSampleReader
 import numpy as np
 import math
 
+"""
+IMPORT CAVEAT:
+Be careful with the captures provided to computeTolerances(). 
+Stationality detection changes after each processing step.
+Why? Because the mean and standard deviation meaningfully change, 
+and using an inappropriate criteria would yield false positives or negatives!
+* When calibrating, use the raw accel and gyro
+* When finding orientation, use the calibrated/low-passed accel and gyro
+* When solving for velocity, use gravity-free accel and calibrated/low-passed gyro
+"""
+
 
 class IMUStationaryChecker:
-    ACCEL_STD = 5
-    GYRO_STD = 5
+    ACCEL_STD = 3
+    GYRO_STD = 3
 
     def __init__(self):
         self.reader = IMUSampleReader()
         self.accelTol = -1.0
         self.gyroTol = -1.0
-        self.g = -1.0
-        self.sampleCount = 0
+        self.accelMean = -1.0
+        self.gyroMean = -1.0
 
-    # Assumes captures with no compensation for gravity, and that the device was stationary during them.
     def computeTolerances(self, capturePaths: list[str]):
         if not capturePaths:
             raise ValueError("No capture paths provided for tolerance computation.")
@@ -36,17 +46,17 @@ class IMUStationaryChecker:
         accelNorms = np.concatenate(captureAccelNorms)
         gyroNorms = np.concatenate(captureGyroNorms)
 
-        accelNormsMean = np.mean(accelNorms)
+        self.accelMean = np.mean(accelNorms)
         accelNormsStdev = np.std(accelNorms)
-        self.g = accelNormsMean
         self.accelTol = self.ACCEL_STD * accelNormsStdev
 
+        self.gyroMean = np.mean(gyroNorms)
         gyroNormsStdev = np.std(gyroNorms)
         self.gyroTol = self.GYRO_STD * gyroNormsStdev
 
         print(
-            f"Acceleration norms:\tMean = {accelNormsMean:.6f}\n\tStdev = {accelNormsStdev:.6f}\n\tStationary tol = {self.accelTol:.6f}"
-            f"\nGyroscope norms: \tStdev = {gyroNormsStdev:.6f}\n\tStationary tol = {self.gyroTol:.6f}"
+            f"Acceleration norms:\n\tMean = {self.accelMean:.6f}\n\tStdev = {accelNormsStdev:.6f}\n\tStationary tol = {self.accelTol:.6f}"
+            f"\nGyroscope norms:\n\tMean = {self.gyroMean:.6f}\n\tStdev = {gyroNormsStdev:.6f}\n\tStationary tol = {self.gyroTol:.6f}"
         )
 
     def isStationarySample(
@@ -57,7 +67,6 @@ class IMUStationaryChecker:
         wroll: float,
         wpitch: float,
         wyaw: float,
-        isFiltered: bool = False,
     ) -> bool:
         if self.accelTol < 0:
             raise ValueError("Tolerance not computed. Call computeTolerances() first.")
@@ -65,17 +74,12 @@ class IMUStationaryChecker:
         accelNorm = math.sqrt(ax**2 + ay**2 + az**2)
         gyroNorm = math.sqrt(wroll**2 + wpitch**2 + wyaw**2)
 
-        if isFiltered:
-            isAccelStationary = bool(accelNorm <= self.accelTol)
-        else:
-            isAccelStationary = bool(abs(accelNorm - self.g) <= self.accelTol)
-        isGyroStationary = bool(gyroNorm <= self.gyroTol)
+        isAccelStationary = bool(abs(accelNorm - self.accelMean) <= self.accelTol)
+        isGyroStationary = bool(abs(gyroNorm - self.gyroMean) <= self.gyroTol)
 
         return isAccelStationary and isGyroStationary
 
-    def areStationarySamples(
-        self, a: np.ndarray, w: np.ndarray, areFiltered: bool = False
-    ) -> np.ndarray:
+    def areStationarySamples(self, a: np.ndarray, w: np.ndarray) -> np.ndarray:
         if self.accelTol < 0:
             raise ValueError("Tolerance not computed. Call computeTolerances() first.")
 
@@ -89,18 +93,15 @@ class IMUStationaryChecker:
         wyaw = w[:, 2]
         gyroNorms = np.sqrt(wroll**2 + wpitch**2 + wyaw**2)
 
-        if areFiltered:
-            areAccelStationary = accelNorms <= self.accelTol
-        else:
-            areAccelStationary = np.abs(accelNorms - self.g) <= self.accelTol
-        areGyroStationary = gyroNorms <= self.gyroTol
+        areAccelStationary = np.abs(accelNorms - self.accelMean) <= self.accelTol
+        areGyroStationary = np.abs(gyroNorms - self.gyroMean) <= self.gyroTol
 
         return areAccelStationary & areGyroStationary
 
     def findStationaryIntervals(
-        self, seq: np.ndarray, a: np.ndarray, w: np.ndarray, areFiltered: bool = False
+        self, seq: np.ndarray, a: np.ndarray, w: np.ndarray
     ) -> list[tuple[int, int]]:
-        checks = self.areStationarySamples(a, w, areFiltered)
+        checks = self.areStationarySamples(a, w)
         wasStationary = checks[0]
         lastLowerBound = int(seq[0])
         stationaryIntervals = []

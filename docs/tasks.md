@@ -23,11 +23,10 @@ Other rules:
 
 ### In Progress
 
-- Reduce residual acceleration on stationary captures after calibration by improving the affine transformation matrix and adding online bias correction after gravity removal.  
+- Evaluate additional low/moderate effort interventions for velocity estimation.
 
 ### Next
 
-- Implement simple and fast noise-reduction/low-pass filter on gravity-free acceleration to improve velocity estimation.
 - Perform spectral analysis with the hardware low-pass filter configured with different cutoff frequencies to understand its behavior. Analyze both stationary and moving captures. Identify whether I need a software low-pass filter in addition to the hardware one.
 
 ### Backlog
@@ -103,3 +102,5 @@ Other rules:
 - Analyze velocity estimation for stationary, simple rotations and real exercise captures. Compare drift-control strategies (e.g. detrending, zero velocity update on stationary periods) against raw integration.
 - Validate the complete signal processing pipeline. Document errors and limitations. Use external video references.
 - On the existing calibration notebook, implement online gyro bias corrections and compare against the offline calibration results.
+- Reduce residual acceleration on stationary captures after calibration by improving the affine transformation matrix and optionally adding online bias correction after gravity removal.  
+- Implement simple and fast noise-reduction/low-pass filter on acceleration to improve velocity estimation.

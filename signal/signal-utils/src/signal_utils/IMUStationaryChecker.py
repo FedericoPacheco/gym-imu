@@ -26,18 +26,33 @@ class IMUStationaryChecker:
         self.gyroMean = -1.0
 
     def computeTolerances(self, capturePaths: list[str]):
-        if not capturePaths:
+        if not capturePaths or len(capturePaths) == 0:
             raise ValueError("No capture paths provided for tolerance computation.")
+
+        # Kind of hacky, but it works
+        read = lambda path: self.reader.readRaw(path)
+        try:
+            read(capturePaths[0])
+        except Exception as e:
+            try:
+                read = lambda path: self.reader.readFiltered(path)
+                read(capturePaths[0])
+            except Exception as e2:
+                raise ValueError(
+                    f"Failed to read capture {capturePaths[0]} with both readRaw() and readFiltered()."
+                ) from e2
 
         captureAccelNorms = []
         captureGyroNorms = []
         for path in capturePaths:
-            _, a, w = self.reader.readRaw(path)
+            samples = read(path)
+            a = samples[1]
             ax = a[:, 0]
             ay = a[:, 1]
             az = a[:, 2]
             captureAccelNorms.append(np.sqrt(ax**2 + ay**2 + az**2))
 
+            w = samples[2]
             wroll = w[:, 0]
             wpitch = w[:, 1]
             wyaw = w[:, 2]
@@ -58,13 +73,13 @@ class IMUStationaryChecker:
             f"Acceleration norms:"
             f"\n\tMean = {self.accelMean:.6f}"
             f"\n\tStdev = {accelNormsStdev:.6f}"
-            f"\n\tInterval = [{self.accelMean - self.accelTol:.6f}, {self.accelMean + self.accelTol:.6f}]"
+            f"\n\tStationary interval = [{self.accelMean - self.accelTol:.6f}, {self.accelMean + self.accelTol:.6f}]"
         )
         print(
             f"Gyroscope norms:"
             f"\n\tMean = {self.gyroMean:.6f}"
             f"\n\tStdev = {gyroNormsStdev:.6f}"
-            f"\n\tInterval = [{self.gyroMean - self.gyroTol:.6f}, {self.gyroMean + self.gyroTol:.6f}]"
+            f"\n\tStationary interval = [{self.gyroMean - self.gyroTol:.6f}, {self.gyroMean + self.gyroTol:.6f}]"
         )
 
     def isStationarySample(

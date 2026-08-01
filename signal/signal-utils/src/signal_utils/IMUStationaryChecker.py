@@ -30,16 +30,16 @@ class IMUStationaryChecker:
             raise ValueError("No capture paths provided for tolerance computation.")
 
         # Kind of hacky, but it works
-        read = lambda path: self.reader.readRaw(path)
+        read = lambda path: self.reader.read(path)
         try:
             read(capturePaths[0])
         except Exception as e:
             try:
-                read = lambda path: self.reader.readFiltered(path)
+                read = lambda path: self.reader.readWithOrientation(path)
                 read(capturePaths[0])
             except Exception as e2:
                 raise ValueError(
-                    f"Failed to read capture {capturePaths[0]} with both readRaw() and readFiltered()."
+                    f"Failed to read capture {capturePaths[0]} with both read() and readWithOrientation()."
                 ) from e2
 
         captureAccelNorms = []

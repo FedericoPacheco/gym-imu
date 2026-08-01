@@ -6,23 +6,8 @@ from array import array
 
 
 class IMUSampleWriter:
-    # Write legacy `motionData` produced by `IMUSampleReader.read()`
-    def write(self, outputFile: str, motionData: dict[str, array | dict[str, array]]):
-        seq = np.asarray(motionData["seq"])
 
-        accelX = np.asarray(motionData["a"]["x"])  # type: ignore
-        accelY = np.asarray(motionData["a"]["y"])  # type: ignore
-        accelZ = np.asarray(motionData["a"]["z"])  # type: ignore
-        a = np.column_stack((accelX, accelY, accelZ))
-
-        gyroRoll = np.asarray(motionData["w"]["roll"])  # type: ignore
-        gyroPitch = np.asarray(motionData["w"]["pitch"])  # type: ignore
-        gyroYaw = np.asarray(motionData["w"]["yaw"])  # type: ignore
-        w = np.column_stack((gyroRoll, gyroPitch, gyroYaw))
-
-        self.writeRaw(outputFile, seq, a, w)
-
-    def writeRaw(self, outputFile: str, seq: np.ndarray, a: np.ndarray, w: np.ndarray):
+    def write(self, outputFile: str, seq: np.ndarray, a: np.ndarray, w: np.ndarray):
         out = Path(outputFile)
         out.parent.mkdir(parents=True, exist_ok=True)
 
@@ -41,7 +26,7 @@ class IMUSampleWriter:
         # Doc: https://numpy.org/doc/stable/reference/generated/numpy.savetxt.html
         np.savetxt(out, data, delimiter=",", header=header, comments="", fmt=format)
 
-    def writeFiltered(
+    def writeWithOrientation(
         self,
         outputFile: str,
         seq: np.ndarray,

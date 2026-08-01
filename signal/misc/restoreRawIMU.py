@@ -62,14 +62,14 @@ def process_file(
     writer: IMUSampleWriter,
     revert_affine: bool,
 ) -> None:
-    seq, acceleration, angular_velocity = reader.readRaw(str(input_path))
+    seq, acceleration, angular_velocity = reader.read(str(input_path))
 
     restored_acceleration = acceleration
     if revert_affine:
         restored_acceleration = restore_raw_acceleration(acceleration)
 
     restored_angular_velocity = angular_velocity + GYRO_STATIONARY_BIAS
-    writer.writeRaw(
+    writer.write(
         str(output_path),
         seq,
         restored_acceleration.astype(np.float32, copy=False),

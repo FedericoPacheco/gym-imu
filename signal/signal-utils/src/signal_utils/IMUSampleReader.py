@@ -5,39 +5,8 @@ import numpy as np
 
 
 class IMUSampleReader:
-    # Deprecated, avoid in new code, use readRaw() instead
-    def read(self, inputFile: str) -> dict[str, array | dict[str, array]]:
-        filePath = self._checkFileExists(inputFile)
-        headers = ["seq", "ax", "ay", "az", "wroll", "wpitch", "wyaw"]
-        self._checkHeaders(filePath, headers)
 
-        motionData = {
-            "a": {"x": array("f"), "y": array("f"), "z": array("f")},
-            "w": {"roll": array("f"), "pitch": array("f"), "yaw": array("f")},
-            "seq": array("I"),
-        }
-
-        fields = ["seq", "ax", "ay", "az", "wroll", "wpitch", "wyaw"]
-        with open(filePath, "r", encoding="utf-8", newline="") as csvFile:
-            reader = csv.DictReader(csvFile)
-            if reader.fieldnames != fields:
-                raise ValueError(
-                    f"Unexpected CSV header in {filePath}: {reader.fieldnames}"
-                )
-
-            for row in reader:
-                motionData["seq"].append(int(row["seq"]))
-                motionData["a"]["x"].append(float(row["ax"]))
-                motionData["a"]["y"].append(float(row["ay"]))
-                motionData["a"]["z"].append(float(row["az"]))
-                motionData["w"]["roll"].append(float(row["wroll"]))
-                motionData["w"]["pitch"].append(float(row["wpitch"]))
-                motionData["w"]["yaw"].append(float(row["wyaw"]))
-
-        return motionData
-
-    # More efficient, numpy-based
-    def readRaw(self, inputFile: str) -> tuple[
+    def read(self, inputFile: str) -> tuple[
         np.ndarray,
         np.ndarray,
         np.ndarray,
@@ -56,7 +25,7 @@ class IMUSampleReader:
 
         return (seq, a, w)
 
-    def readFiltered(self, inputFile: str) -> tuple[
+    def readWithOrientation(self, inputFile: str) -> tuple[
         np.ndarray,
         np.ndarray,
         np.ndarray,

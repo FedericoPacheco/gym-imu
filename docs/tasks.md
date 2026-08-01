@@ -23,8 +23,6 @@ Other rules:
 
 ### In Progress
 
-- Evaluate and implement refinements for orientation estimation.
-
 ### Next
 
 - Perform spectral analysis with the hardware low-pass filter configured with different cutoff frequencies to understand its behavior. Analyze both stationary and moving captures. Identify whether I need a software low-pass filter in addition to the hardware one.
@@ -105,3 +103,4 @@ Other rules:
 - Reduce residual acceleration on stationary captures after calibration by improving the affine transformation matrix and optionally adding online bias correction after gravity removal.  
 - Implement simple and fast noise-reduction/low-pass filter on acceleration to improve velocity estimation.
 - Evaluate and implement additional low/moderate effort interventions to improve velocity estimation.
+- Evaluate and implement refinements for orientation estimation.

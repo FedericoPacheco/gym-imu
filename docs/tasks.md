@@ -23,24 +23,26 @@ Other rules:
 
 ### In Progress
 
-Update README.md with new information about the signal processing pipeline.
+- Update calibration implementation on the device and test for performance.
 
 ### Next
 
-### Backlog
-
-- Perform spectral analysis to diagnose aliasing. Provide a recommendation of minimum sampling frequency.
+- Implement noise reduction on the device and test for performance.
 - Implement complementary filter on the device and test for performance.
 - Implement gravity removal strategy on the device and test for performance.
+
+### Backlog
+
 - Implement velocity estimation with drift-control on the device and test for performance.
-- Implement on a jupyter notebook a simple rep-counting mechanism and evaluate it on real captures, comparing it against video references.
-- Implement simple rep-counting mechanism on the device and test for performance.
 - Fine tune transmission parameters to optimize for latency.
 - Fine tune pipe sizes to optimize for data preservation.
 - Fine tune tasks priorities and ISR behaviors to optimize for latency and responsiveness.
 - Fine tune IMU parameters to optimize for throughput.
+- Perform spectral analysis to diagnose aliasing. Provide a recommendation of minimum sampling frequency.
 - Perform spectral analysis with the hardware low-pass filter configured with different cutoff frequencies to understand its behavior. Analyze both stationary and moving captures.
 
+- Implement on a jupyter notebook a simple rep-counting mechanism and evaluate it on real captures, comparing it against video references.
+- Implement simple rep-counting mechanism on the device and test for performance.
 - Review if error macros work with variable arguments
 - Fork I2C and MPU libraries on github and apply changes there. Then include as dependencies in the platformIO file.
 - Remove unnecessary includes to reduce compiled code size.
@@ -105,3 +107,4 @@ Update README.md with new information about the signal processing pipeline.
 - Implement simple and fast noise-reduction/low-pass filter on acceleration to improve velocity estimation.
 - Evaluate and implement additional low/moderate effort interventions to improve velocity estimation.
 - Evaluate and implement refinements for orientation estimation.
+- Update README.md with new information about the signal processing pipeline.

@@ -23,9 +23,9 @@ Other rules:
 
 ### In Progress
 
-### Next
+Update README.md with new information about the signal processing pipeline.
 
-- Perform spectral analysis with the hardware low-pass filter configured with different cutoff frequencies to understand its behavior. Analyze both stationary and moving captures. Identify whether I need a software low-pass filter in addition to the hardware one.
+### Next
 
 ### Backlog
 
@@ -39,6 +39,7 @@ Other rules:
 - Fine tune pipe sizes to optimize for data preservation.
 - Fine tune tasks priorities and ISR behaviors to optimize for latency and responsiveness.
 - Fine tune IMU parameters to optimize for throughput.
+- Perform spectral analysis with the hardware low-pass filter configured with different cutoff frequencies to understand its behavior. Analyze both stationary and moving captures.
 
 - Review if error macros work with variable arguments
 - Fork I2C and MPU libraries on github and apply changes there. Then include as dependencies in the platformIO file.

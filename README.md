@@ -16,7 +16,7 @@ The project was inspired by the chapter "Velocity in the Weight Room" from the b
   - [Hardware](#hardware)
   - [Firmware](#firmware)
   - [Testing](#testing)
-- [Signal Analysis and Processing](#signal-analysis-and-processing)
+- [Signal Processing](#signal-processing)
 - [Mobile App](#mobile-app)
 - [Tasks & Roadmap](#tasks--roadmap)
 
@@ -33,7 +33,7 @@ Main technologies used:
 
 - **Device Hardware**: [XIAO ESP32 C3](https://wiki.seeedstudio.com/XIAO_ESP32C3_Getting_Started/), [MPU6050](https://www.invensense.com/products/motion-tracking/6-axis/mpu-6050/)
 - **Device Firmware**: PlatformIO with [Espressif IoT Development Framework (ESP-IDF)](https://www.espressif.com/en/products/sdks/esp-idf), [FreeRTOS](https://www.freertos.org/Why-FreeRTOS/What-is-FreeRTOS), NimBLE (Bluetooth Low Energy stack), C++20
-- **Signal analysis and processing**: TBD (likely Python for data analysis and visualization)
+- **Signal Processing**: Python, [NumPy](https://numpy.org/), [SciPy](https://scipy.org/), [Matplotlib](https://matplotlib.org/)
 - **Mobile App**: TBD (likely TypeScript + React Native)
 
 Key decisions and their rationale are documented in [Architecture Decision Records (ADRs)](docs/adrs/).
@@ -95,14 +95,40 @@ Currently done manually by compiling, flashing the device and:
 
 - Reviewing logs on serial.
 - Measuring continuity or tension with the multimeter.
-- Pressing the record button and physically moving the IMU in simple ways (rotating with respect to one axis or moving along it).
-- Performing BLE operations (e.g. connect, subscribe) with the *nRF Connect* mobile app.
+- Pressing the record button and physically moving the IMU (rotating it with respect to one axis or moving along it, real gym exercises).
+- Performing BLE operations (e.g. connect, subscribe) with either the [*nRF Connect* mobile app](https://play.google.com/store/apps/details?id=no.nordicsemi.android.mcp&pcampaignid=web_share) or with the `IMUSampleReceiver` Python class.
 
 Might consider doing hardware-in-the-loop automated tests in the future.
 
-## Signal Analysis and Processing
+## Signal Processing
 
-TBD
+As outlined in [ADR-8](docs/adrs/8-signal-transformer-steps.md) and [ADR-9](docs/adrs/9-adjust-signal-transformer-with-simple-methods.md), the pipeline currently consists of the following steps:
+
+| # | Step | Description | Method employed |
+| -- | ---- | ------------ | -------------- |
+| 0 | [**Capture**](signal/0-capture) | Acquire raw  acceleration and gyroscope data on each axis. | De-queue samples pushed from the `MPU6050Sensor` class. |
+| 1 | [**Calibration**](signal/1-calibration) | Remove accelerometer and gyroscope biases, offsets, axis misalignments, sensitivity changes, drift. | Apply affine transformation (extended linear transformation that rotates, shears, scales, and translates) to the acceleration. Estimate offline bias for both the accelerometer (after gravity removal) and gyroscope and update it online when stationarity is detected. |
+| 2 | [**Noise reduction**](signal/2-noiseReduction) | Reduce random variations in the sensor data. | Apply a simple time-domain filter: causal moving average with a short window. |
+| 3 | [**Orientation estimation**](signal/3-orientation) | Estimate the device orientation. | Perform sensor fusion of the accelerometer and gyroscope with a modified complementary filter. Euler angles are used. |
+| 4 | [**Gravity removal**](signal/4-gravityRemoval) | Remove gravity from the acceleration signal. | Rotate the gravity vector using the estimated roll and pitch and subtract it. |
+| 5 | [**Velocity estimation**](signal/5-velocity) | Estimate the device linear velocity. | Integrate the gravity-free acceleration with respect to time using the trapezoidal rule and apply a zero-velocity update strategy to stabilize the estimation on each axis when stationarity is detected. |
+
+Each individual step was first implemented and evaluated separately on Jupyter notebooks, accepting inputs as *.csv* files and producing outputs as *.csv* files. Three types of captures were used:
+
+- Stationary data (standing still on each face of the case, as well as tilted).
+- Simple rotations (rotating the device around one axis at a time).
+- Real gym exercises (pull-ups, dips, 90° push-ups).
+
+Validation was performed by:
+
+- Visual inspection of graphs (time series, histograms, scatter plots).
+- Analysis of summary metrics (mean, standard deviation, RMS, Pearson/Spearman correlation, cross correlation, metrics differences or ratios).
+- Comparison of methods and parameters (transformations matrices, kernel lengths, offline vs online corrections, Newton-Cotes/Adams-Moulton formulas, time constant values, etc.)
+- Comparison against video recordings.
+
+See the notebooks for details.
+
+The pipeline is yet to be implemented on the firmware.
 
 ## Mobile App
 

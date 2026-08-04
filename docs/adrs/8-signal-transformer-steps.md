@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted
+Superseded by ADR-9
 
 ## Date
 
@@ -30,7 +30,7 @@ Input: raw single precision acceleration and gyroscope data on each axis + seque
 
 4. Rotate the signals using the computed orientation to later subtract gravity from the acceleration.
 
-“Integrate acceleration with respect to time using the device sampling period and a fast method (e.g. trapezoidal rule) to get velocity. Apply a drift control strategy (e.g. detrending, zero velocity update on stationary periods). Leave angular velocity as-is.
+5. Integrate acceleration with respect to time using the device sampling period and a fast method (e.g. trapezoidal rule) to get velocity. Apply a drift control strategy (e.g. detrending, zero velocity update on stationary periods). Leave angular velocity as-is.
 
 Output: processed single precision acceleration and gyroscope data on each axis + sequence numbers.
 

@@ -9,22 +9,26 @@
 #include <Constants.hpp>
 #include <FreeRTOSLoopRunner.hpp>
 #include <FreeRTOSNotificationRunner.hpp>
+#include <IMUSignalProcessor.hpp>
 #include <LED.hpp>
 #include <Logger.hpp>
+#include <MPU6050AffineCalibrator.hpp>
 #include <MPU6050Sensor.hpp>
 #include <QueuePipe.hpp>
 #include <memory>
 
 extern "C" void app_main() {
-  gpio_install_isr_service(ESP_INTR_FLAG_IRAM);
-
-  UARTLogger samplingPipeLogger("SamplingPipe", LogLevel::WARN);
-  std::shared_ptr<Pipe<IMUSample, SAMPLING_PIPE_SIZE>> samplingPipe =
-      QueuePipe<IMUSample, SAMPLING_PIPE_SIZE>::create(&samplingPipeLogger);
-  if (!samplingPipe) {
-    samplingPipeLogger.error("Failed to create pipe");
-    return;
-  }
+  /* Note:
+   Do NOT use the ESP_INTR_FLAG_IRAM here. Depending on timing, it produces the
+   watchdog to panic and restart the system indefinitively. The flag enables
+   ISRs to run when flash operations (write/erase) are in progress, but it also
+   prevents the use of any code that lives in flash from within the ISR, which
+   effectively prevents me from using the Runner abstractions I've built (not
+   IRAM-safe). Tradeoff: slight delays or misses in rare cases that may make me
+   lose some samples (acceptable due to soft real-time requirements and mission
+   criticality) vs. more complex, less flexible, code.
+  */
+  gpio_install_isr_service(0);
 
   UARTLogger ledLogger("LED", LogLevel::WARN);
   std::unique_ptr<LED> led = LED::create(&ledLogger);
@@ -37,6 +41,14 @@ extern "C" void app_main() {
   std::unique_ptr<Button> button = Button::create(&buttonLogger);
   if (button == nullptr) {
     buttonLogger.error("Failed to initialize Button");
+    return;
+  }
+
+  UARTLogger samplingPipeLogger("SamplingPipe", LogLevel::WARN);
+  std::shared_ptr<Pipe<IMUSample, SAMPLING_PIPE_SIZE>> samplingPipe =
+      QueuePipe<IMUSample, SAMPLING_PIPE_SIZE>::create(&samplingPipeLogger);
+  if (!samplingPipe) {
+    samplingPipeLogger.error("Failed to create sampling pipe");
     return;
   }
 
@@ -53,22 +65,57 @@ extern "C" void app_main() {
     return;
   }
 
-  UARTLogger bleLogger("BLE", LogLevel::INFO);
+#ifdef PROCESS_SIGNAL
+  UARTLogger transmissionPipeLogger("TransmissionPipe", LogLevel::WARN);
+  std::shared_ptr<Pipe<IMUSample, TRANSMISSION_PIPE_SIZE>> transmissionPipe =
+      QueuePipe<IMUSample, TRANSMISSION_PIPE_SIZE>::create(
+          &transmissionPipeLogger);
+  if (!transmissionPipe) {
+    transmissionPipeLogger.error("Failed to create transmission pipe");
+    return;
+  }
+
+  UARTLogger processorLogger("Processor", LogLevel::DEBUG);
+  auto processorRunner = std::make_unique<FreeRTOSLoopRunner>(
+      "processTask", PROCESS_TASK_STACK_SIZE, PROCESS_TASK_PRIORITY,
+      pdMS_TO_TICKS(25));
+  std::unique_ptr<IMUCalibrator> calibrator =
+      std::make_unique<MPU6050AffineCalibrator>();
+  IMUSignalProcessor processor(samplingPipe, transmissionPipe,
+                               std::move(processorRunner), &processorLogger,
+                               std::move(calibrator));
+
+  UARTLogger bleLogger("BLE", LogLevel::DEBUG);
   auto bleLoopRunner = std::make_unique<FreeRTOSLoopRunner>(
-      "transmitTask", BLE::TRANSMIT_TASK_STACK_SIZE,
-      BLE::TRANSMIT_TASK_PRIORITY, pdMS_TO_TICKS(100));
+      "transmitTask", TRANSMIT_TASK_STACK_SIZE, TRANSMIT_TASK_PRIORITY,
+      pdMS_TO_TICKS(100));
+  BLE *ble =
+      BLE::getInstance(&bleLogger, transmissionPipe, std::move(bleLoopRunner));
+  if (ble == nullptr) {
+    bleLogger.error("Failed to initialize BLE");
+    return;
+  }
+#else
+  UARTLogger bleLogger("BLE", LogLevel::DEBUG);
+  auto bleLoopRunner = std::make_unique<FreeRTOSLoopRunner>(
+      "transmitTask", TRANSMIT_TASK_STACK_SIZE, TRANSMIT_TASK_PRIORITY,
+      pdMS_TO_TICKS(100));
   BLE *ble =
       BLE::getInstance(&bleLogger, samplingPipe, std::move(bleLoopRunner));
   if (ble == nullptr) {
     bleLogger.error("Failed to initialize BLE");
     return;
   }
+#endif
 
   bool doSample = false;
   button->enableAsync();
+#ifdef PROCESS_SIGNAL
+  processor.beginProcessing();
+#endif
   while (true) {
     vTaskDelay(pdMS_TO_TICKS(1000));
-
+    // Toggle sampling when user commands via button press
     if (button->wasPressedAsync() && ble->isConnected()) {
       doSample = !doSample;
       led->toggle();
@@ -80,6 +127,16 @@ extern "C" void app_main() {
         ble->stopTransmission();
       }
     }
+    // Stop sampling if BLE gets disconnected
+    if (doSample && !ble->isConnected()) {
+      doSample = false;
+      led->turnOff();
+      imu->stopAsync();
+      ble->stopTransmission();
+    }
   }
+#ifdef PROCESS_SIGNAL
+  processor.stopProcessing();
+#endif
   button->disableAsync();
 }

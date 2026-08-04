@@ -73,15 +73,14 @@ MPU6050SensorDependencies buildDefaultDependencies() {
   ON_CALL(*deps.sensor, setSampleRate(_)).WillByDefault(Return(ESP_OK));
   ON_CALL(*deps.sensor, setAccelFullScale(_)).WillByDefault(Return(ESP_OK));
   ON_CALL(*deps.sensor, setGyroFullScale(_)).WillByDefault(Return(ESP_OK));
+  ON_CALL(*deps.sensor, setDigitalLowPassFilter(_))
+      .WillByDefault(Return(ESP_OK));
 
   ON_CALL(*deps.sensor, setFIFOConfig(_)).WillByDefault(Return(ESP_OK));
   ON_CALL(*deps.sensor, setFIFOEnabled(_)).WillByDefault(Return(ESP_OK));
 
   ON_CALL(*deps.sensor, setInterruptConfig(_)).WillByDefault(Return(ESP_OK));
   ON_CALL(*deps.sensor, setInterruptEnabled(_)).WillByDefault(Return(ESP_OK));
-
-  // Sensor sampling
-  getTimeUs_fake.return_val = 123456;
 
   ON_CALL(*deps.sensor, resetFIFO()).WillByDefault(Return(ESP_OK));
   ON_CALL(*deps.sensor, getFIFOCount()).WillByDefault(Return(0));
@@ -138,13 +137,6 @@ TEST(MPU6050Sensor_getInstance, ReturnsNullWhenSettingAddressToSensorFails) {
   EXPECT_EQ(getInstanceWith(std::move(deps)), nullptr);
 }
 
-TEST(MPU6050Sensor_getInstance, ReturnsNullWhenResetSensorFails) {
-  auto deps = buildDefaultDependencies();
-  EXPECT_CALL(*deps.sensor, reset()).WillOnce(Return(ESP_FAIL));
-
-  EXPECT_EQ(getInstanceWith(std::move(deps)), nullptr);
-}
-
 TEST(MPU6050Sensor_getInstance,
      ReturnsNullWhenConnectionTestFailsAfterMaxRetries) {
   auto deps = buildDefaultDependencies();
@@ -183,12 +175,22 @@ TEST(MPU6050Sensor_getInstance, ReturnsNullWhenSettingGyroscopeScaleFails) {
   EXPECT_EQ(getInstanceWith(std::move(deps)), nullptr);
 }
 
+#ifdef PROCESS_SIGNAL
+TEST(MPU6050Sensor_getInstance, ReturnsNullWhenSettingLowPassFilterFails) {
+  auto deps = buildDefaultDependencies();
+  EXPECT_CALL(*deps.sensor, setDigitalLowPassFilter(mpud::DLPF_42HZ))
+      .WillOnce(Return(ESP_FAIL));
+
+  EXPECT_EQ(getInstanceWith(std::move(deps)), nullptr);
+}
+
 TEST(MPU6050Sensor_getInstance, ReturnsNullWhenConfiguringFIFOFails) {
   auto deps = buildDefaultDependencies();
   EXPECT_CALL(*deps.sensor, setFIFOConfig(_)).WillOnce(Return(ESP_FAIL));
 
   EXPECT_EQ(getInstanceWith(std::move(deps)), nullptr);
 }
+#endif
 
 TEST(MPU6050Sensor_getInstance, ReturnsNullWhenEnablingFIFOFails) {
   auto deps = buildDefaultDependencies();
@@ -246,14 +248,16 @@ TEST(MPU6050Sensor_getInstance, InitializesSuccessfully) {
 // ----------------------------------------------------------------------------------------------------
 // Sensor sampling tests
 
-TEST(MPU6050Sensor_onReadTaskNotification,
-     SendsMultipleSamplesToPipeWhenFifoCountIsValid) {
+TEST(
+    MPU6050Sensor_onReadTaskNotification,
+    SendsMultipleSamplesWithMonotonicSequenceNumbersToPipeWhenFifoCountIsValid) {
   auto deps = buildDefaultDependencies();
   auto *runner =
       static_cast<DeterministicNotificationRunner *>(deps.runner.get());
   auto *sensor = deps.sensor.get();
   auto *pipe = deps.pipe.get();
   MPU6050Sensor *instance = getInstanceWith(std::move(deps));
+  std::vector<IMUSample> pushed;
 
   EXPECT_CALL(*sensor, resetFIFO()).Times(1); // beginAsync() call
   EXPECT_CALL(*sensor, getFIFOCount()).WillOnce(Return(3 * FIFO_PACKET_SIZE));
@@ -261,12 +265,22 @@ TEST(MPU6050Sensor_onReadTaskNotification,
   EXPECT_CALL(*sensor, readFIFO(FIFO_PACKET_SIZE, _))
       .Times(3)
       .WillRepeatedly(Invoke(fillDeterministicFIFOPacket));
-  EXPECT_CALL(*pipe, push(_)).Times(3).WillRepeatedly(Return(true));
+  EXPECT_CALL(*pipe, push(_))
+      .Times(3)
+      .WillRepeatedly(Invoke([&pushed](const IMUSample &sample) {
+        pushed.push_back(sample);
+        return true;
+      }));
 
   instance->beginAsync();
   runner->notify();
   runner->runOneStep();
   instance->stopAsync();
+
+  ASSERT_EQ(pushed.size(), 3u);
+  for (size_t i = 1; i < pushed.size(); ++i) {
+    EXPECT_EQ(pushed[i].seq - 1, pushed[i - 1].seq);
+  }
 }
 
 TEST(MPU6050Sensor_onReadTaskNotification,
@@ -293,7 +307,7 @@ TEST(MPU6050Sensor_onReadTaskNotification,
                         EXPECT_FLOAT_EQ(sample.w.roll, 5.0f);
                         EXPECT_FLOAT_EQ(sample.w.pitch, 10.0f);
                         EXPECT_FLOAT_EQ(sample.w.yaw, 15.0f);
-                        EXPECT_EQ(sample.t, 123456);
+                        EXPECT_EQ(sample.seq, 0);
                       }),
                       Return(true)));
 

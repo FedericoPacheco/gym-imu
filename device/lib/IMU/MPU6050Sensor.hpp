@@ -92,6 +92,7 @@ private:
       mpud::ACCEL_FS_2G;
   static constexpr mpud::types::gyro_fs_t GYROSCOPE_SCALE =
       mpud::GYRO_FS_250DPS;
+  static constexpr mpud::dlpf_t DLPF_CONFIG = mpud::DLPF_42HZ;
   static constexpr int BUS_FREQUENCY_HZ = 400000; // 400kHz, short wires (<10cm)
   // static constexpr int BUS_FREQUENCY_HZ = 100000; // 100kHz, long wires
 
@@ -112,7 +113,8 @@ private:
     portMUX_TYPE mux;
   } static instanceState;
 
-  std::atomic<bool> doRead;
+  std::atomic<bool> doRead{false};
+  std::atomic<uint32_t> nextSeq{0};
 
   MPU6050Sensor(LoggerPort *logger,
                 std::shared_ptr<Pipe<IMUSample, SAMPLING_PIPE_SIZE>> pipe,
@@ -146,4 +148,6 @@ private:
   std::tuple<mpud::raw_axes_t, mpud::raw_axes_t>
   parseSensorData(const uint8_t *data);
   IMUSample toIMUSample(mpud::raw_axes_t aRaw, mpud::raw_axes_t wRaw);
+  void setNextSeq();
+  uint32_t getNextSeq();
 };

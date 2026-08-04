@@ -8,6 +8,8 @@
 - C++ Reference: <https://en.cppreference.com/index.html>
 - Cplusplus Reference: <https://cplusplus.com/reference/>
 - YT series on C++: <https://www.youtube.com/playlist?list=PLlrATfBNZ98dudnM48yfGUldqGD0S4FFb>
+- Numpy Reference: <https://numpy.org/doc/stable/reference/>
+- Scipy Reference: <https://docs.scipy.org/doc/scipy/reference/>
 
 ## ESP32 variants
 
@@ -124,3 +126,88 @@
 - <https://www.youtube.com/watch?v=QhZTc1x1-pM>
 - <https://www.youtube.com/watch?v=rnTwT-ifLkU>
 - <https://www.youtube.com/watch?v=3NOc-h0P_e8>
+
+## Python quirks
+
+### Asyncio
+
+- <https://www.youtube.com/watch?v=Qb9s3UiMSTA>
+- <https://docs.python.org/3/library/asyncio.html>
+
+### Bleak (BLE client)
+
+- <https://bleak.readthedocs.io/en/latest/usage.html>
+
+### Bytes, structs, arrays
+
+- <https://docs.python.org/3/library/stdtypes.html#binary-sequence-types-bytes-bytearray-memoryview>
+- <https://docs.python.org/3/library/struct.html>
+- <https://docs.python.org/3/library/array.html>
+
+### Stats
+
+- <https://docs.python.org/3/library/statistics.html>
+- <https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.hist.html>
+- <https://docs.scipy.org/doc/scipy/reference/stats.html>
+
+### Scipy signal processing / numpy
+
+- <https://docs.scipy.org/doc/scipy/reference/signal.html>
+- <https://docs.scipy.org/doc/scipy/tutorial/signal.html>
+- <https://docs.scipy.org/doc/scipy/reference/fft.html>
+- <https://docs.scipy.org/doc/scipy/tutorial/fft.html>
+- <https://numpy.org/doc/stable/reference/routines.array-creation.html>
+
+## IMU calibration
+
+- <https://www.researchgate.net/publication/230959638_An_enhanced_multi-position_calibration_method_for_consumer-grade_inertial_measurement_units_applied_and_tested>
+- <https://www.cl.cam.ac.uk/techreports/UCAM-CL-TR-696.pdf>
+- <https://miis.maths.ox.ac.uk/633/1/p5_mms.pdf> (!)
+- <https://cookierobotics.com/061/> (!)
+- <https://www.youtube.com/watch?v=AheaTd_l5Is>
+- <https://www.youtube.com/watch?v=MODiqfW-ibQ>
+
+## Sensor fusion
+
+- <https://www.youtube.com/watch?v=6AoJ8wr8G6A>
+- <http://www.geekmomprojects.com/gyroscopes-and-accelerometers-on-a-chip/>
+- <https://www.analog.com/en/resources/app-notes/an-1057.html>
+- <https://www.geekmomprojects.com/wp-content/uploads/2022/03/filter.pdf>
+- <https://ocw.mit.edu/courses/16-333-aircraft-stability-and-control-fall-2004/9bc94307e01f85dbdfee05e87851361a_lecture_15.pdf>
+- <https://www.youtube.com/watch?v=whSw42XddsU>
+
+## Orientantion in 3D space
+
+### Euler angles
+
+- <https://en.wikipedia.org/wiki/Rotation_matrix>
+- <https://en.wikipedia.org/wiki/Euler%27s_rotation_theorem>
+- <https://en.wikipedia.org/wiki/Euler_angles>
+- <https://en.wikipedia.org/wiki/Gimbal_lock>
+- <https://web.mit.edu/2.05/www/Handout/HO2.PDF>
+- <https://www.youtube.com/watch?v=2Cwa6hfn2K0>
+- <https://www.youtube.com/watch?v=gzliGOj9P7w>
+- <https://www.youtube.com/watch?v=zc8b2Jo7mno>
+- <https://www.youtube.com/watch?v=WzLJDjfm2Xo>
+- <https://www.youtube.com/watch?v=SrLcvAw1iW4>
+- <https://en.wikipedia.org/wiki/Atan2>
+
+### Quaternions
+
+- <https://en.wikipedia.org/wiki/Quaternions_and_spatial_rotation>
+- <https://www.youtube.com/watch?v=d4EgbgTm0Bg>
+- <https://www.youtube.com/watch?v=zjMuIxRvygQ>
+
+## Human motion
+
+- <https://valdperformance.com/news/sampling-frequency-how-much-is-enough>
+
+## Stats
+
+- <https://www.youtube.com/watch?v=k7IctLRiZmo>
+- <https://www.youtube.com/watch?v=XV_W1w4Nwoc>
+- <https://en.wikipedia.org/wiki/Ranking>
+
+## Signals
+
+- <https://www.youtube.com/watch?v=L6YJqhbsuFY>

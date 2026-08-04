@@ -189,3 +189,25 @@ OS: Linux Ubuntu 24.04
 4. Install VS Code Extension: OpenSCAD Language Support
 
 5. Inside OpenSCAD, check "Design" > "Automatic Reload and Preview"
+
+## Signal reception, analysis and processing
+
+1. Create and activate virtual environment:
+
+    ```bash
+    python -m venv venv
+    source venv/bin/activate    # Linux
+    .\venv\Scripts\activate.ps1 # Windows
+    ```
+
+2. Install dependencies:
+
+    ```bash
+    pip install -r requirements.txt
+    ```
+
+    This also installs the local `signal-utils` package in editable mode.
+
+3. Install extension: Black Formatter by Microsoft
+4. Install extension: Jupyter by Microsoft
+5. Install extension: Edit CSV by janisdd

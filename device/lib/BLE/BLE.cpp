@@ -408,8 +408,8 @@ bool BLE::initializeTasks() {
   }
 
   BaseType_t bleTaskResult =
-      rtosTaskCreate(BLE::bleTask, "bleTask", BLE::BLE_TASK_STACK_SIZE, this,
-                     BLE::BLE_TASK_PRIORITY, &this->bleTaskHandle);
+      rtosTaskCreate(BLE::bleTask, "bleTask", BLE_TASK_STACK_SIZE, this,
+                     BLE_TASK_PRIORITY, &this->bleTaskHandle);
   if (bleTaskResult != pdPASS) {
     this->logger->error("Failed to create BLE task");
     this->transmitRunner->stop();

@@ -14,7 +14,7 @@ public:
   bool start(std::function<void(void *, uint32_t)> loopFunction,
              void *argForCallback) override;
   void runOneStep() override;
-  void notifyFromISR() override;
+  void IRAM_ATTR notifyFromISR() override;
   void notify() override;
   void stop() override;
 

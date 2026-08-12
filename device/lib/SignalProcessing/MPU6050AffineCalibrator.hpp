@@ -21,12 +21,16 @@ public:
   void calibrate(IMUSample &sample) override {
     // Emulate matrix multiplication to avoid importing a linear algebra library
     // just for this, saving space.
-    sample.a.x = sample.a.x * aTransf[0][0] + sample.a.y * aTransf[1][0] +
-                 sample.a.z * aTransf[2][0] + 1 * aTransf[3][0];
-    sample.a.y = sample.a.x * aTransf[0][1] + sample.a.y * aTransf[1][1] +
-                 sample.a.z * aTransf[2][1] + 1 * aTransf[3][1];
-    sample.a.z = sample.a.x * aTransf[0][2] + sample.a.y * aTransf[1][2] +
-                 sample.a.z * aTransf[2][2] + 1 * aTransf[3][2];
+    const float x = sample.a.x;
+    const float y = sample.a.y;
+    const float z = sample.a.z;
+
+    sample.a.x = x * aTransf[0][0] + y * aTransf[1][0] + z * aTransf[2][0] +
+                 aTransf[3][0];
+    sample.a.y = x * aTransf[0][1] + y * aTransf[1][1] + z * aTransf[2][1] +
+                 aTransf[3][1];
+    sample.a.z = x * aTransf[0][2] + y * aTransf[1][2] + z * aTransf[2][2] +
+                 aTransf[3][2];
 
     sample.w.roll = sample.w.roll - wBiases[0];
     sample.w.pitch = sample.w.pitch - wBiases[1];

@@ -2,7 +2,7 @@
 #include <optional>
 #include <stdint.h>
 
-// g (m/s2)
+// m/s2
 struct AccelerationSample {
   float x;
   float y;
@@ -14,7 +14,7 @@ struct AngularVelocitySample {
   float pitch;
   float yaw;
 };
-// us (microseconds)
+
 typedef uint32_t SequenceNumber;
 struct IMUSample {
   AccelerationSample a;

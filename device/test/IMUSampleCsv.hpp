@@ -1,6 +1,8 @@
 #pragma once
 
 #include "IMUSensorPort.hpp"
+#include "IMUSignalProcessor.hpp"
+
 #include <cmath>
 #include <filesystem>
 #include <fstream>
@@ -11,33 +13,6 @@
 #include <vector>
 
 namespace testsupport {
-
-struct OrientationSample {
-  float roll;
-  float pitch;
-  float yaw;
-};
-
-struct Velocity3DSample {
-  float x;
-  float y;
-  float z;
-};
-
-struct IMUWithAnglesSample {
-  AccelerationSample a;
-  AngularVelocitySample w;
-  SequenceNumber seq;
-  OrientationSample angle;
-};
-
-struct IMUWithVelocitySample {
-  AccelerationSample a;
-  AngularVelocitySample w;
-  SequenceNumber seq;
-  OrientationSample angle;
-  Velocity3DSample v;
-};
 
 inline std::vector<std::string> splitCSVRow(const std::string &line) {
   std::vector<std::string> columns;
@@ -86,9 +61,9 @@ inline IMUSample parseIMUSampleRow(const std::vector<std::string> &columns) {
                    .seq = static_cast<SequenceNumber>(std::stoul(columns[0]))};
 }
 
-inline IMUWithAnglesSample
+inline IMUSampleWithAngles
 parseIMUWithAnglesSampleRow(const std::vector<std::string> &columns) {
-  return IMUWithAnglesSample{
+  return IMUSampleWithAngles{
       .a = {.x = std::stof(columns[1]),
             .y = std::stof(columns[2]),
             .z = std::stof(columns[3])},
@@ -101,9 +76,9 @@ parseIMUWithAnglesSampleRow(const std::vector<std::string> &columns) {
                 .yaw = std::stof(columns[9])}};
 }
 
-inline IMUWithVelocitySample
-parseIMUWithVelocitySampleRow(const std::vector<std::string> &columns) {
-  return IMUWithVelocitySample{
+inline IMUSampleWithVelocity
+parseIMUSampleWithVelocityRow(const std::vector<std::string> &columns) {
+  return IMUSampleWithVelocity{
       .a = {.x = std::stof(columns[1]),
             .y = std::stof(columns[2]),
             .z = std::stof(columns[3])},
@@ -144,13 +119,13 @@ readIMUSamplesFromCSV(const std::filesystem::path &filePath) {
   return samples;
 }
 
-inline std::vector<IMUWithAnglesSample>
+inline std::vector<IMUSampleWithAngles>
 readIMUWithAnglesSamplesFromCSV(const std::filesystem::path &filePath) {
   std::ifstream file = openCSVFile(filePath);
   assertCSVHeader(readCSVHeader(file, filePath),
                   "seq,ax,ay,az,wroll,wpitch,wyaw,roll,pitch,yaw", filePath);
 
-  std::vector<IMUWithAnglesSample> samples;
+  std::vector<IMUSampleWithAngles> samples;
   std::string line;
   while (std::getline(file, line)) {
     if (line.empty()) {
@@ -163,20 +138,20 @@ readIMUWithAnglesSamplesFromCSV(const std::filesystem::path &filePath) {
                                filePath.string());
     }
 
-    samples.push_back(parseIMUWithAnglesSampleRow(columns));
+    samples.push_back(parseIMUSampleWithAnglesRow(columns));
   }
 
   return samples;
 }
 
-inline std::vector<IMUWithVelocitySample>
-readIMUWithVelocitySamplesFromCSV(const std::filesystem::path &filePath) {
+inline std::vector<IMUSampleWithVelocity>
+readIMUSampleWithVelocitysFromCSV(const std::filesystem::path &filePath) {
   std::ifstream file = openCSVFile(filePath);
   assertCSVHeader(readCSVHeader(file, filePath),
                   "seq,ax,ay,az,wroll,wpitch,wyaw,roll,pitch,yaw,vx,vy,vz",
                   filePath);
 
-  std::vector<IMUWithVelocitySample> samples;
+  std::vector<IMUSampleWithVelocity> samples;
   std::string line;
   while (std::getline(file, line)) {
     if (line.empty()) {
@@ -189,7 +164,7 @@ readIMUWithVelocitySamplesFromCSV(const std::filesystem::path &filePath) {
                                filePath.string());
     }
 
-    samples.push_back(parseIMUWithVelocitySampleRow(columns));
+    samples.push_back(parseIMUSampleWithVelocityRow(columns));
   }
 
   return samples;
@@ -290,8 +265,8 @@ inline ::testing::AssertionResult AssertNearIMUWithAnglesSeries(
   }
 
   for (size_t index = 0; index < expected.size(); ++index) {
-    const IMUWithAnglesSample &expectedSample = expected[index];
-    const IMUWithAnglesSample &actualSample = actual[index];
+    const IMUSampleWithAngles &expectedSample = expected[index];
+    const IMUSampleWithAngles &actualSample = actual[index];
 
     if (expectedSample.seq != actualSample.seq) {
       return ::testing::AssertionFailure()
@@ -352,8 +327,8 @@ inline ::testing::AssertionResult AssertNearIMUWithAnglesSeries(
 inline ::testing::AssertionResult AssertNearIMUWithVelocitySeries(
     const char *expectedExpr, const char *actualExpr, const char *aTolExpr,
     const char *wTolExpr, const char *angleTolExpr, const char *vTolExpr,
-    const std::vector<IMUWithVelocitySample> &expected,
-    const std::vector<IMUWithVelocitySample> &actual, float aTolerance,
+    const std::vector<IMUSampleWithVelocity> &expected,
+    const std::vector<IMUSampleWithVelocity> &actual, float aTolerance,
     float wTolerance, float angleTolerance, float velocityTolerance) {
   auto sizeResult =
       AssertSeriesSameSize(expectedExpr, actualExpr, expected, actual);
@@ -362,8 +337,8 @@ inline ::testing::AssertionResult AssertNearIMUWithVelocitySeries(
   }
 
   for (size_t index = 0; index < expected.size(); ++index) {
-    const IMUWithVelocitySample &expectedSample = expected[index];
-    const IMUWithVelocitySample &actualSample = actual[index];
+    const IMUSampleWithVelocity &expectedSample = expected[index];
+    const IMUSampleWithVelocity &actualSample = actual[index];
 
     if (expectedSample.seq != actualSample.seq) {
       return ::testing::AssertionFailure()

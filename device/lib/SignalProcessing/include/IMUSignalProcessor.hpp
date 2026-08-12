@@ -6,6 +6,35 @@
 #include <LoopRunner.hpp>
 #include <Pipe.hpp>
 
+// deg
+struct OrientationSample {
+  float roll;
+  float pitch;
+  float yaw;
+};
+
+// m/s
+struct VelocitySample {
+  float x;
+  float y;
+  float z;
+};
+
+struct IMUSampleWithAngles {
+  AccelerationSample a;
+  AngularVelocitySample w;
+  SequenceNumber seq;
+  OrientationSample angle;
+};
+
+struct IMUSampleWithVelocity {
+  AccelerationSample a;
+  AngularVelocitySample w;
+  SequenceNumber seq;
+  OrientationSample angle;
+  VelocitySample v;
+};
+
 class IMUSignalProcessor {
 public:
   IMUSignalProcessor(

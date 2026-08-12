@@ -12,7 +12,48 @@
 #include <string>
 #include <vector>
 
+/*
+Misc docs:
+* https://cplusplus.com/reference/string/string/
+* https://en.cppreference.com/cpp/string/basic_string/getline
+* https://en.cppreference.com/cpp/io/basic_ifstream
+* https://en.cppreference.com/cpp/string/basic_string/stof
+* https://en.cppreference.com/cpp/string/basic_string/stoul
+* https://en.cppreference.com/cpp/language/function_template
+*/
+
 namespace testsupport {
+
+struct SeriesCase {
+  const char *name;
+  std::filesystem::path inputPath;
+  std::filesystem::path expectedPath;
+};
+
+// Declarations to avoid compiler errors.
+// Callers are defined first, then callees.
+std::ifstream openCSVFile(const std::filesystem::path &filePath);
+std::string readCSVHeader(std::ifstream &file,
+                          const std::filesystem::path &filePath);
+void assertCSVHeader(const std::string &header,
+                     const std::string &expectedHeader,
+                     const std::filesystem::path &filePath);
+std::vector<std::string> splitCSVRow(const std::string &line);
+IMUSample parseIMUSampleRow(const std::vector<std::string> &columns);
+IMUSampleWithAngles
+parseIMUSampleWithAnglesRow(const std::vector<std::string> &columns);
+IMUSampleWithVelocity
+parseIMUSampleWithVelocityRow(const std::vector<std::string> &columns);
+template <typename Sample>
+::testing::AssertionResult
+assertSeriesSameSize(const char *expectedExpr, const char *actualExpr,
+                     const std::vector<Sample> &expected,
+                     const std::vector<Sample> &actual);
+::testing::AssertionResult assertNearField(size_t index, const char *fieldName,
+                                           float expectedValue,
+                                           float actualValue, float tolerance);
+
+// --------------------------
 
 inline std::vector<IMUSample>
 readIMUSamplesFromCSV(const std::filesystem::path &filePath) {
@@ -272,6 +313,7 @@ inline ::testing::AssertionResult assertNearIMUWithAnglesSeries(
              << expectedSample.seq << ", actual " << actualSample.seq;
     }
 
+    std::cout << expectedSample.a.x << " " << actualSample.a.x << std::endl;
     auto result = assertNearField(index, "ax", expectedSample.a.x,
                                   actualSample.a.x, aTolerance);
     if (!result) {

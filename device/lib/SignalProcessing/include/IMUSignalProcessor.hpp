@@ -5,6 +5,7 @@
 #include <LoggerPort.hpp>
 #include <LoopRunner.hpp>
 #include <Pipe.hpp>
+#include <memory>
 
 // deg
 struct OrientationSample {

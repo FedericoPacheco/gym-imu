@@ -1,72 +1,51 @@
+#include "IMUSampleCsv.hpp"
 #include "IMUSensorPort.hpp"
 #include <MPU6050AffineCalibrator.hpp>
+#include <array>
+#include <filesystem>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-constexpr float G = 9.80665f;
-constexpr float A_TOLERANCE = 0.1f;
-constexpr float W_TOLERANCE =
-    0.5f; // Method was more basic for angular velocities
+/*
+Misc docs:
+* https://google.github.io/googletest/reference/testing.html#SCOPED_TRACE
+*/
 
-TEST(MPU6050AffineCalibrator_calibrate,
-     TransformsStationarySampleWithXAxisUpCorrectly) {
+constexpr float A_TOLERANCE = 0.0001f;
+constexpr float W_TOLERANCE = 0.0001f;
 
-  auto calibrator = new MPU6050AffineCalibrator();
-  SequenceNumber sequence = 0;
-  IMUSample sample = {
-      .a = {.x = 10.1110f, .y = 0.3520f, .z = -0.1431f},
-      .w = {.roll = -5.1195f, .pitch = 3.1892f, .yaw = -1.3810f},
-      .seq = sequence};
+const std::array<testsupport::SeriesCase, 3> testCases = {{
+    {.name = "dips-1",
+     .inputPath = "../signal/0-capture/real-exercises/apr-28-2026/dips-1.csv",
+     .expectedPath = "../signal/1-calibration/output/"
+                     "dips-1-calib-affine-sixf-a-offline-w.csv"},
+    {.name = "pull-ups-1",
+     .inputPath =
+         "../signal/0-capture/real-exercises/apr-28-2026/pull-ups-1.csv",
+     .expectedPath = "../signal/1-calibration/output/"
+                     "pull-ups-1-calib-affine-sixf-a-offline-w.csv"},
+    {.name = "90-deg-push-ups-1",
+     .inputPath =
+         "../signal/0-capture/real-exercises/apr-28-2026/90-deg-push-ups-1.csv",
+     .expectedPath = "../signal/1-calibration/output/"
+                     "90-deg-push-ups-1-calib-affine-sixf-a-offline-w.csv"},
+}};
 
-  calibrator->calibrate(sample);
+TEST(MPU6050AffineCalibrator_calibrate, CalibratesSeriesCorrectly) {
+  for (const testsupport::SeriesCase &series : testCases) {
+    SCOPED_TRACE(series.name);
 
-  EXPECT_NEAR(G, sample.a.x, A_TOLERANCE);
-  EXPECT_NEAR(0.0f, sample.a.y, A_TOLERANCE);
-  EXPECT_NEAR(0.0f, sample.a.z, A_TOLERANCE);
-  EXPECT_NEAR(0.0f, sample.w.roll, W_TOLERANCE);
-  EXPECT_NEAR(0.0f, sample.w.pitch, W_TOLERANCE);
-  EXPECT_NEAR(0.0f, sample.w.yaw, W_TOLERANCE);
-  EXPECT_EQ(sample.seq, sequence);
-}
+    MPU6050AffineCalibrator calibrator;
+    std::vector<IMUSample> rawSamples =
+        testsupport::readIMUSamplesFromCSV(series.inputPath);
+    const std::vector<IMUSample> expectedSamples =
+        testsupport::readIMUSamplesFromCSV(series.expectedPath);
 
-TEST(MPU6050AffineCalibrator_calibrate,
-     TransformsStationarySampleWithYAxisUpCorrectly) {
+    for (IMUSample &sample : rawSamples) {
+      calibrator.calibrate(sample);
+    }
 
-  auto calibrator = new MPU6050AffineCalibrator();
-  SequenceNumber sequence = 0;
-  IMUSample sample = {
-      .a = {.x = 0.2107f, .y = 9.9925f, .z = 0.3478f},
-      .w = {.roll = -5.1195f, .pitch = 3.1587f, .yaw = -1.4420f},
-      .seq = sequence};
-
-  calibrator->calibrate(sample);
-
-  EXPECT_NEAR(0.0f, sample.a.x, A_TOLERANCE);
-  EXPECT_NEAR(G, sample.a.y, A_TOLERANCE);
-  EXPECT_NEAR(0.0f, sample.a.z, A_TOLERANCE);
-  EXPECT_NEAR(0.0f, sample.w.roll, W_TOLERANCE);
-  EXPECT_NEAR(0.0f, sample.w.pitch, W_TOLERANCE);
-  EXPECT_NEAR(0.0f, sample.w.yaw, W_TOLERANCE);
-  EXPECT_EQ(sample.seq, sequence);
-}
-
-TEST(MPU6050AffineCalibrator_calibrate,
-     TransformsStationarySampleWithZAxisUpCorrectly) {
-
-  auto calibrator = new MPU6050AffineCalibrator();
-  SequenceNumber sequence = 0;
-  IMUSample sample = {
-      .a = {.x = 0.4609f, .y = 0.1371f, .z = 10.2044f},
-      .w = {.roll = -5.1424f, .pitch = 3.1434f, .yaw = -1.3810f},
-      .seq = sequence};
-
-  calibrator->calibrate(sample);
-
-  EXPECT_NEAR(0.0f, sample.a.x, A_TOLERANCE);
-  EXPECT_NEAR(0.0f, sample.a.y, A_TOLERANCE);
-  EXPECT_NEAR(G, sample.a.z, A_TOLERANCE);
-  EXPECT_NEAR(0.0f, sample.w.roll, W_TOLERANCE);
-  EXPECT_NEAR(0.0f, sample.w.pitch, W_TOLERANCE);
-  EXPECT_NEAR(0.0f, sample.w.yaw, W_TOLERANCE);
-  EXPECT_EQ(sample.seq, sequence);
+    EXPECT_NEAR_IMU_SERIES(expectedSamples, rawSamples, A_TOLERANCE,
+                           W_TOLERANCE);
+  }
 }

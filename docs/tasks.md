@@ -23,6 +23,7 @@ Other rules:
 
 ### In Progress
 
+- Create utility to make assertions on complete time series, using output .csv files from the offline analysis notebooks.
 - Update calibration implementation on the device and test for performance.
 
 ### Next

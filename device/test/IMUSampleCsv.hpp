@@ -14,86 +14,6 @@
 
 namespace testsupport {
 
-inline std::vector<std::string> splitCSVRow(const std::string &line) {
-  std::vector<std::string> columns;
-  std::stringstream row(line);
-  std::string cell;
-  while (std::getline(row, cell, ',')) {
-    columns.push_back(cell);
-  }
-  return columns;
-}
-
-inline std::string readCSVHeader(std::ifstream &file,
-                                 const std::filesystem::path &filePath) {
-  std::string header;
-  if (!std::getline(file, header)) {
-    throw std::runtime_error("CSV file is empty: " + filePath.string());
-  }
-  return header;
-}
-
-inline void assertCSVHeader(const std::string &header,
-                            const std::string &expectedHeader,
-                            const std::filesystem::path &filePath) {
-  if (header != expectedHeader) {
-    throw std::runtime_error("Unexpected CSV header in file: " +
-                             filePath.string());
-  }
-}
-
-inline std::ifstream openCSVFile(const std::filesystem::path &filePath) {
-  std::ifstream file(filePath);
-  if (!file.is_open()) {
-    throw std::runtime_error("Unable to open CSV file: " + filePath.string());
-  }
-
-  return file;
-}
-
-inline IMUSample parseIMUSampleRow(const std::vector<std::string> &columns) {
-  return IMUSample{.a = {.x = std::stof(columns[1]),
-                         .y = std::stof(columns[2]),
-                         .z = std::stof(columns[3])},
-                   .w = {.roll = std::stof(columns[4]),
-                         .pitch = std::stof(columns[5]),
-                         .yaw = std::stof(columns[6])},
-                   .seq = static_cast<SequenceNumber>(std::stoul(columns[0]))};
-}
-
-inline IMUSampleWithAngles
-parseIMUWithAnglesSampleRow(const std::vector<std::string> &columns) {
-  return IMUSampleWithAngles{
-      .a = {.x = std::stof(columns[1]),
-            .y = std::stof(columns[2]),
-            .z = std::stof(columns[3])},
-      .w = {.roll = std::stof(columns[4]),
-            .pitch = std::stof(columns[5]),
-            .yaw = std::stof(columns[6])},
-      .seq = static_cast<SequenceNumber>(std::stoul(columns[0])),
-      .angle = {.roll = std::stof(columns[7]),
-                .pitch = std::stof(columns[8]),
-                .yaw = std::stof(columns[9])}};
-}
-
-inline IMUSampleWithVelocity
-parseIMUSampleWithVelocityRow(const std::vector<std::string> &columns) {
-  return IMUSampleWithVelocity{
-      .a = {.x = std::stof(columns[1]),
-            .y = std::stof(columns[2]),
-            .z = std::stof(columns[3])},
-      .w = {.roll = std::stof(columns[4]),
-            .pitch = std::stof(columns[5]),
-            .yaw = std::stof(columns[6])},
-      .seq = static_cast<SequenceNumber>(std::stoul(columns[0])),
-      .angle = {.roll = std::stof(columns[7]),
-                .pitch = std::stof(columns[8]),
-                .yaw = std::stof(columns[9])},
-      .v = {.x = std::stof(columns[10]),
-            .y = std::stof(columns[11]),
-            .z = std::stof(columns[12])}};
-}
-
 inline std::vector<IMUSample>
 readIMUSamplesFromCSV(const std::filesystem::path &filePath) {
   std::ifstream file = openCSVFile(filePath);
@@ -119,8 +39,54 @@ readIMUSamplesFromCSV(const std::filesystem::path &filePath) {
   return samples;
 }
 
+inline std::ifstream openCSVFile(const std::filesystem::path &filePath) {
+  std::ifstream file(filePath);
+  if (!file.is_open()) {
+    throw std::runtime_error("Unable to open CSV file: " + filePath.string());
+  }
+
+  return file;
+}
+
+inline std::string readCSVHeader(std::ifstream &file,
+                                 const std::filesystem::path &filePath) {
+  std::string header;
+  if (!std::getline(file, header)) {
+    throw std::runtime_error("CSV file is empty: " + filePath.string());
+  }
+  return header;
+}
+inline void assertCSVHeader(const std::string &header,
+                            const std::string &expectedHeader,
+                            const std::filesystem::path &filePath) {
+  if (header != expectedHeader) {
+    throw std::runtime_error("Unexpected CSV header in file: " +
+                             filePath.string());
+  }
+}
+
+inline std::vector<std::string> splitCSVRow(const std::string &line) {
+  std::vector<std::string> columns;
+  std::stringstream row(line);
+  std::string cell;
+  while (std::getline(row, cell, ',')) {
+    columns.push_back(cell);
+  }
+  return columns;
+}
+
+inline IMUSample parseIMUSampleRow(const std::vector<std::string> &columns) {
+  return IMUSample{.a = {.x = std::stof(columns[1]),
+                         .y = std::stof(columns[2]),
+                         .z = std::stof(columns[3])},
+                   .w = {.roll = std::stof(columns[4]),
+                         .pitch = std::stof(columns[5]),
+                         .yaw = std::stof(columns[6])},
+                   .seq = static_cast<SequenceNumber>(std::stoul(columns[0]))};
+}
+
 inline std::vector<IMUSampleWithAngles>
-readIMUWithAnglesSamplesFromCSV(const std::filesystem::path &filePath) {
+readIMUSampleWithAnglesFromCSV(const std::filesystem::path &filePath) {
   std::ifstream file = openCSVFile(filePath);
   assertCSVHeader(readCSVHeader(file, filePath),
                   "seq,ax,ay,az,wroll,wpitch,wyaw,roll,pitch,yaw", filePath);
@@ -142,6 +108,21 @@ readIMUWithAnglesSamplesFromCSV(const std::filesystem::path &filePath) {
   }
 
   return samples;
+}
+
+inline IMUSampleWithAngles
+parseIMUSampleWithAnglesRow(const std::vector<std::string> &columns) {
+  return IMUSampleWithAngles{
+      .a = {.x = std::stof(columns[1]),
+            .y = std::stof(columns[2]),
+            .z = std::stof(columns[3])},
+      .w = {.roll = std::stof(columns[4]),
+            .pitch = std::stof(columns[5]),
+            .yaw = std::stof(columns[6])},
+      .seq = static_cast<SequenceNumber>(std::stoul(columns[0])),
+      .angle = {.roll = std::stof(columns[7]),
+                .pitch = std::stof(columns[8]),
+                .yaw = std::stof(columns[9])}};
 }
 
 inline std::vector<IMUSampleWithVelocity>
@@ -170,39 +151,30 @@ readIMUSampleWithVelocitysFromCSV(const std::filesystem::path &filePath) {
   return samples;
 }
 
-template <typename Sample>
-inline ::testing::AssertionResult
-AssertSeriesSameSize(const char *expectedExpr, const char *actualExpr,
-                     const std::vector<Sample> &expected,
-                     const std::vector<Sample> &actual) {
-  if (expected.size() != actual.size()) {
-    return ::testing::AssertionFailure()
-           << expectedExpr << " and " << actualExpr
-           << " have different sizes: expected " << expected.size()
-           << ", actual " << actual.size();
-  }
-
-  return ::testing::AssertionSuccess();
+inline IMUSampleWithVelocity
+parseIMUSampleWithVelocityRow(const std::vector<std::string> &columns) {
+  return IMUSampleWithVelocity{
+      .a = {.x = std::stof(columns[1]),
+            .y = std::stof(columns[2]),
+            .z = std::stof(columns[3])},
+      .w = {.roll = std::stof(columns[4]),
+            .pitch = std::stof(columns[5]),
+            .yaw = std::stof(columns[6])},
+      .seq = static_cast<SequenceNumber>(std::stoul(columns[0])),
+      .angle = {.roll = std::stof(columns[7]),
+                .pitch = std::stof(columns[8]),
+                .yaw = std::stof(columns[9])},
+      .v = {.x = std::stof(columns[10]),
+            .y = std::stof(columns[11]),
+            .z = std::stof(columns[12])}};
 }
 
-inline ::testing::AssertionResult
-assertNearField(size_t index, const char *fieldName, float expectedValue,
-                float actualValue, float tolerance) {
-  if (std::abs(expectedValue - actualValue) <= tolerance) {
-    return ::testing::AssertionSuccess();
-  }
-  return ::testing::AssertionFailure()
-         << "Sample " << index << " field '" << fieldName
-         << "' differs more than tolerance: expected " << expectedValue
-         << ", actual " << actualValue << ", tolerance " << tolerance;
-}
-
-inline ::testing::AssertionResult AssertNearIMUSeries(
+inline ::testing::AssertionResult assertNearIMUSeries(
     const char *expectedExpr, const char *actualExpr, const char *aTolExpr,
     const char *wTolExpr, const std::vector<IMUSample> &expected,
     const std::vector<IMUSample> &actual, float aTolerance, float wTolerance) {
   auto sizeResult =
-      AssertSeriesSameSize(expectedExpr, actualExpr, expected, actual);
+      assertSeriesSameSize(expectedExpr, actualExpr, expected, actual);
   if (!sizeResult) {
     return sizeResult;
   }
@@ -252,14 +224,40 @@ inline ::testing::AssertionResult AssertNearIMUSeries(
   return ::testing::AssertionSuccess();
 }
 
-inline ::testing::AssertionResult AssertNearIMUWithAnglesSeries(
+template <typename Sample>
+inline ::testing::AssertionResult
+assertSeriesSameSize(const char *expectedExpr, const char *actualExpr,
+                     const std::vector<Sample> &expected,
+                     const std::vector<Sample> &actual) {
+  if (expected.size() != actual.size()) {
+    return ::testing::AssertionFailure()
+           << expectedExpr << " and " << actualExpr
+           << " have different sizes: expected " << expected.size()
+           << ", actual " << actual.size();
+  }
+
+  return ::testing::AssertionSuccess();
+}
+inline ::testing::AssertionResult
+assertNearField(size_t index, const char *fieldName, float expectedValue,
+                float actualValue, float tolerance) {
+  if (std::abs(expectedValue - actualValue) <= tolerance) {
+    return ::testing::AssertionSuccess();
+  }
+  return ::testing::AssertionFailure()
+         << "Sample " << index << " field '" << fieldName
+         << "' differs more than tolerance: expected " << expectedValue
+         << ", actual " << actualValue << ", tolerance " << tolerance;
+}
+
+inline ::testing::AssertionResult assertNearIMUWithAnglesSeries(
     const char *expectedExpr, const char *actualExpr, const char *aTolExpr,
     const char *wTolExpr, const char *angleTolExpr,
-    const std::vector<IMUWithAnglesSample> &expected,
-    const std::vector<IMUWithAnglesSample> &actual, float aTolerance,
+    const std::vector<IMUSampleWithAngles> &expected,
+    const std::vector<IMUSampleWithAngles> &actual, float aTolerance,
     float wTolerance, float angleTolerance) {
   auto sizeResult =
-      AssertSeriesSameSize(expectedExpr, actualExpr, expected, actual);
+      assertSeriesSameSize(expectedExpr, actualExpr, expected, actual);
   if (!sizeResult) {
     return sizeResult;
   }
@@ -324,14 +322,14 @@ inline ::testing::AssertionResult AssertNearIMUWithAnglesSeries(
   return ::testing::AssertionSuccess();
 }
 
-inline ::testing::AssertionResult AssertNearIMUWithVelocitySeries(
+inline ::testing::AssertionResult assertNearIMUWithVelocitySeries(
     const char *expectedExpr, const char *actualExpr, const char *aTolExpr,
     const char *wTolExpr, const char *angleTolExpr, const char *vTolExpr,
     const std::vector<IMUSampleWithVelocity> &expected,
     const std::vector<IMUSampleWithVelocity> &actual, float aTolerance,
     float wTolerance, float angleTolerance, float velocityTolerance) {
   auto sizeResult =
-      AssertSeriesSameSize(expectedExpr, actualExpr, expected, actual);
+      assertSeriesSameSize(expectedExpr, actualExpr, expected, actual);
   if (!sizeResult) {
     return sizeResult;
   }
@@ -414,17 +412,17 @@ inline ::testing::AssertionResult AssertNearIMUWithVelocitySeries(
 } // namespace testsupport
 
 #define EXPECT_NEAR_IMU_SERIES(expected, actual, aTolerance, wTolerance)       \
-  EXPECT_PRED_FORMAT4(testsupport::AssertNearIMUSeries, expected, actual,      \
+  EXPECT_PRED_FORMAT4(testsupport::assertNearIMUSeries, expected, actual,      \
                       aTolerance, wTolerance)
 
 #define EXPECT_NEAR_IMU_WITH_ANGLES_SERIES(expected, actual, aTolerance,       \
                                            wTolerance, angleTolerance)         \
-  EXPECT_PRED_FORMAT5(testsupport::AssertNearIMUWithAnglesSeries, expected,    \
+  EXPECT_PRED_FORMAT5(testsupport::assertNearIMUWithAnglesSeries, expected,    \
                       actual, aTolerance, wTolerance, angleTolerance)
 
 #define EXPECT_NEAR_IMU_WITH_VELOCITY_SERIES(expected, actual, aTolerance,     \
                                              wTolerance, angleTolerance,       \
                                              velocityTolerance)                \
-  EXPECT_PRED_FORMAT6(testsupport::AssertNearIMUWithVelocitySeries, expected,  \
+  EXPECT_PRED_FORMAT6(testsupport::assertNearIMUWithVelocitySeries, expected,  \
                       actual, aTolerance, wTolerance, angleTolerance,          \
                       velocityTolerance)

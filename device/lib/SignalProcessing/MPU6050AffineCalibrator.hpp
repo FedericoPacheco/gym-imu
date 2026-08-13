@@ -1,39 +1,53 @@
 #pragma once
 #include <IMUCalibrator.hpp>
+#include <StationaryChecker.hpp>
 
-// For details on offline acceleration transformation matrix and gyroscope
-// biases computation, refer to: signal/calibration/3-calibration.ipynb
+// For details, refer to: signal/1-calibration
 class MPU6050AffineCalibrator : public IMUCalibrator {
 private:
-  static constexpr float aTransf[4][3] = {
-      {0.99878374f, -0.00933288f, 0.02040961f},
-      {0.01210606f, 0.99696514f, -0.01862394f},
-      {-0.01313606f, -0.00642989f, 0.98043959f},
-      {-0.32646267f, -0.16230203f, -0.1406934f}};
+  static constexpr float A_AFFINE_TRANSF[4][3] = {
+      {1.00081528f, -0.01812657f, 0.01910186f},
+      {0.01423018f, 1.00642545f, -0.00695651f},
+      {-0.01369805f, 0.00239254f, 0.97203501f},
+      {-0.30637323f, -0.19065541f, -0.10564389f}};
 
-  static constexpr float wBiases[3] = {-5.133701801300049f, 3.226569890975952f,
-                                       -1.397046685218811f};
+  static constexpr float W_STATIONARY_BIAS[3] = {-5.180648f, 3.161055f,
+                                                 -1.4527919f};
+  static constexpr float W_ALPHA = 0.967216f;
+
+  float wBias[3] = {W_STATIONARY_BIAS[0], W_STATIONARY_BIAS[1],
+                    W_STATIONARY_BIAS[2]};
 
 public:
   MPU6050AffineCalibrator() = default;
   ~MPU6050AffineCalibrator() = default;
 
   void calibrate(IMUSample &sample) override {
+    if (StationaryChecker::isStationaryPreCalibration(sample) &&
+        sample.seq > 1) {
+      this->wBias[0] =
+          MPU6050AffineCalibrator::W_ALPHA * this->wBias[0] +
+          (1.0f - MPU6050AffineCalibrator::W_ALPHA) * sample.w.roll;
+      this->wBias[1] =
+          MPU6050AffineCalibrator::W_ALPHA * this->wBias[1] +
+          (1.0f - MPU6050AffineCalibrator::W_ALPHA) * sample.w.pitch;
+      this->wBias[2] = MPU6050AffineCalibrator::W_ALPHA * this->wBias[2] +
+                       (1.0f - MPU6050AffineCalibrator::W_ALPHA) * sample.w.yaw;
+    }
+    sample.w.roll -= this->wBias[0];
+    sample.w.pitch -= this->wBias[1];
+    sample.w.yaw -= this->wBias[2];
+
     // Emulate matrix multiplication to avoid importing a linear algebra library
     // just for this, saving space.
-    const float x = sample.a.x;
-    const float y = sample.a.y;
-    const float z = sample.a.z;
-
-    sample.a.x = x * aTransf[0][0] + y * aTransf[1][0] + z * aTransf[2][0] +
-                 aTransf[3][0];
-    sample.a.y = x * aTransf[0][1] + y * aTransf[1][1] + z * aTransf[2][1] +
-                 aTransf[3][1];
-    sample.a.z = x * aTransf[0][2] + y * aTransf[1][2] + z * aTransf[2][2] +
-                 aTransf[3][2];
-
-    sample.w.roll = sample.w.roll - wBiases[0];
-    sample.w.pitch = sample.w.pitch - wBiases[1];
-    sample.w.yaw = sample.w.yaw - wBiases[2];
+    const float axRaw = sample.a.x;
+    const float ayRaw = sample.a.y;
+    const float azRaw = sample.a.z;
+    sample.a.x = axRaw * A_AFFINE_TRANSF[0][0] + ayRaw * A_AFFINE_TRANSF[1][0] +
+                 azRaw * A_AFFINE_TRANSF[2][0] + A_AFFINE_TRANSF[3][0];
+    sample.a.y = axRaw * A_AFFINE_TRANSF[0][1] + ayRaw * A_AFFINE_TRANSF[1][1] +
+                 azRaw * A_AFFINE_TRANSF[2][1] + A_AFFINE_TRANSF[3][1];
+    sample.a.z = axRaw * A_AFFINE_TRANSF[0][2] + ayRaw * A_AFFINE_TRANSF[1][2] +
+                 azRaw * A_AFFINE_TRANSF[2][2] + A_AFFINE_TRANSF[3][2];
   }
 };

@@ -13,6 +13,9 @@
 #include <vector>
 
 /*
+On failure, make sure to run the tests with greater verbosity to see the failed
+assertions: pio run -e host -v. Otherwise it just states "FAILED".
+
 Misc docs:
 * https://cplusplus.com/reference/string/string/
 * https://en.cppreference.com/cpp/string/basic_string/getline
@@ -20,6 +23,7 @@ Misc docs:
 * https://en.cppreference.com/cpp/string/basic_string/stof
 * https://en.cppreference.com/cpp/string/basic_string/stoul
 * https://en.cppreference.com/cpp/language/function_template
+* https://google.github.io/googletest/advanced.html#using-a-function-that-returns-an-assertionresult
 */
 
 namespace testsupport {

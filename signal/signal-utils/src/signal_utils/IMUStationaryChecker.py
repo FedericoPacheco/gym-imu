@@ -72,13 +72,13 @@ class IMUStationaryChecker:
         print(
             f"Acceleration norms:"
             f"\n\tMean = {self.accelMean:.6f}"
-            f"\n\tStdev = {accelNormsStdev:.6f}"
+            f"\n\tStdev = {accelNormsStdev:.6f} (tol = {self.accelTol:.6f})"
             f"\n\tStationary interval = [{self.accelMean - self.accelTol:.6f}, {self.accelMean + self.accelTol:.6f}]"
         )
         print(
             f"Gyroscope norms:"
             f"\n\tMean = {self.gyroMean:.6f}"
-            f"\n\tStdev = {gyroNormsStdev:.6f}"
+            f"\n\tStdev = {gyroNormsStdev:.6f} (tol = {self.gyroTol:.6f})"
             f"\n\tStationary interval = [{self.gyroMean - self.gyroTol:.6f}, {self.gyroMean + self.gyroTol:.6f}]"
         )
 

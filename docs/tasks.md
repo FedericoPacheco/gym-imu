@@ -23,7 +23,6 @@ Other rules:
 
 ### In Progress
 
-- Create utility to make assertions on complete time series, using output .csv files from the offline analysis notebooks.
 - Update calibration implementation on the device and test for performance.
 
 ### Next
@@ -109,3 +108,4 @@ Other rules:
 - Evaluate and implement additional low/moderate effort interventions to improve velocity estimation.
 - Evaluate and implement refinements for orientation estimation.
 - Update README.md with new information about the signal processing pipeline.
+- Create utility to make assertions on complete time series, using output .csv files from the offline analysis notebooks.

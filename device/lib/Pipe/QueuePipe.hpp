@@ -40,6 +40,7 @@ public:
     }
 
     // Policy: if full, drop one oldest item and retry once
+    this->logger->warn("Enqueue failed: pipe full, dropping oldest sample");
     T droppedItem;
     if (xQueueReceive(this->handle, &droppedItem, 0) != pdPASS) {
       if (this->logger)

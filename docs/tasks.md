@@ -40,6 +40,7 @@ Other rules:
 - Fine tune IMU parameters to optimize for throughput.
 - Perform spectral analysis to diagnose aliasing. Provide a recommendation of minimum sampling frequency.
 - Perform spectral analysis with the hardware low-pass filter configured with different cutoff frequencies to understand its behavior. Analyze both stationary and moving captures.
+- Evaluate whether to remove or not the remaining freeRTOS direct calls, replacing them with my own abstractions.
 
 - Implement on a jupyter notebook a simple rep-counting mechanism and evaluate it on real captures, comparing it against video references.
 - Implement simple rep-counting mechanism on the device and test for performance.

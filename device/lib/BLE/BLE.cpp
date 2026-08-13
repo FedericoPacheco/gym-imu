@@ -601,8 +601,14 @@ bool BLE::isConnected() {
   return connectionHandle != BLE_HS_CONN_HANDLE_NONE;
 }
 
-void BLE::beginTransmission() { this->setDoTransmit(true); }
-void BLE::stopTransmission() { this->setDoTransmit(false); }
+void BLE::beginTransmission() {
+  this->logger->info("Starting BLE transmission");
+  this->setDoTransmit(true);
+}
+void BLE::stopTransmission() {
+  this->logger->info("Stopping BLE transmission");
+  this->setDoTransmit(false);
+}
 
 void BLE::setDoTransmit(bool value) {
   this->doTransmit.store(value, std::memory_order_relaxed);

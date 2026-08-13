@@ -44,7 +44,7 @@ extern "C" void app_main() {
     return;
   }
 
-  UARTLogger samplingPipeLogger("SamplingPipe", LogLevel::WARN);
+  UARTLogger samplingPipeLogger("SamplingPipe", LogLevel::INFO);
   std::shared_ptr<Pipe<IMUSample, SAMPLING_PIPE_SIZE>> samplingPipe =
       QueuePipe<IMUSample, SAMPLING_PIPE_SIZE>::create(&samplingPipeLogger);
   if (!samplingPipe) {
@@ -52,7 +52,7 @@ extern "C" void app_main() {
     return;
   }
 
-  UARTLogger imuLogger("IMU", LogLevel::DEBUG);
+  UARTLogger imuLogger("IMU", LogLevel::INFO);
   auto imuMPUPort = std::make_unique<MPUReal>();
   auto imuI2CPort = std::make_unique<I2CReal>();
   auto imuRunner = std::make_unique<FreeRTOSNotificationRunner>(
@@ -66,7 +66,7 @@ extern "C" void app_main() {
   }
 
 #ifdef PROCESS_SIGNAL
-  UARTLogger transmissionPipeLogger("TransmissionPipe", LogLevel::WARN);
+  UARTLogger transmissionPipeLogger("TransmissionPipe", LogLevel::INFO);
   std::shared_ptr<Pipe<IMUSample, TRANSMISSION_PIPE_SIZE>> transmissionPipe =
       QueuePipe<IMUSample, TRANSMISSION_PIPE_SIZE>::create(
           &transmissionPipeLogger);
@@ -85,7 +85,7 @@ extern "C" void app_main() {
                                std::move(processorRunner), &processorLogger,
                                std::move(calibrator));
 
-  UARTLogger bleLogger("BLE", LogLevel::DEBUG);
+  UARTLogger bleLogger("BLE", LogLevel::WARN);
   auto bleLoopRunner = std::make_unique<FreeRTOSLoopRunner>(
       "transmitTask", TRANSMIT_TASK_STACK_SIZE, TRANSMIT_TASK_PRIORITY,
       pdMS_TO_TICKS(100));
@@ -96,7 +96,7 @@ extern "C" void app_main() {
     return;
   }
 #else
-  UARTLogger bleLogger("BLE", LogLevel::DEBUG);
+  UARTLogger bleLogger("BLE", LogLevel::INFO);
   auto bleLoopRunner = std::make_unique<FreeRTOSLoopRunner>(
       "transmitTask", TRANSMIT_TASK_STACK_SIZE, TRANSMIT_TASK_PRIORITY,
       pdMS_TO_TICKS(100));
@@ -125,6 +125,19 @@ extern "C" void app_main() {
       } else {
         imu->stopAsync();
         ble->stopTransmission();
+
+        PipeMetrics samplingMetrics = samplingPipe->getMetrics();
+        samplingPipeLogger.info(
+            "Sampling pipe metrics: drops=%u, maxDepth=%u, currentDepth=%u",
+            samplingMetrics.drops, samplingMetrics.maxDepth,
+            samplingMetrics.currentDepth);
+#ifdef PROCESS_SIGNAL
+        PipeMetrics transmissionMetrics = transmissionPipe->getMetrics();
+        transmissionPipeLogger.info(
+            "Transmission pipe metrics: drops=%u, maxDepth=%u, currentDepth=%u",
+            transmissionMetrics.drops, transmissionMetrics.maxDepth,
+            transmissionMetrics.currentDepth);
+#endif
       }
     }
     // Stop sampling if BLE gets disconnected

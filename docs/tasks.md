@@ -23,11 +23,10 @@ Other rules:
 
 ### In Progress
 
-- Update calibration implementation on the device and test for performance.
+- Implement noise reduction on the device and test for performance.
 
 ### Next
 
-- Implement noise reduction on the device and test for performance.
 - Implement complementary filter on the device and test for performance.
 - Implement gravity removal strategy on the device and test for performance.
 
@@ -110,3 +109,4 @@ Other rules:
 - Evaluate and implement refinements for orientation estimation.
 - Update README.md with new information about the signal processing pipeline.
 - Create utility to make assertions on complete time series, using output .csv files from the offline analysis notebooks.
+- Update calibration implementation on the device and test for performance.

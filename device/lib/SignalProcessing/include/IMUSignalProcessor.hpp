@@ -1,6 +1,7 @@
 #pragma once
 #include <Constants.hpp>
 #include <IMUCalibrator.hpp>
+#include <IMUNoiseReducer.hpp>
 #include <IMUSensorPort.hpp>
 #include <LoggerPort.hpp>
 #include <LoopRunner.hpp>
@@ -42,9 +43,11 @@ public:
       std::shared_ptr<Pipe<IMUSample, SAMPLING_PIPE_SIZE>> inputPipe,
       std::shared_ptr<Pipe<IMUSample, TRANSMISSION_PIPE_SIZE>> outputPipe,
       std::unique_ptr<LoopRunner> runner, LoggerPort *logger,
-      std::unique_ptr<IMUCalibrator> calibrator)
+      std::unique_ptr<IMUCalibrator> calibrator,
+      std::unique_ptr<IMUNoiseReducer> noiseReducer)
       : inputPipe(inputPipe), outputPipe(outputPipe), runner(std::move(runner)),
-        logger(logger), calibrator(std::move(calibrator)){};
+        logger(logger), calibrator(std::move(calibrator)),
+        noiseReducer(std::move(noiseReducer)){};
   ~IMUSignalProcessor() = default;
 
   void beginProcessing() {
@@ -61,6 +64,7 @@ private:
   std::unique_ptr<LoopRunner> runner;
   LoggerPort *logger;
   std::unique_ptr<IMUCalibrator> calibrator;
+  std::unique_ptr<IMUNoiseReducer> noiseReducer;
 
   static void processingLoopFunction(void *arg) {
     IMUSignalProcessor *self = static_cast<IMUSignalProcessor *>(arg);
@@ -79,6 +83,7 @@ private:
           sample.w.yaw, sample.seq);
 
       self->calibrator->calibrate(sample);
+      self->noiseReducer->filter(sample);
 
       if (!self->outputPipe->push(sample))
         self->logger->warn(

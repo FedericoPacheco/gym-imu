@@ -1,3 +1,5 @@
+#pragma once
+
 class StationaryChecker {
   static constexpr float PRE_CALIBRATION_A_STATIONARY_MEAN = 9.907132f;
   static constexpr float PRE_CALIBRATION_A_STATIONARY_TOL = 0.691502f;

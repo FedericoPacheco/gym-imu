@@ -8,34 +8,8 @@
 #include <Pipe.hpp>
 #include <memory>
 
-// deg
-struct OrientationSample {
-  float roll;
-  float pitch;
-  float yaw;
-};
-
-// m/s
-struct VelocitySample {
-  float x;
-  float y;
-  float z;
-};
-
-struct IMUSampleWithAngles {
-  AccelerationSample a;
-  AngularVelocitySample w;
-  SequenceNumber seq;
-  OrientationSample angle;
-};
-
-struct IMUSampleWithVelocity {
-  AccelerationSample a;
-  AngularVelocitySample w;
-  SequenceNumber seq;
-  OrientationSample angle;
-  VelocitySample v;
-};
+typedef AngleAxes EulerOrientationSample; // deg
+typedef LinearAxes VelocitySample;        // m/s
 
 class IMUSignalProcessor {
 public:

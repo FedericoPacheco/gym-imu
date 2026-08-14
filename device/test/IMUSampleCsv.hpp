@@ -44,10 +44,10 @@ void assertCSVHeader(const std::string &header,
                      const std::filesystem::path &filePath);
 std::vector<std::string> splitCSVRow(const std::string &line);
 IMUSample parseIMUSampleRow(const std::vector<std::string> &columns);
-IMUSampleWithAngles
+std::tuple<IMUSample, EulerOrientationSample>
 parseIMUSampleWithAnglesRow(const std::vector<std::string> &columns);
-IMUSampleWithVelocity
-parseIMUSampleWithVelocityRow(const std::vector<std::string> &columns);
+std::tuple<IMUSample, EulerOrientationSample, VelocitySample>
+parseVelocitySampleRow(const std::vector<std::string> &columns);
 template <typename Sample>
 ::testing::AssertionResult
 assertSeriesSameSize(const char *expectedExpr, const char *actualExpr,
@@ -130,13 +130,13 @@ inline IMUSample parseIMUSampleRow(const std::vector<std::string> &columns) {
                    .seq = static_cast<SequenceNumber>(std::stoul(columns[0]))};
 }
 
-inline std::vector<IMUSampleWithAngles>
+inline std::vector<std::tuple<IMUSample, EulerOrientationSample>>
 readIMUSampleWithAnglesFromCSV(const std::filesystem::path &filePath) {
   std::ifstream file = openCSVFile(filePath);
   assertCSVHeader(readCSVHeader(file, filePath),
                   "seq,ax,ay,az,wroll,wpitch,wyaw,roll,pitch,yaw", filePath);
 
-  std::vector<IMUSampleWithAngles> samples;
+  std::vector<std::tuple<IMUSample, EulerOrientationSample>> samples;
   std::string line;
   while (std::getline(file, line)) {
     if (line.empty()) {
@@ -155,29 +155,32 @@ readIMUSampleWithAnglesFromCSV(const std::filesystem::path &filePath) {
   return samples;
 }
 
-inline IMUSampleWithAngles
+inline std::tuple<IMUSample, EulerOrientationSample>
 parseIMUSampleWithAnglesRow(const std::vector<std::string> &columns) {
-  return IMUSampleWithAngles{
-      .a = {.x = std::stof(columns[1]),
-            .y = std::stof(columns[2]),
-            .z = std::stof(columns[3])},
-      .w = {.roll = std::stof(columns[4]),
-            .pitch = std::stof(columns[5]),
-            .yaw = std::stof(columns[6])},
-      .seq = static_cast<SequenceNumber>(std::stoul(columns[0])),
-      .angle = {.roll = std::stof(columns[7]),
-                .pitch = std::stof(columns[8]),
-                .yaw = std::stof(columns[9])}};
+  return {IMUSample{
+              .a = {.x = std::stof(columns[1]),
+                    .y = std::stof(columns[2]),
+                    .z = std::stof(columns[3])},
+              .w = {.roll = std::stof(columns[4]),
+                    .pitch = std::stof(columns[5]),
+                    .yaw = std::stof(columns[6])},
+              .seq = static_cast<SequenceNumber>(std::stoul(columns[0])),
+          },
+          EulerOrientationSample{.roll = std::stof(columns[7]),
+                                 .pitch = std::stof(columns[8]),
+                                 .yaw = std::stof(columns[9])}};
 }
 
-inline std::vector<IMUSampleWithVelocity>
-readIMUSampleWithVelocitysFromCSV(const std::filesystem::path &filePath) {
+inline std::vector<
+    std::tuple<IMUSample, EulerOrientationSample, VelocitySample>>
+readVelocitySamplesFromCSV(const std::filesystem::path &filePath) {
   std::ifstream file = openCSVFile(filePath);
   assertCSVHeader(readCSVHeader(file, filePath),
                   "seq,ax,ay,az,wroll,wpitch,wyaw,roll,pitch,yaw,vx,vy,vz",
                   filePath);
 
-  std::vector<IMUSampleWithVelocity> samples;
+  std::vector<std::tuple<IMUSample, EulerOrientationSample, VelocitySample>>
+      samples;
   std::string line;
   while (std::getline(file, line)) {
     if (line.empty()) {
@@ -190,28 +193,29 @@ readIMUSampleWithVelocitysFromCSV(const std::filesystem::path &filePath) {
                                filePath.string());
     }
 
-    samples.push_back(parseIMUSampleWithVelocityRow(columns));
+    samples.push_back(parseVelocitySampleRow(columns));
   }
 
   return samples;
 }
 
-inline IMUSampleWithVelocity
-parseIMUSampleWithVelocityRow(const std::vector<std::string> &columns) {
-  return IMUSampleWithVelocity{
-      .a = {.x = std::stof(columns[1]),
-            .y = std::stof(columns[2]),
-            .z = std::stof(columns[3])},
-      .w = {.roll = std::stof(columns[4]),
-            .pitch = std::stof(columns[5]),
-            .yaw = std::stof(columns[6])},
-      .seq = static_cast<SequenceNumber>(std::stoul(columns[0])),
-      .angle = {.roll = std::stof(columns[7]),
-                .pitch = std::stof(columns[8]),
-                .yaw = std::stof(columns[9])},
-      .v = {.x = std::stof(columns[10]),
-            .y = std::stof(columns[11]),
-            .z = std::stof(columns[12])}};
+inline std::tuple<IMUSample, EulerOrientationSample, VelocitySample>
+parseVelocitySampleRow(const std::vector<std::string> &columns) {
+  return {IMUSample{
+              .a = {.x = std::stof(columns[1]),
+                    .y = std::stof(columns[2]),
+                    .z = std::stof(columns[3])},
+              .w = {.roll = std::stof(columns[4]),
+                    .pitch = std::stof(columns[5]),
+                    .yaw = std::stof(columns[6])},
+              .seq = static_cast<SequenceNumber>(std::stoul(columns[0])),
+          },
+          EulerOrientationSample{.roll = std::stof(columns[7]),
+                                 .pitch = std::stof(columns[8]),
+                                 .yaw = std::stof(columns[9])},
+          VelocitySample{.x = std::stof(columns[10]),
+                         .y = std::stof(columns[11]),
+                         .z = std::stof(columns[12])}};
 }
 
 inline ::testing::AssertionResult assertNearIMUSeries(
@@ -224,42 +228,42 @@ inline ::testing::AssertionResult assertNearIMUSeries(
     return sizeResult;
   }
 
-  for (size_t index = 0; index < expected.size(); ++index) {
-    const IMUSample &expectedSample = expected[index];
-    const IMUSample &actualSample = actual[index];
+  for (size_t i = 0; i < expected.size(); ++i) {
+    const IMUSample &expectedSample = expected[i];
+    const IMUSample &actualSample = actual[i];
 
     if (expectedSample.seq != actualSample.seq) {
       return ::testing::AssertionFailure()
-             << "Sample " << index << " sequence mismatch: expected "
+             << "Sample " << i << " sequence mismatch: expected "
              << expectedSample.seq << ", actual " << actualSample.seq;
     }
 
-    auto result = assertNearField(index, "ax", expectedSample.a.x,
-                                  actualSample.a.x, aTolerance);
+    auto result = assertNearField(i, "ax", expectedSample.a.x, actualSample.a.x,
+                                  aTolerance);
     if (!result) {
       return result;
     }
-    result = assertNearField(index, "ay", expectedSample.a.y, actualSample.a.y,
+    result = assertNearField(i, "ay", expectedSample.a.y, actualSample.a.y,
                              aTolerance);
     if (!result) {
       return result;
     }
-    result = assertNearField(index, "az", expectedSample.a.z, actualSample.a.z,
+    result = assertNearField(i, "az", expectedSample.a.z, actualSample.a.z,
                              aTolerance);
     if (!result) {
       return result;
     }
-    result = assertNearField(index, "wroll", expectedSample.w.roll,
+    result = assertNearField(i, "wroll", expectedSample.w.roll,
                              actualSample.w.roll, wTolerance);
     if (!result) {
       return result;
     }
-    result = assertNearField(index, "wpitch", expectedSample.w.pitch,
+    result = assertNearField(i, "wpitch", expectedSample.w.pitch,
                              actualSample.w.pitch, wTolerance);
     if (!result) {
       return result;
     }
-    result = assertNearField(index, "wyaw", expectedSample.w.yaw,
+    result = assertNearField(i, "wyaw", expectedSample.w.yaw,
                              actualSample.w.yaw, wTolerance);
     if (!result) {
       return result;
@@ -283,6 +287,7 @@ assertSeriesSameSize(const char *expectedExpr, const char *actualExpr,
 
   return ::testing::AssertionSuccess();
 }
+
 inline ::testing::AssertionResult
 assertNearField(size_t index, const char *fieldName, float expectedValue,
                 float actualValue, float tolerance) {
@@ -295,71 +300,32 @@ assertNearField(size_t index, const char *fieldName, float expectedValue,
          << ", actual " << actualValue << ", tolerance " << tolerance;
 }
 
-inline ::testing::AssertionResult assertNearIMUWithAnglesSeries(
-    const char *expectedExpr, const char *actualExpr, const char *aTolExpr,
-    const char *wTolExpr, const char *angleTolExpr,
-    const std::vector<IMUSampleWithAngles> &expected,
-    const std::vector<IMUSampleWithAngles> &actual, float aTolerance,
-    float wTolerance, float angleTolerance) {
+inline ::testing::AssertionResult assertNearAnglesSeries(
+    const char *expectedExpr, const char *actualExpr, const char *angleTolExpr,
+    const std::vector<EulerOrientationSample> &expected,
+    const std::vector<EulerOrientationSample> &actual, float angleTolerance) {
   auto sizeResult =
       assertSeriesSameSize(expectedExpr, actualExpr, expected, actual);
   if (!sizeResult) {
     return sizeResult;
   }
 
-  for (size_t index = 0; index < expected.size(); ++index) {
-    const IMUSampleWithAngles &expectedSample = expected[index];
-    const IMUSampleWithAngles &actualSample = actual[index];
+  for (size_t i = 0; i < expected.size(); ++i) {
+    const auto &expectedAngle = expected[i];
+    const auto &actualAngle = actual[i];
 
-    if (expectedSample.seq != actualSample.seq) {
-      return ::testing::AssertionFailure()
-             << "Sample " << index << " sequence mismatch: expected "
-             << expectedSample.seq << ", actual " << actualSample.seq;
-    }
-
-    std::cout << expectedSample.a.x << " " << actualSample.a.x << std::endl;
-    auto result = assertNearField(index, "ax", expectedSample.a.x,
-                                  actualSample.a.x, aTolerance);
+    auto result = assertNearField(i, "roll", expectedAngle.roll,
+                                  actualAngle.roll, angleTolerance);
     if (!result) {
       return result;
     }
-    result = assertNearField(index, "ay", expectedSample.a.y, actualSample.a.y,
-                             aTolerance);
+    result = assertNearField(i, "pitch", expectedAngle.pitch, actualAngle.pitch,
+                             angleTolerance);
     if (!result) {
       return result;
     }
-    result = assertNearField(index, "az", expectedSample.a.z, actualSample.a.z,
-                             aTolerance);
-    if (!result) {
-      return result;
-    }
-    result = assertNearField(index, "wroll", expectedSample.w.roll,
-                             actualSample.w.roll, wTolerance);
-    if (!result) {
-      return result;
-    }
-    result = assertNearField(index, "wpitch", expectedSample.w.pitch,
-                             actualSample.w.pitch, wTolerance);
-    if (!result) {
-      return result;
-    }
-    result = assertNearField(index, "wyaw", expectedSample.w.yaw,
-                             actualSample.w.yaw, wTolerance);
-    if (!result) {
-      return result;
-    }
-    result = assertNearField(index, "roll", expectedSample.angle.roll,
-                             actualSample.angle.roll, angleTolerance);
-    if (!result) {
-      return result;
-    }
-    result = assertNearField(index, "pitch", expectedSample.angle.pitch,
-                             actualSample.angle.pitch, angleTolerance);
-    if (!result) {
-      return result;
-    }
-    result = assertNearField(index, "yaw", expectedSample.angle.yaw,
-                             actualSample.angle.yaw, angleTolerance);
+    result = assertNearField(i, "yaw", expectedAngle.yaw, actualAngle.yaw,
+                             angleTolerance);
     if (!result) {
       return result;
     }
@@ -368,84 +334,31 @@ inline ::testing::AssertionResult assertNearIMUWithAnglesSeries(
   return ::testing::AssertionSuccess();
 }
 
-inline ::testing::AssertionResult assertNearIMUWithVelocitySeries(
-    const char *expectedExpr, const char *actualExpr, const char *aTolExpr,
-    const char *wTolExpr, const char *angleTolExpr, const char *vTolExpr,
-    const std::vector<IMUSampleWithVelocity> &expected,
-    const std::vector<IMUSampleWithVelocity> &actual, float aTolerance,
-    float wTolerance, float angleTolerance, float velocityTolerance) {
+inline ::testing::AssertionResult assertNearVelocitySeries(
+    const char *expectedExpr, const char *actualExpr, const char *vTolExpr,
+    const std::vector<VelocitySample> &expected,
+    const std::vector<VelocitySample> &actual, float velocityTolerance) {
   auto sizeResult =
       assertSeriesSameSize(expectedExpr, actualExpr, expected, actual);
   if (!sizeResult) {
     return sizeResult;
   }
 
-  for (size_t index = 0; index < expected.size(); ++index) {
-    const IMUSampleWithVelocity &expectedSample = expected[index];
-    const IMUSampleWithVelocity &actualSample = actual[index];
+  for (size_t i = 0; i < expected.size(); ++i) {
+    const auto &expectedVelocity = expected[i];
+    const auto &actualVelocity = actual[i];
 
-    if (expectedSample.seq != actualSample.seq) {
-      return ::testing::AssertionFailure()
-             << "Sample " << index << " sequence mismatch: expected "
-             << expectedSample.seq << ", actual " << actualSample.seq;
-    }
-
-    auto result = assertNearField(index, "ax", expectedSample.a.x,
-                                  actualSample.a.x, aTolerance);
+    auto result = assertNearField(i, "vx", expectedVelocity.x, actualVelocity.x,
+                                  velocityTolerance);
     if (!result) {
       return result;
     }
-    result = assertNearField(index, "ay", expectedSample.a.y, actualSample.a.y,
-                             aTolerance);
-    if (!result) {
-      return result;
-    }
-    result = assertNearField(index, "az", expectedSample.a.z, actualSample.a.z,
-                             aTolerance);
-    if (!result) {
-      return result;
-    }
-    result = assertNearField(index, "wroll", expectedSample.w.roll,
-                             actualSample.w.roll, wTolerance);
-    if (!result) {
-      return result;
-    }
-    result = assertNearField(index, "wpitch", expectedSample.w.pitch,
-                             actualSample.w.pitch, wTolerance);
-    if (!result) {
-      return result;
-    }
-    result = assertNearField(index, "wyaw", expectedSample.w.yaw,
-                             actualSample.w.yaw, wTolerance);
-    if (!result) {
-      return result;
-    }
-    result = assertNearField(index, "roll", expectedSample.angle.roll,
-                             actualSample.angle.roll, angleTolerance);
-    if (!result) {
-      return result;
-    }
-    result = assertNearField(index, "pitch", expectedSample.angle.pitch,
-                             actualSample.angle.pitch, angleTolerance);
-    if (!result) {
-      return result;
-    }
-    result = assertNearField(index, "yaw", expectedSample.angle.yaw,
-                             actualSample.angle.yaw, angleTolerance);
-    if (!result) {
-      return result;
-    }
-    result = assertNearField(index, "vx", expectedSample.v.x, actualSample.v.x,
+    result = assertNearField(i, "vy", expectedVelocity.y, actualVelocity.y,
                              velocityTolerance);
     if (!result) {
       return result;
     }
-    result = assertNearField(index, "vy", expectedSample.v.y, actualSample.v.y,
-                             velocityTolerance);
-    if (!result) {
-      return result;
-    }
-    result = assertNearField(index, "vz", expectedSample.v.z, actualSample.v.z,
+    result = assertNearField(i, "vz", expectedVelocity.z, actualVelocity.z,
                              velocityTolerance);
     if (!result) {
       return result;
@@ -461,14 +374,10 @@ inline ::testing::AssertionResult assertNearIMUWithVelocitySeries(
   EXPECT_PRED_FORMAT4(testsupport::assertNearIMUSeries, expected, actual,      \
                       aTolerance, wTolerance)
 
-#define EXPECT_NEAR_IMU_WITH_ANGLES_SERIES(expected, actual, aTolerance,       \
-                                           wTolerance, angleTolerance)         \
-  EXPECT_PRED_FORMAT5(testsupport::assertNearIMUWithAnglesSeries, expected,    \
-                      actual, aTolerance, wTolerance, angleTolerance)
+#define EXPECT_NEAR_ANGLES_SERIES(expected, actual, angleTolerance)            \
+  EXPECT_PRED_FORMAT3(testsupport::assertNearAnglesSeries, expected, actual,   \
+                      angleTolerance)
 
-#define EXPECT_NEAR_IMU_WITH_VELOCITY_SERIES(expected, actual, aTolerance,     \
-                                             wTolerance, angleTolerance,       \
-                                             velocityTolerance)                \
-  EXPECT_PRED_FORMAT6(testsupport::assertNearIMUWithVelocitySeries, expected,  \
-                      actual, aTolerance, wTolerance, angleTolerance,          \
+#define EXPECT_NEAR_VELOCITY_SERIES(expected, actual, velocityTolerance)       \
+  EXPECT_PRED_FORMAT3(testsupport::assertNearVelocitySeries, expected, actual, \
                       velocityTolerance)

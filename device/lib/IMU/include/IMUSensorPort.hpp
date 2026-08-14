@@ -2,19 +2,18 @@
 #include <optional>
 #include <stdint.h>
 
-// m/s2
-struct AccelerationSample {
+struct LinearAxes {
   float x;
   float y;
   float z;
 };
-// deg/s
-struct AngularVelocitySample {
+struct AngleAxes {
   float roll;
   float pitch;
   float yaw;
 };
-
+typedef LinearAxes AccelerationSample;   // m/s2
+typedef AngleAxes AngularVelocitySample; // deg/s
 typedef uint32_t SequenceNumber;
 struct IMUSample {
   AccelerationSample a;

@@ -23,11 +23,10 @@ Other rules:
 
 ### In Progress
 
-- Implement noise reduction on the device and test for performance.
+- Implement complementary filter on the device and test for performance.
 
 ### Next
 
-- Implement complementary filter on the device and test for performance.
 - Implement gravity removal strategy on the device and test for performance.
 
 ### Backlog
@@ -110,3 +109,4 @@ Other rules:
 - Update README.md with new information about the signal processing pipeline.
 - Create utility to make assertions on complete time series, using output .csv files from the offline analysis notebooks.
 - Update calibration implementation on the device and test for performance.
+- Implement noise reduction on the device and test for performance.

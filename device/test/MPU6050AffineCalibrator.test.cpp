@@ -2,7 +2,6 @@
 #include "IMUSensorPort.hpp"
 #include <MPU6050AffineCalibrator.hpp>
 #include <array>
-#include <filesystem>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 

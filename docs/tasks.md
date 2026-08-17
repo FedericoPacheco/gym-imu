@@ -23,11 +23,9 @@ Other rules:
 
 ### In Progress
 
-- Implement gravity removal strategy on the device and test for performance.
+- Implement velocity estimation with drift-control on the device and test for performance.
 
 ### Next
-
-- Implement velocity estimation with drift-control on the device and test for performance.
 
 ### Backlog
 
@@ -110,3 +108,4 @@ Other rules:
 - Update calibration implementation on the device and test for performance.
 - Implement noise reduction on the device and test for performance.
 - Implement complementary filter on the device and test for performance.
+- Implement gravity removal strategy on the device and test for performance.

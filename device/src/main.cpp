@@ -14,6 +14,7 @@
 #include <Logger.hpp>
 #include <MPU6050AffineCalibrator.hpp>
 #include <MPU6050ComplementaryOrientationFinder.hpp>
+#include <MPU6050EulerGravityRemover.hpp>
 #include <MPU6050NoiseReducer.hpp>
 #include <MPU6050Sensor.hpp>
 #include <QueuePipe.hpp>
@@ -87,10 +88,12 @@ extern "C" void app_main() {
       std::make_unique<MPU6050NoiseReducer>();
   std::unique_ptr<IMUEulerOrientationFinder> orientationFinder =
       std::make_unique<MPU6050ComplementaryOrientationFinder>();
-  IMUSignalProcessor processor(samplingPipe, transmissionPipe,
-                               std::move(processorRunner), &processorLogger,
-                               std::move(calibrator), std::move(noiseReducer),
-                               std::move(orientationFinder));
+  std::unique_ptr<IMUEulerGravityRemover> gravityRemover =
+      std::make_unique<MPU6050EulerGravityRemover>();
+  IMUSignalProcessor processor(
+      samplingPipe, transmissionPipe, std::move(processorRunner),
+      &processorLogger, std::move(calibrator), std::move(noiseReducer),
+      std::move(orientationFinder), std::move(gravityRemover));
 
   UARTLogger bleLogger("BLE", LogLevel::WARN);
   auto bleLoopRunner = std::make_unique<FreeRTOSLoopRunner>(
@@ -122,7 +125,8 @@ extern "C" void app_main() {
 #endif
   while (true) {
     vTaskDelay(pdMS_TO_TICKS(1000));
-    // Toggle sampling when user commands via button press
+    // Toggle sampling when user presses button, but only if a client is
+    // connected
     if (button->wasPressedAsync() && ble->isConnected()) {
       doSample = !doSample;
       led->toggle();

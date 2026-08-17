@@ -23,15 +23,14 @@ Other rules:
 
 ### In Progress
 
-- Implement complementary filter on the device and test for performance.
+- Implement gravity removal strategy on the device and test for performance.
 
 ### Next
 
-- Implement gravity removal strategy on the device and test for performance.
+- Implement velocity estimation with drift-control on the device and test for performance.
 
 ### Backlog
 
-- Implement velocity estimation with drift-control on the device and test for performance.
 - Fine tune transmission parameters to optimize for latency.
 - Fine tune pipe sizes to optimize for data preservation.
 - Fine tune tasks priorities and ISR behaviors to optimize for latency and responsiveness.
@@ -110,3 +109,4 @@ Other rules:
 - Create utility to make assertions on complete time series, using output .csv files from the offline analysis notebooks.
 - Update calibration implementation on the device and test for performance.
 - Implement noise reduction on the device and test for performance.
+- Implement complementary filter on the device and test for performance.

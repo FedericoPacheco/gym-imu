@@ -87,7 +87,9 @@ readIMUSamplesFromCSV(const std::filesystem::path &filePath) {
 inline std::ifstream openCSVFile(const std::filesystem::path &filePath) {
   std::ifstream file(filePath);
   if (!file.is_open()) {
-    throw std::runtime_error("Unable to open CSV file: " + filePath.string());
+    throw std::runtime_error("Unable to open CSV file: " + filePath.string() +
+                             "\nCurrent working directory: " +
+                             std::filesystem::current_path().string());
   }
 
   return file;

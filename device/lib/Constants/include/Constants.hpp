@@ -2,6 +2,8 @@
 
 #include <cstdint>
 
+inline constexpr float g = 9.80665f; // m/s²
+
 inline constexpr int SAMPLING_FREQUENCY_HZ = 30;
 
 inline constexpr uint32_t SAMPLING_PIPE_SIZE = 128;

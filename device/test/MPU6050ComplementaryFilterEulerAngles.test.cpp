@@ -5,25 +5,23 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-constexpr float A_TOLERANCE = 0.0001f;
-constexpr float W_TOLERANCE = 0.0001f;
 constexpr float ANGLE_TOLERANCE = 0.0001f;
 
 const std::array<testsupport::SeriesCase, 3> testCases = {{
-    {.name = "dips-1",
+    {.name = "dips-3",
      .inputPath = "../signal/2-noiseReduction/output/"
-                  "dips-1-calib-affine-sixf-tilted-a-online-w-filt-box5.csv",
+                  "dips-3-calib-affine-sixf-tilted-a-online-w-filt-box5.csv",
      .expectedPath = "../signal/3-orientation/output/ast=0.750-amv=0.950/"
-                     "dips-1-calib-affine-sixf-tilted-a-online-w-"
+                     "dips-3-calib-affine-sixf-tilted-a-online-w-"
                      "filt-box5-or-compl.csv"},
-    {.name = "pull-ups-1",
+    {.name = "pull-ups-3",
      .inputPath =
          "../signal/2-noiseReduction/output/"
-         "pull-ups-1-calib-affine-sixf-tilted-a-online-w-filt-box5.csv",
+         "pull-ups-3-calib-affine-sixf-tilted-a-online-w-filt-box5.csv",
      .expectedPath = "../signal/3-orientation/output/ast=0.750-amv=0.950/"
-                     "pull-ups-1-calib-affine-sixf-tilted-a-online-w-filt-box5-"
+                     "pull-ups-3-calib-affine-sixf-tilted-a-online-w-filt-box5-"
                      "or-compl.csv"},
-    {.name = "90-deg-push-ups-1",
+    {.name = "90-deg-push-ups-3",
      .inputPath =
          "../signal/2-noiseReduction/output/"
          "90-deg-push-ups-1-calib-affine-sixf-tilted-a-online-w-filt-box5.csv",

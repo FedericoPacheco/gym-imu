@@ -429,11 +429,10 @@ IMUSample MPU6050Sensor::toIMUSample(mpud::raw_axes_t aRaw,
   mpud::float_axes_t w =
       mpud::math::gyroDegPerSec(wRaw, MPU6050Sensor::GYROSCOPE_SCALE);
 
-  IMUSample sample = {.a = {.x = aGravity.x * MPU6050Sensor::g,
-                            .y = aGravity.y * MPU6050Sensor::g,
-                            .z = aGravity.z * MPU6050Sensor::g},
-                      .w = {.roll = w.x, .pitch = w.y, .yaw = w.z},
-                      .seq = this->getNextSeq()};
+  IMUSample sample = {
+      .a = {.x = aGravity.x * g, .y = aGravity.y * g, .z = aGravity.z * g},
+      .w = {.roll = w.x, .pitch = w.y, .yaw = w.z},
+      .seq = this->getNextSeq()};
   this->setNextSeq();
 
   return sample;

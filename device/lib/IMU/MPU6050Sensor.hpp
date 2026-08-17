@@ -65,8 +65,6 @@ here in Argentina.
 
 class MPU6050Sensor : public IMUSensorPort {
 public:
-  static constexpr float g = 9.80665f; // m/s²
-
   static MPU6050Sensor *
   getInstance(LoggerPort *logger,
               std::shared_ptr<Pipe<IMUSample, SAMPLING_PIPE_SIZE>> pipe,

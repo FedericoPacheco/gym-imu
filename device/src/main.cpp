@@ -13,6 +13,7 @@
 #include <LED.hpp>
 #include <Logger.hpp>
 #include <MPU6050AffineCalibrator.hpp>
+#include <MPU6050ComplementaryOrientationFinder.hpp>
 #include <MPU6050NoiseReducer.hpp>
 #include <MPU6050Sensor.hpp>
 #include <QueuePipe.hpp>
@@ -84,9 +85,12 @@ extern "C" void app_main() {
       std::make_unique<MPU6050AffineCalibrator>();
   std::unique_ptr<IMUNoiseReducer> noiseReducer =
       std::make_unique<MPU6050NoiseReducer>();
+  std::unique_ptr<IMUEulerOrientationFinder> orientationFinder =
+      std::make_unique<MPU6050ComplementaryOrientationFinder>();
   IMUSignalProcessor processor(samplingPipe, transmissionPipe,
                                std::move(processorRunner), &processorLogger,
-                               std::move(calibrator), std::move(noiseReducer));
+                               std::move(calibrator), std::move(noiseReducer),
+                               std::move(orientationFinder));
 
   UARTLogger bleLogger("BLE", LogLevel::WARN);
   auto bleLoopRunner = std::make_unique<FreeRTOSLoopRunner>(

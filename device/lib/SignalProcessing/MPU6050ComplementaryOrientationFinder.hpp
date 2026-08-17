@@ -1,9 +1,8 @@
 #pragma once
 #include <Constants.hpp>
-#include <IMUOrientationFinder.hpp>
+#include <IMUEulerOrientationFinder.hpp>
 #include <StationaryChecker.hpp>
 #include <numbers>
-#include <random>
 
 /*
 For details, refer to: signal/3-orientation
@@ -116,8 +115,6 @@ public:
                               (1.0f - ALPHA_STATIONARY) * predAngleAccel.roll;
         predAngleCompl.pitch = ALPHA_STATIONARY * predAngleGyro.pitch +
                                (1.0f - ALPHA_STATIONARY) * predAngleAccel.pitch;
-        if (sample.seq == 2)
-          std::cout << "Stationary detected" << std::endl;
       } else {
         predAngleCompl.roll = ALPHA_MOVING * predAngleGyro.roll +
                               (1.0f - ALPHA_MOVING) * predAngleAccel.roll;

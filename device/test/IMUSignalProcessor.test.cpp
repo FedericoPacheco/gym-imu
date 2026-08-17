@@ -1,9 +1,11 @@
+#include "IMUEulerOrientationFinder.hpp"
 #include "doubles/LoggerDouble.hpp"
 #include "doubles/PipeDouble.hpp"
 #include <DeterministicLoopRunner.hpp>
 #include <IMUSignalProcessor.hpp>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include <memory>
 #include <optional>
 
 namespace {
@@ -21,6 +23,10 @@ class IMUNoiseReducerDouble : public IMUNoiseReducer {
 public:
   MOCK_METHOD(void, filter, (IMUSample & sample));
 };
+class IMUEulerOrientationFinderDouble : public IMUEulerOrientationFinder {
+public:
+  MOCK_METHOD(EulerOrientationSample, find, (IMUSample & sample));
+};
 
 TEST(IMUSignalProcessor_processingLoopFunction,
      RunsAllOperationsOnASingleSampleSuccessfully) {
@@ -30,6 +36,8 @@ TEST(IMUSignalProcessor_processingLoopFunction,
   auto runnerRaw = static_cast<DeterministicLoopRunner *>(runner.get());
   auto calibrator = std::make_unique<NiceMock<IMUCalibratorDouble>>();
   auto noiseReducer = std::make_unique<NiceMock<IMUNoiseReducerDouble>>();
+  auto orientationFinder =
+      std::make_unique<NiceMock<IMUEulerOrientationFinderDouble>>();
   IMUSample sample = {.a =
                           {
                               .x = 0,
@@ -48,11 +56,12 @@ TEST(IMUSignalProcessor_processingLoopFunction,
       .WillOnce(Return(std::optional<IMUSample>(sample)));
   EXPECT_CALL(*calibrator, calibrate(_)).Times(1);
   EXPECT_CALL(*noiseReducer, filter(_)).Times(1);
+  EXPECT_CALL(*orientationFinder, find(_)).Times(1);
   EXPECT_CALL(*outputPipe, push(_)).Times(1).WillOnce(Return(true));
 
-  auto processor =
-      IMUSignalProcessor(inputPipe, outputPipe, std::move(runner), &logger,
-                         std::move(calibrator), std::move(noiseReducer));
+  auto processor = IMUSignalProcessor(
+      inputPipe, outputPipe, std::move(runner), &logger, std::move(calibrator),
+      std::move(noiseReducer), std::move(orientationFinder));
   processor.beginProcessing();
   runnerRaw->runOneStep();
   processor.stopProcessing();
@@ -65,15 +74,18 @@ TEST(IMUSignalProcessor_processingLoopFunction, DoesNotPushOnNullSamples) {
   auto runnerRaw = static_cast<DeterministicLoopRunner *>(runner.get());
   auto calibrator = std::make_unique<NiceMock<IMUCalibratorDouble>>();
   auto noiseReducer = std::make_unique<NiceMock<IMUNoiseReducerDouble>>();
+  auto orientationFinder =
+      std::make_unique<NiceMock<IMUEulerOrientationFinderDouble>>();
 
   EXPECT_CALL(*inputPipe, pop(_)).WillOnce(Return(std::nullopt));
   EXPECT_CALL(*calibrator, calibrate(_)).Times(0);
   EXPECT_CALL(*noiseReducer, filter(_)).Times(0);
+  EXPECT_CALL(*orientationFinder, find(_)).Times(0);
   EXPECT_CALL(*outputPipe, push(_)).Times(0);
 
-  auto processor =
-      IMUSignalProcessor(inputPipe, outputPipe, std::move(runner), &logger,
-                         std::move(calibrator), std::move(noiseReducer));
+  auto processor = IMUSignalProcessor(
+      inputPipe, outputPipe, std::move(runner), &logger, std::move(calibrator),
+      std::move(noiseReducer), std::move(orientationFinder));
   processor.beginProcessing();
   runnerRaw->runOneStep();
   processor.stopProcessing();

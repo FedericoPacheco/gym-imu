@@ -1,6 +1,7 @@
 #pragma once
 #include <IMUSensorPort.hpp>
-#include <IMUSignalProcessor.hpp>
+
+typedef AngleAxes EulerOrientationSample; // deg
 
 // Strategy interface for orientation using Euler angles
 class IMUEulerOrientationFinder {

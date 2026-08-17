@@ -1,6 +1,7 @@
 from signal_utils.IMUSampleReader import IMUSampleReader
 import numpy as np
 import math
+import os
 
 """
 IMPORTANT:
@@ -40,6 +41,7 @@ class IMUStationaryChecker:
             except Exception as e2:
                 raise ValueError(
                     f"Failed to read capture {capturePaths[0]} with both read() and readWithOrientation()."
+                    f"\nCurrent working directory: {os.getcwd()}"
                 ) from e2
 
         captureAccelNorms = []

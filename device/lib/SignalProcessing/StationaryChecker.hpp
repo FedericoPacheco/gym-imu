@@ -1,10 +1,14 @@
 #pragma once
-
 class StationaryChecker {
   static constexpr float PRE_CALIBRATION_A_STATIONARY_MEAN = 9.907132f;
   static constexpr float PRE_CALIBRATION_A_STATIONARY_TOL = 0.691502f;
   static constexpr float PRE_CALIBRATION_W_STATIONARY_MEAN = 6.291752f;
   static constexpr float PRE_CALIBRATION_W_STATIONARY_TOL = 4.630163f;
+
+  static constexpr float PRE_ORIENTATION_A_STATIONARY_MEAN = 9.803694f;
+  static constexpr float PRE_ORIENTATION_A_STATIONARY_TOL = 0.236366f;
+  static constexpr float PRE_ORIENTATION_W_STATIONARY_MEAN = 0.141652f;
+  static constexpr float PRE_ORIENTATION_W_STATIONARY_TOL = 3.821403f;
 
 public:
   static bool isStationaryPreCalibration(const IMUSample &sample) {
@@ -12,6 +16,13 @@ public:
                         PRE_CALIBRATION_A_STATIONARY_TOL,
                         PRE_CALIBRATION_W_STATIONARY_MEAN,
                         PRE_CALIBRATION_W_STATIONARY_TOL);
+  }
+
+  static bool isStationaryPreOrientation(const IMUSample &sample) {
+    return isStationary(sample, PRE_ORIENTATION_A_STATIONARY_MEAN,
+                        PRE_ORIENTATION_A_STATIONARY_TOL,
+                        PRE_ORIENTATION_W_STATIONARY_MEAN,
+                        PRE_ORIENTATION_W_STATIONARY_TOL);
   }
 
 private:

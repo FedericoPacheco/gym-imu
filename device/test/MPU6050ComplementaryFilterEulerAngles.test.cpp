@@ -43,13 +43,17 @@ TEST(MPU6050ComplementaryOrientationFinder_find,
     const std::vector<std::tuple<IMUSample, EulerOrientationSample>>
         expectedSamples =
             testsupport::readIMUSampleWithAnglesFromCSV(series.expectedPath);
+    std::vector<EulerOrientationSample> expectedAngles;
+    for (const auto [_, expectedAngle] : expectedSamples) {
+      expectedAngles.push_back(expectedAngle);
+    }
     std::vector<EulerOrientationSample> orientationResultsSamples;
 
-    for (IMUSample &sample : noiseFreeSamples) {
+    for (IMUSample sample : noiseFreeSamples) {
       orientationResultsSamples.push_back(orientator.find(sample));
     }
 
-    EXPECT_NEAR_ANGLES_SERIES(expectedSamples, orientationResultsSamples,
+    EXPECT_NEAR_ANGLES_SERIES(expectedAngles, orientationResultsSamples,
                               ANGLE_TOLERANCE);
   }
 }

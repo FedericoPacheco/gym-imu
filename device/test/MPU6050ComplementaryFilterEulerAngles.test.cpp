@@ -1,11 +1,10 @@
 #include "IMUSampleCsv.hpp"
 #include "IMUSensorPort.hpp"
+#include <Constants.hpp>
 #include <MPU6050ComplementaryOrientationFinder.hpp>
 #include <array>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
-
-constexpr float ANGLE_TOLERANCE = 0.0001f;
 
 const std::array<testsupport::SeriesCase, 3> testCases = {{
     {.name = "dips-3",
@@ -52,6 +51,6 @@ TEST(MPU6050ComplementaryOrientationFinder_find,
     }
 
     EXPECT_NEAR_ANGLES_SERIES(expectedAngles, orientationResultsSamples,
-                              ANGLE_TOLERANCE);
+                              ANGLE_TEST_TOLERANCE);
   }
 }

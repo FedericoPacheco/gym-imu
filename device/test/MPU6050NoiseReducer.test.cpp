@@ -1,12 +1,10 @@
 #include "IMUSampleCsv.hpp"
 #include "IMUSensorPort.hpp"
+#include <Constants.hpp>
 #include <MPU6050NoiseReducer.hpp>
 #include <array>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
-
-constexpr float A_TOLERANCE = 0.0001f;
-constexpr float W_TOLERANCE = 0.0001f;
 
 const std::array<testsupport::SeriesCase, 3> testCases = {{
     {.name = "dips-2",
@@ -43,7 +41,7 @@ TEST(MPU6050NoiseReducer_filter, FiltersSeriesCorrectly) {
       noiseReducer.filter(sample);
     }
 
-    EXPECT_NEAR_IMU_SERIES(expectedSamples, calibratedSamples, A_TOLERANCE,
-                           W_TOLERANCE);
+    EXPECT_NEAR_IMU_SERIES(expectedSamples, calibratedSamples, A_TEST_TOLERANCE,
+                           W_TEST_TOLERANCE);
   }
 }

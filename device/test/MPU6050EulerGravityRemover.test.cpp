@@ -5,10 +5,6 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-constexpr float A_TOLERANCE = 0.0001f;
-constexpr float W_TOLERANCE = 0.0001f;
-constexpr float ANGLE_TOLERANCE = 0.0001f;
-
 const std::array<testsupport::SeriesCase, 3> testCases = {{
     {.name = "dips-1",
      .inputPath = "../signal/3-orientation/output/ast=0.750-amv=0.950/"
@@ -55,7 +51,7 @@ TEST(MPU6050EulerGravityRemover_find, RemovesGravityCorrectly) {
       results.push_back(sample);
     }
 
-    EXPECT_NEAR_IMU_SERIES(results, gravityFreeSamples, A_TOLERANCE,
-                           W_TOLERANCE);
+    EXPECT_NEAR_IMU_SERIES(results, gravityFreeSamples, A_TEST_TOLERANCE,
+                           W_TEST_TOLERANCE);
   }
 }

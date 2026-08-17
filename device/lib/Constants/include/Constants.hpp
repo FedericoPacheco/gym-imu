@@ -20,3 +20,7 @@ inline constexpr int BLE_TASK_PRIORITY = 4;
 inline constexpr int BLE_TASK_STACK_SIZE = 4096;
 inline constexpr int TRANSMIT_TASK_PRIORITY = 4;
 inline constexpr int TRANSMIT_TASK_STACK_SIZE = 4096;
+
+inline constexpr float A_TEST_TOLERANCE = 0.0001f;
+inline constexpr float W_TEST_TOLERANCE = 0.0001f;
+inline constexpr float ANGLE_TEST_TOLERANCE = 0.0001f;

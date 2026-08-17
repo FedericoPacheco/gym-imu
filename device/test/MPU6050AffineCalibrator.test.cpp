@@ -1,5 +1,6 @@
 #include "IMUSampleCsv.hpp"
 #include "IMUSensorPort.hpp"
+#include <Constants.hpp>
 #include <MPU6050AffineCalibrator.hpp>
 #include <array>
 #include <gmock/gmock.h>
@@ -9,9 +10,6 @@
 Misc docs:
 * https://google.github.io/googletest/reference/testing.html#SCOPED_TRACE
 */
-
-constexpr float A_TOLERANCE = 0.0001f;
-constexpr float W_TOLERANCE = 0.0001f;
 
 const std::array<testsupport::SeriesCase, 3> testCases = {{
     {.name = "dips-1",
@@ -45,7 +43,7 @@ TEST(MPU6050AffineCalibrator_calibrate, CalibratesSeriesCorrectly) {
       calibrator.calibrate(sample);
     }
 
-    EXPECT_NEAR_IMU_SERIES(expectedSamples, rawSamples, A_TOLERANCE,
-                           W_TOLERANCE);
+    EXPECT_NEAR_IMU_SERIES(expectedSamples, rawSamples, A_TEST_TOLERANCE,
+                           W_TEST_TOLERANCE);
   }
 }

@@ -12,12 +12,17 @@ and using an inappropriate criteria would yield false positives or negatives!
 * When calibrating, use the raw accel and gyro
 * When finding orientation, use the calibrated/low-passed accel and gyro
 * When solving for velocity, use gravity-free accel and calibrated/low-passed gyro
+
+LIMITATIONS:
+Notice that true stillness is INDISTINGUISHABLE from movement at constant velocity and 
+no rotations based on the IMU data alone. Why? If v = c, then a = dv/dt = 0, and if there's
+no rotations, w = d(theta)/dt = 0. Another external measurement would ideally be needed.
 """
 
 
 class IMUStationaryChecker:
-    ACCEL_STD = 3
-    GYRO_STD = 3
+    ACCEL_STDS = 3
+    GYRO_STDS = 3
 
     def __init__(self):
         self.reader = IMUSampleReader()
@@ -65,11 +70,11 @@ class IMUStationaryChecker:
 
         self.accelMean = np.mean(accelNorms)
         accelNormsStdev = np.std(accelNorms)
-        self.accelTol = self.ACCEL_STD * accelNormsStdev
+        self.accelTol = self.ACCEL_STDS * accelNormsStdev
 
         self.gyroMean = np.mean(gyroNorms)
         gyroNormsStdev = np.std(gyroNorms)
-        self.gyroTol = self.GYRO_STD * gyroNormsStdev
+        self.gyroTol = self.GYRO_STDS * gyroNormsStdev
 
         print(
             f"Acceleration norms:"
@@ -84,6 +89,7 @@ class IMUStationaryChecker:
             f"\n\tStationary interval = [{self.gyroMean - self.gyroTol:.6f}, {self.gyroMean + self.gyroTol:.6f}]"
         )
 
+    # TODO: receive a and w vectors instead of individual components
     def isStationarySample(
         self,
         ax: float,

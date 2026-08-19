@@ -191,6 +191,9 @@
 - <https://www.youtube.com/watch?v=WzLJDjfm2Xo>
 - <https://www.youtube.com/watch?v=SrLcvAw1iW4>
 - <https://en.wikipedia.org/wiki/Atan2>
+- <https://www.youtube.com/watch?v=-OyRCgv-hPs>
+- <https://www.youtube.com/watch?v=GJBc6z6p0KQ>
+- <https://www.youtube.com/watch?v=9GZjtfYOXao>
 
 ### Quaternions
 

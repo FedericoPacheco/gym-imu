@@ -200,6 +200,9 @@
 - <https://en.wikipedia.org/wiki/Quaternions_and_spatial_rotation>
 - <https://www.youtube.com/watch?v=d4EgbgTm0Bg>
 - <https://www.youtube.com/watch?v=zjMuIxRvygQ>
+- <https://www.youtube.com/playlist?list=PLpzmRsG7u_gr0FO12cBWj-15_e0yqQQ1U>
+- <http://youtube.com/watch?v=98Mfe-Vfgo0>
+- <https://eater.net/quaternions>
 
 ## Human motion
 

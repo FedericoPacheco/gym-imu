@@ -194,6 +194,7 @@
 - <https://www.youtube.com/watch?v=-OyRCgv-hPs>
 - <https://www.youtube.com/watch?v=GJBc6z6p0KQ>
 - <https://www.youtube.com/watch?v=9GZjtfYOXao>
+- <https://www.youtube.com/watch?v=uTabQKD2WMs>
 
 ### Quaternions
 

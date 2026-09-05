@@ -219,3 +219,9 @@
 ## Signals
 
 - <https://www.youtube.com/watch?v=L6YJqhbsuFY>
+
+## Orientation filters reference implementations / library
+
+- <https://ahrs.readthedocs.io/en/latest/index.html>
+- <https://ahrs.readthedocs.io/en/latest/filters/madgwick.html>
+- <https://ahrs.readthedocs.io/en/latest/filters/mahony.html>

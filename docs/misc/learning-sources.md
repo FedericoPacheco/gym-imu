@@ -225,3 +225,8 @@
 - <https://ahrs.readthedocs.io/en/latest/index.html>
 - <https://ahrs.readthedocs.io/en/latest/filters/madgwick.html>
 - <https://ahrs.readthedocs.io/en/latest/filters/mahony.html>
+
+## Mahony filter
+
+- <https://medium.com/@k66115704/imu-mahony-filter-explanation-1ae75bf033ab>
+- <https://husainlokhandwala.in/2026/08/09/attitude-filter-comparison.html>

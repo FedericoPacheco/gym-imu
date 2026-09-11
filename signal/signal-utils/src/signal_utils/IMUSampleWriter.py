@@ -19,6 +19,7 @@ class IMUSampleWriter:
             raise ValueError("All inputs must have the same number of rows")
 
         data = np.hstack((seqColumn, accelArray, gyroArray))
+        # TODO: Change wroll, wpitch, wyaw to wx, wy, wz (here, C++ utility class, files) (current names are technically wrong)
         header = "seq,ax,ay,az,wroll,wpitch,wyaw"
         format = ["%u"] + [
             "%.6f"

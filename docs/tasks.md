@@ -23,12 +23,13 @@ Other rules:
 
 ### In Progress
 
-- Implement velocity estimation with drift-control on the device and test for performance.
+- Implement Mahony filter on jupyter notebook.
 
 ### Next
 
 ### Backlog
 
+- Implement velocity estimation with drift-control on the device and test for performance.
 - Fine tune transmission parameters to optimize for latency.
 - Fine tune pipe sizes to optimize for data preservation.
 - Fine tune tasks priorities and ISR behaviors to optimize for latency and responsiveness.
@@ -109,3 +110,5 @@ Other rules:
 - Implement noise reduction on the device and test for performance.
 - Implement complementary filter on the device and test for performance.
 - Implement gravity removal strategy on the device and test for performance.
+- Attempt to improve complementary filter (Euler kinematical equations, handling gimbal lock, better orientation branch choosing, etc).
+- Choose new orientation filter (Mahony, Madgwick, etc.) to overcome complementary filter limitations and write ADR with rationale.

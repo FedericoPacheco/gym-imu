@@ -23,12 +23,15 @@ Other rules:
 
 ### In Progress
 
-- Implement Mahony filter on jupyter notebook.
+- Review velocity jupyter notebook documentation and zero velocity updates for possible improvements.
 
 ### Next
 
+- Make decision about buying new IMU sensor and microcontroller.
+
 ### Backlog
 
+- Implement writing to csv file with quaternion orientation.
 - Implement velocity estimation with drift-control on the device and test for performance.
 - Fine tune transmission parameters to optimize for latency.
 - Fine tune pipe sizes to optimize for data preservation.
@@ -112,3 +115,4 @@ Other rules:
 - Implement gravity removal strategy on the device and test for performance.
 - Attempt to improve complementary filter (Euler kinematical equations, handling gimbal lock, better orientation branch choosing, etc).
 - Choose new orientation filter (Mahony, Madgwick, etc.) to overcome complementary filter limitations and write ADR with rationale.
+- Implement Mahony filter on jupyter notebook and review gravity removal results.

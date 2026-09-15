@@ -31,7 +31,7 @@ class IMUStationaryChecker:
         self.accelMean = -1.0
         self.gyroMean = -1.0
 
-    def computeTolerances(self, capturePaths: list[str]):
+    def computeTolerances(self, capturePaths: list[str], doPrintResults=True):
         if not capturePaths or len(capturePaths) == 0:
             raise ValueError("No capture paths provided for tolerance computation.")
 
@@ -76,18 +76,19 @@ class IMUStationaryChecker:
         gyroNormsStdev = np.std(gyroNorms)
         self.gyroTol = self.GYRO_STDS * gyroNormsStdev
 
-        print(
-            f"Acceleration norms:"
-            f"\n\tMean = {self.accelMean:.6f}"
-            f"\n\tStdev = {accelNormsStdev:.6f} (tol = {self.accelTol:.6f})"
-            f"\n\tStationary interval = [{self.accelMean - self.accelTol:.6f}, {self.accelMean + self.accelTol:.6f}]"
-        )
-        print(
-            f"Gyroscope norms:"
-            f"\n\tMean = {self.gyroMean:.6f}"
-            f"\n\tStdev = {gyroNormsStdev:.6f} (tol = {self.gyroTol:.6f})"
-            f"\n\tStationary interval = [{self.gyroMean - self.gyroTol:.6f}, {self.gyroMean + self.gyroTol:.6f}]"
-        )
+        if doPrintResults:
+            print(
+                f"Acceleration norms:"
+                f"\n\tMean = {self.accelMean:.6f}"
+                f"\n\tStdev = {accelNormsStdev:.6f} (tol = {self.accelTol:.6f})"
+                f"\n\tStationary interval = [{self.accelMean - self.accelTol:.6f}, {self.accelMean + self.accelTol:.6f}]"
+            )
+            print(
+                f"Gyroscope norms:"
+                f"\n\tMean = {self.gyroMean:.6f}"
+                f"\n\tStdev = {gyroNormsStdev:.6f} (tol = {self.gyroTol:.6f})"
+                f"\n\tStationary interval = [{self.gyroMean - self.gyroTol:.6f}, {self.gyroMean + self.gyroTol:.6f}]"
+            )
 
     # TODO: receive a and w vectors instead of individual components
     def isStationarySample(

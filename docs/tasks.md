@@ -23,7 +23,6 @@ Other rules:
 
 ### In Progress
 
-- Implement writing to csv file with quaternion orientation.
 - Review velocity jupyter notebook documentation and zero velocity updates for possible improvements.
 
 ### Next
@@ -116,3 +115,4 @@ Other rules:
 - Attempt to improve complementary filter (Euler kinematical equations, handling gimbal lock, better orientation branch choosing, etc).
 - Choose new orientation filter (Mahony, Madgwick, etc.) to overcome complementary filter limitations and write ADR with rationale.
 - Implement Mahony filter on jupyter notebook and review gravity removal results.
+- Implement writing to csv file with quaternion orientation.

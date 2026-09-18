@@ -4,6 +4,7 @@ from .IMUSampleWriter import IMUSampleWriter
 from .IMUSampleTimeSeriesPlotter import IMUSampleTimeSeriesPlotter
 from .FTPlotter import FTPlotter
 from .IMUStationaryChecker import IMUStationaryChecker
+from .Quaternion import Quaternion
 
 __all__ = [
     "IMUSampleReceiver",
@@ -12,4 +13,5 @@ __all__ = [
     "IMUSampleTimeSeriesPlotter",
     "FTPlotter",
     "IMUStationaryChecker",
+    "Quaternion",
 ]

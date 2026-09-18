@@ -23,6 +23,7 @@ Other rules:
 
 ### In Progress
 
+- Implement writing to csv file with quaternion orientation.
 - Review velocity jupyter notebook documentation and zero velocity updates for possible improvements.
 
 ### Next
@@ -31,7 +32,6 @@ Other rules:
 
 ### Backlog
 
-- Implement writing to csv file with quaternion orientation.
 - Implement velocity estimation with drift-control on the device and test for performance.
 - Fine tune transmission parameters to optimize for latency.
 - Fine tune pipe sizes to optimize for data preservation.

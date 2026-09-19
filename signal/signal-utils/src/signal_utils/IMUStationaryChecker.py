@@ -9,14 +9,18 @@ Be careful with the captures provided to computeTolerances().
 Stationality detection changes after each processing step.
 Why? Because the mean and standard deviation meaningfully change, 
 and using an inappropriate criteria would yield false positives or negatives!
-* When calibrating, use the raw accel and gyro
-* When finding orientation, use the calibrated/low-passed accel and gyro
-* When solving for velocity, use gravity-free accel and calibrated/low-passed gyro
+* When calibrating, use the raw specific force and gyro
+* When finding orientation, use the calibrated/low-passed specific force and gyro
+* When solving for velocity, use gravity-free acceleration and calibrated/low-passed/corrected gyro
 
 LIMITATIONS:
 Notice that true stillness is INDISTINGUISHABLE from movement at constant velocity and 
 no rotations based on the IMU data alone. Why? If v = c, then a = dv/dt = 0, and if there's
 no rotations, w = d(theta)/dt = 0. Another external measurement would ideally be needed.
+
+INVARIANT:
+Stationarity detection should be frame-independent, as applying a rotation matrix o quaternion 
+pre/post multiplication should NOT affect the norms. 
 """
 
 

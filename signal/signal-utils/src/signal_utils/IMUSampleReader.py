@@ -17,27 +17,35 @@ class IMUSampleReader:
 
         result = ()
         remainingCols = header
-        if remainingCols[0] == "seq":
+        if len(remainingCols) >= 1 and remainingCols[0] == "seq":
             result += (data[:, 0].astype(np.uint32, copy=False),)
             remainingCols = remainingCols[1:]
             data = data[:, 1:]
-        if remainingCols[0:3] == ["ax", "ay", "az"]:
+        if len(remainingCols) >= 3 and remainingCols[0:3] == ["ax", "ay", "az"]:
             result += (data[:, 0:3].astype(np.float32, copy=False),)
             remainingCols = remainingCols[3:]
             data = data[:, 3:]
-        if remainingCols[0:3] == ["wroll", "wpitch", "wyaw"]:
+        if len(remainingCols) >= 3 and remainingCols[0:3] == [
+            "wroll",
+            "wpitch",
+            "wyaw",
+        ]:
             result += (data[:, 0:3].astype(np.float32, copy=False),)
             remainingCols = remainingCols[3:]
             data = data[:, 3:]
-        if remainingCols[0:3] == ["roll", "pitch", "yaw"]:
+        if len(remainingCols) >= 3 and remainingCols[0:3] == ["roll", "pitch", "yaw"]:
             result += (data[:, 0:3].astype(np.float32, copy=False),)
             remainingCols = remainingCols[3:]
             data = data[:, 3:]
-        if remainingCols[0:4] == ["q0", "q1", "q2", "q3"]:
-            result += (data[:, 0:4].astype(np.float32, copy=False),)
-            remainingCols = remainingCols[4:]
-            data = data[:, 4:]
-        if remainingCols[0:3] == ["vx", "vy", "vz"]:
+        if len(remainingCols) >= 1 and remainingCols[0] == "q0":
+            result += (data[:, 0].astype(np.float32, copy=False),)
+            remainingCols = remainingCols[1:]
+            data = data[:, 1:]
+        if len(remainingCols) >= 3 and remainingCols[0:3] == ["q1", "q2", "q3"]:
+            result += (data[:, 0:3].astype(np.float32, copy=False),)
+            remainingCols = remainingCols[3:]
+            data = data[:, 3:]
+        if len(remainingCols) >= 3 and remainingCols[0:3] == ["vx", "vy", "vz"]:
             result += (data[:, 0:3].astype(np.float32, copy=False),)
             remainingCols = remainingCols[3:]
             data = data[:, 3:]

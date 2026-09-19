@@ -127,13 +127,13 @@ class Quaternion:
             raise ValueError("Quaternion must be normalized to convert it to a DCM.")
 
         c11 = self.s**2 + self.v[0] ** 2 - self.v[1] ** 2 - self.v[2] ** 2
-        c12 = 2 * (self.v[0] * self.v[1] - self.s * self.v[2])
-        c13 = 2 * (self.v[0] * self.v[2] + self.s * self.v[1])
-        c21 = 2 * (self.v[0] * self.v[1] + self.s * self.v[2])
+        c12 = 2 * (self.v[0] * self.v[1] + self.s * self.v[2])
+        c13 = 2 * (self.v[0] * self.v[2] - self.s * self.v[1])
+        c21 = 2 * (self.v[0] * self.v[1] - self.s * self.v[2])
         c22 = self.s**2 - self.v[0] ** 2 + self.v[1] ** 2 - self.v[2] ** 2
-        c23 = 2 * (self.v[1] * self.v[2] - self.s * self.v[0])
-        c31 = 2 * (self.v[0] * self.v[2] - self.s * self.v[1])
-        c32 = 2 * (self.v[1] * self.v[2] + self.s * self.v[0])
+        c23 = 2 * (self.v[1] * self.v[2] + self.s * self.v[0])
+        c31 = 2 * (self.v[0] * self.v[2] + self.s * self.v[1])
+        c32 = 2 * (self.v[1] * self.v[2] - self.s * self.v[0])
         c33 = self.s**2 - self.v[0] ** 2 - self.v[1] ** 2 + self.v[2] ** 2
 
         return np.array([[c11, c12, c13], [c21, c22, c23], [c31, c32, c33]])

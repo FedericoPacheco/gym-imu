@@ -42,12 +42,8 @@ class IMUStationaryDetector:
     @abstractmethod
     def isStationarySample(
         self,
-        ax: float,
-        ay: float,
-        az: float,
-        wroll: float,
-        wpitch: float,
-        wyaw: float,
+        a: np.ndarray,
+        w: np.ndarray,
     ) -> bool:
         pass
 
@@ -125,21 +121,16 @@ class InstantaneousIMUStationaryDetector(IMUStationaryDetector):
                 f"\n\tStationary interval = [{self.gyroCenter - self.gyroTol:.6f}, {self.gyroCenter + self.gyroTol:.6f}] deg/s"
             )
 
-    # TODO: receive a and w vectors instead of individual components
     def isStationarySample(
         self,
-        ax: float,
-        ay: float,
-        az: float,
-        wroll: float,
-        wpitch: float,
-        wyaw: float,
+        a: np.ndarray,
+        w: np.ndarray,
     ) -> bool:
         if self.accelTol < 0:
             raise ValueError("Tolerance not computed. Call computeTolerances() first.")
 
-        accelNorm = math.sqrt(ax**2 + ay**2 + az**2)
-        gyroNorm = math.sqrt(wroll**2 + wpitch**2 + wyaw**2)
+        accelNorm = np.linalg.norm(a)
+        gyroNorm = np.linalg.norm(w)
 
         isAccelStationary = bool(abs(accelNorm - self.accelCenter) <= self.accelTol)
         isGyroStationary = bool(abs(gyroNorm - self.gyroCenter) <= self.gyroTol)

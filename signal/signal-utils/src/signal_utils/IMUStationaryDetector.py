@@ -47,9 +47,10 @@ class IMUStationaryDetector:
     ) -> bool:
         pass
 
-    @abstractmethod
     def areStationarySamples(self, a: np.ndarray, w: np.ndarray) -> np.ndarray:
-        pass
+        return np.array(
+            [self.isStationarySample(a[i, :], w[i, :]) for i in range(len(a))]
+        )
 
     def findStationaryIntervals(
         self, seq: np.ndarray, a: np.ndarray, w: np.ndarray
@@ -155,23 +156,3 @@ class InstantaneousIMUStationaryDetector(IMUStationaryDetector):
         areGyroStationary = np.abs(gyroNorms - self.gyroCenter) <= self.gyroTol
 
         return areAccelStationary & areGyroStationary
-
-    def findStationaryIntervals(
-        self, seq: np.ndarray, a: np.ndarray, w: np.ndarray
-    ) -> list[tuple[int, int]]:
-        checks = self.areStationarySamples(a, w)
-        wasStationary = checks[0]
-        lastLowerBound = int(seq[0])
-        stationaryIntervals = []
-        for i, isStationary in enumerate(checks[1:], start=1):
-            if wasStationary and not isStationary:
-                stationaryIntervals.append((lastLowerBound, int(seq[i - 1])))
-                wasStationary = False
-            if not wasStationary and isStationary:
-                lastLowerBound = int(seq[i])
-                wasStationary = True
-
-        if wasStationary:
-            stationaryIntervals.append((lastLowerBound, int(seq[-1])))
-
-        return stationaryIntervals

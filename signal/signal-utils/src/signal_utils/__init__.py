@@ -3,7 +3,7 @@ from .IMUSampleReader import IMUSampleReader
 from .IMUSampleWriter import IMUSampleWriter
 from .IMUSampleTimeSeriesPlotter import IMUSampleTimeSeriesPlotter
 from .FTPlotter import FTPlotter
-from .IMUStationaryChecker import IMUStationaryChecker
+from .IMUStationaryDetector import IMUStationaryDetector
 from .Quaternion import Quaternion
 
 __all__ = [
@@ -12,6 +12,6 @@ __all__ = [
     "IMUSampleWriter",
     "IMUSampleTimeSeriesPlotter",
     "FTPlotter",
-    "IMUStationaryChecker",
+    "IMUStationaryDetector",
     "Quaternion",
 ]

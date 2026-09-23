@@ -23,6 +23,7 @@ Other rules:
 
 ### In Progress
 
+- Improve stationary detection.
 - Review velocity jupyter notebook documentation and zero velocity updates for possible improvements.
 
 ### Next

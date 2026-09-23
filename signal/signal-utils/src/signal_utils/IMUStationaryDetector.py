@@ -1,3 +1,5 @@
+from pyparsing.common import abstractmethod
+
 from signal_utils.IMUSampleReader import IMUSampleReader
 import numpy as np
 import math
@@ -24,16 +26,59 @@ pre/post multiplication should NOT affect the norms.
 """
 
 
-class IMUStationaryChecker:
-    ACCEL_STDS = 3
-    GYRO_STDS = 3
+class IMUStationaryDetector:
 
     def __init__(self):
         self.reader = IMUSampleReader()
         self.accelTol = -1.0
         self.gyroTol = -1.0
-        self.accelMean = -1.0
-        self.gyroMean = -1.0
+        self.accelCenter = -1.0
+        self.gyroCenter = -1.0
+
+    @abstractmethod
+    def computeTolerances(self, capturePaths: list[str], doPrintResults=True):
+        pass
+
+    @abstractmethod
+    def isStationarySample(
+        self,
+        ax: float,
+        ay: float,
+        az: float,
+        wroll: float,
+        wpitch: float,
+        wyaw: float,
+    ) -> bool:
+        pass
+
+    @abstractmethod
+    def areStationarySamples(self, a: np.ndarray, w: np.ndarray) -> np.ndarray:
+        pass
+
+    def findStationaryIntervals(
+        self, seq: np.ndarray, a: np.ndarray, w: np.ndarray
+    ) -> list[tuple[int, int]]:
+        checks = self.areStationarySamples(a, w)
+        wasStationary = checks[0]
+        lastLowerBound = int(seq[0])
+        stationaryIntervals = []
+        for i, isStationary in enumerate(checks[1:], start=1):
+            if wasStationary and not isStationary:
+                stationaryIntervals.append((lastLowerBound, int(seq[i - 1])))
+                wasStationary = False
+            if not wasStationary and isStationary:
+                lastLowerBound = int(seq[i])
+                wasStationary = True
+
+        if wasStationary:
+            stationaryIntervals.append((lastLowerBound, int(seq[-1])))
+
+        return stationaryIntervals
+
+
+class InstantaneousIMUStationaryDetector(IMUStationaryDetector):
+    ACCEL_STDS = 3
+    GYRO_STDS = 3
 
     def computeTolerances(self, capturePaths: list[str], doPrintResults=True):
         if not capturePaths or len(capturePaths) == 0:
@@ -58,26 +103,26 @@ class IMUStationaryChecker:
         accelNorms = np.concatenate(captureAccelNorms)
         gyroNorms = np.concatenate(captureGyroNorms)
 
-        self.accelMean = np.mean(accelNorms)
+        self.accelCenter = np.mean(accelNorms)
         accelNormsStdev = np.std(accelNorms)
         self.accelTol = self.ACCEL_STDS * accelNormsStdev
 
-        self.gyroMean = np.mean(gyroNorms)
+        self.gyroCenter = np.mean(gyroNorms)
         gyroNormsStdev = np.std(gyroNorms)
         self.gyroTol = self.GYRO_STDS * gyroNormsStdev
 
         if doPrintResults:
             print(
                 f"Acceleration norms:"
-                f"\n\tMean = {self.accelMean:.6f}"
+                f"\n\tMean = {self.accelCenter:.6f}"
                 f"\n\tStdev = {accelNormsStdev:.6f} (tol = {self.accelTol:.6f})"
-                f"\n\tStationary interval = [{self.accelMean - self.accelTol:.6f}, {self.accelMean + self.accelTol:.6f}] m/s²"
+                f"\n\tStationary interval = [{self.accelCenter - self.accelTol:.6f}, {self.accelCenter + self.accelTol:.6f}] m/s²"
             )
             print(
                 f"Gyroscope norms:"
-                f"\n\tMean = {self.gyroMean:.6f}"
+                f"\n\tMean = {self.gyroCenter:.6f}"
                 f"\n\tStdev = {gyroNormsStdev:.6f} (tol = {self.gyroTol:.6f})"
-                f"\n\tStationary interval = [{self.gyroMean - self.gyroTol:.6f}, {self.gyroMean + self.gyroTol:.6f}] deg/s"
+                f"\n\tStationary interval = [{self.gyroCenter - self.gyroTol:.6f}, {self.gyroCenter + self.gyroTol:.6f}] deg/s"
             )
 
     # TODO: receive a and w vectors instead of individual components
@@ -96,8 +141,8 @@ class IMUStationaryChecker:
         accelNorm = math.sqrt(ax**2 + ay**2 + az**2)
         gyroNorm = math.sqrt(wroll**2 + wpitch**2 + wyaw**2)
 
-        isAccelStationary = bool(abs(accelNorm - self.accelMean) <= self.accelTol)
-        isGyroStationary = bool(abs(gyroNorm - self.gyroMean) <= self.gyroTol)
+        isAccelStationary = bool(abs(accelNorm - self.accelCenter) <= self.accelTol)
+        isGyroStationary = bool(abs(gyroNorm - self.gyroCenter) <= self.gyroTol)
 
         return isAccelStationary and isGyroStationary
 
@@ -115,8 +160,8 @@ class IMUStationaryChecker:
         wyaw = w[:, 2]
         gyroNorms = np.sqrt(wroll**2 + wpitch**2 + wyaw**2)
 
-        areAccelStationary = np.abs(accelNorms - self.accelMean) <= self.accelTol
-        areGyroStationary = np.abs(gyroNorms - self.gyroMean) <= self.gyroTol
+        areAccelStationary = np.abs(accelNorms - self.accelCenter) <= self.accelTol
+        areGyroStationary = np.abs(gyroNorms - self.gyroCenter) <= self.gyroTol
 
         return areAccelStationary & areGyroStationary
 

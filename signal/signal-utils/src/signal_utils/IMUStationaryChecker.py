@@ -71,13 +71,13 @@ class IMUStationaryChecker:
                 f"Acceleration norms:"
                 f"\n\tMean = {self.accelMean:.6f}"
                 f"\n\tStdev = {accelNormsStdev:.6f} (tol = {self.accelTol:.6f})"
-                f"\n\tStationary interval = [{self.accelMean - self.accelTol:.6f}, {self.accelMean + self.accelTol:.6f}]"
+                f"\n\tStationary interval = [{self.accelMean - self.accelTol:.6f}, {self.accelMean + self.accelTol:.6f}] m/s²"
             )
             print(
                 f"Gyroscope norms:"
                 f"\n\tMean = {self.gyroMean:.6f}"
                 f"\n\tStdev = {gyroNormsStdev:.6f} (tol = {self.gyroTol:.6f})"
-                f"\n\tStationary interval = [{self.gyroMean - self.gyroTol:.6f}, {self.gyroMean + self.gyroTol:.6f}]"
+                f"\n\tStationary interval = [{self.gyroMean - self.gyroTol:.6f}, {self.gyroMean + self.gyroTol:.6f}] deg/s"
             )
 
     # TODO: receive a and w vectors instead of individual components

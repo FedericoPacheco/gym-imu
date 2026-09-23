@@ -230,3 +230,4 @@
 
 - <https://medium.com/@k66115704/imu-mahony-filter-explanation-1ae75bf033ab>
 - <https://husainlokhandwala.in/2026/08/09/attitude-filter-comparison.html>
+- <https://itohi.com/snippets/filters/sensor-fusion-mahony/>

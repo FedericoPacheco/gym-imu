@@ -28,8 +28,8 @@ pre/post multiplication should NOT affect the norms.
 
 class IMUStationaryDetector:
 
-    def __init__(self):
-        self.reader = IMUSampleReader()
+    def __init__(self, reader=IMUSampleReader()):
+        self.reader = reader
         self.accelTol = -1.0
         self.gyroTol = -1.0
         self.accelCenter = -1.0
@@ -45,6 +45,10 @@ class IMUStationaryDetector:
         a: np.ndarray,
         w: np.ndarray,
     ) -> bool:
+        pass
+
+    @abstractmethod
+    def reset(self):
         pass
 
     def areStationarySamples(self, a: np.ndarray, w: np.ndarray) -> np.ndarray:
@@ -111,16 +115,17 @@ class InstantaneousIMUStationaryDetector(IMUStationaryDetector):
         if doPrintResults:
             print(
                 f"Acceleration norms:"
-                f"\n\tMean = {self.accelCenter:.6f}"
-                f"\n\tStdev = {accelNormsStdev:.6f} (tol = {self.accelTol:.6f})"
+                f"\n\tMean = {self.accelCenter:.6f} m/s²"
+                f"\n\tStdev = {accelNormsStdev:.6f} (tol = {self.accelTol:.6f}) m/s²"
                 f"\n\tStationary interval = [{self.accelCenter - self.accelTol:.6f}, {self.accelCenter + self.accelTol:.6f}] m/s²"
             )
             print(
                 f"Gyroscope norms:"
-                f"\n\tMean = {self.gyroCenter:.6f}"
-                f"\n\tStdev = {gyroNormsStdev:.6f} (tol = {self.gyroTol:.6f})"
+                f"\n\tMean = {self.gyroCenter:.6f} deg/s"
+                f"\n\tStdev = {gyroNormsStdev:.6f} (tol = {self.gyroTol:.6f}) deg/s"
                 f"\n\tStationary interval = [{self.gyroCenter - self.gyroTol:.6f}, {self.gyroCenter + self.gyroTol:.6f}] deg/s"
             )
+            print()
 
     def isStationarySample(
         self,
@@ -156,3 +161,81 @@ class InstantaneousIMUStationaryDetector(IMUStationaryDetector):
         areGyroStationary = np.abs(gyroNorms - self.gyroCenter) <= self.gyroTol
 
         return areAccelStationary & areGyroStationary
+
+
+class WindowedIMUStationaryDetector(IMUStationaryDetector):
+    ACCEL_MADS = 3 * 1.4826
+    GYRO_MADS = 3 * 1.4826
+
+    # Short but meaningful:
+    # 7.5 samples at 30 Hz
+    # 15 samples at 60 Hz
+    # 30 samples at 120 Hz
+    WINDOW_TIME_SECONDS = 0.25
+
+    def __init__(
+        self,
+        samplingFrequency: float,
+        reader=IMUSampleReader(),
+    ):
+        super().__init__(reader=reader)
+        self.stationaryCount = 0
+        self.windowSize = math.floor(self.WINDOW_TIME_SECONDS * samplingFrequency)
+
+    def computeTolerances(self, capturePaths: list[str], doPrintResults=True):
+        if not capturePaths or len(capturePaths) == 0:
+            raise ValueError("No capture paths provided for tolerance computation.")
+
+        captureAccelNorms = []
+        captureGyroNorms = []
+        for path in capturePaths:
+            samples = self.reader.read(path)
+            a = samples[1]
+            w = samples[2]
+            captureAccelNorms.append(np.linalg.norm(a, axis=1))
+            captureGyroNorms.append(np.linalg.norm(w, axis=1))
+        accelNorms = np.concatenate(captureAccelNorms)
+        gyroNorms = np.concatenate(captureGyroNorms)
+
+        self.accelCenter = np.median(accelNorms)
+        self.gyroCenter = np.median(gyroNorms)
+        accelMad = np.median(np.abs(accelNorms - self.accelCenter))
+        gyroMad = np.median(np.abs(gyroNorms - self.gyroCenter))
+        self.accelTol = self.ACCEL_MADS * accelMad
+        self.gyroTol = self.GYRO_MADS * gyroMad
+
+        if doPrintResults:
+            print(
+                f"Acceleration norms:"
+                f"\n\tMedian = {self.accelCenter:.6f} m/s²"
+                f"\n\tMAD = {accelMad:.6f} (tol = {self.accelTol:.6f}) m/s²"
+                f"\n\tStationary interval = [{self.accelCenter - self.accelTol:.6f}, {self.accelCenter + self.accelTol:.6f}] m/s²"
+            )
+            print(
+                f"Gyroscope norms:"
+                f"\n\tMedian = {self.gyroCenter:.6f} deg/s"
+                f"\n\tMAD = {gyroMad:.6f} (tol = {self.gyroTol:.6f}) deg/s"
+                f"\n\tStationary interval = [{self.gyroCenter - self.gyroTol:.6f}, {self.gyroCenter + self.gyroTol:.6f}] deg/s"
+            )
+            print()
+
+    # Meant to be called repeatedly with samples from a data stream
+    def isStationarySample(self, a: np.ndarray, w: np.ndarray) -> bool:
+        if a.shape != (3,) or w.shape != (3,):
+            raise ValueError("Input arrays must have shape (3,).")
+
+        isAccelStationary = (
+            np.abs(np.linalg.norm(a) - self.accelCenter) <= self.accelTol
+        )
+        isGyroStationary = np.abs(np.linalg.norm(w) - self.gyroCenter) <= self.gyroTol
+
+        if isAccelStationary & isGyroStationary:
+            self.stationaryCount += 1
+            if self.stationaryCount >= self.windowSize:
+                return True
+        else:
+            self.stationaryCount = 0
+        return False
+
+    def reset(self):
+        self.stationaryCount = 0

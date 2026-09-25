@@ -23,28 +23,25 @@ Other rules:
 
 ### In Progress
 
-- Evaluate high-pass filtering to separate real exercise acceleration for later velocity estimation.  
+- Review velocity jupyter notebook documentation and zero velocity updates for possible improvements.
 
 ### Next
 
-- Review velocity jupyter notebook documentation and zero velocity updates for possible improvements.
 - Make decision about buying new IMU sensor (e.g. BMI270, ICM-42688-P, ISM330DHCX, BMI323, BNO085, ICM-20948) and microcontroller (e.g. ESP32 s3). Write ADR with rationale.
 
 ### Backlog
 
-- Implement velocity estimation with drift-control on the device and test for performance.
+- Implement velocity estimation  on the device and test for performance.
 - Fine tune transmission parameters to optimize for latency.
 - Fine tune pipe sizes to optimize for data preservation.
 - Fine tune tasks priorities and ISR behaviors to optimize for latency and responsiveness.
 - Fine tune IMU parameters to optimize for throughput.
 - Perform spectral analysis to diagnose aliasing. Provide a recommendation of minimum sampling frequency.
-- Perform spectral analysis with the hardware low-pass filter configured with different cutoff frequencies to understand its behavior. Analyze both stationary and moving captures.
+- Perform spectral analysis with the MPU6050's hardware low-pass filter configured with different cutoff frequencies to understand its behavior. Analyze both stationary and moving captures.
 - Evaluate whether to remove or not the remaining freeRTOS direct calls, replacing them with my own abstractions.
 - Investigate ESP-IDF DSP library: <https://components.espressif.com/components/espressif/esp-dsp/versions/1.8.2/readme>, <https://docs.espressif.com/projects/esp-dsp/en/latest/esp32/esp-dsp-apis.html#>
 
-- Implement on a jupyter notebook a simple rep-counting mechanism and evaluate it on real captures, comparing it against video references.
-- Implement simple rep-counting mechanism on the device and test for performance.
-- Review if error macros work with variable arguments
+- Implement on a jupyter notebook a repetition detection algorithm and evaluate it on real captures, comparing it against video references.
 - Fork I2C and MPU libraries on github and apply changes there. Then include as dependencies in the platformIO file.
 - Remove unnecessary includes to reduce compiled code size.
 - Extract control logic from `src/main.cpp` to separate class.
@@ -58,6 +55,7 @@ Other rules:
 - Improve setup documentation aiming for easy reproducibility by others.
 - Add license to project.
 - Order links at learning sources file.
+- Review if error macros work with variable arguments.
 
 ### Done
 
@@ -120,3 +118,4 @@ Other rules:
 - Implement Mahony filter on jupyter notebook and review gravity removal results.
 - Implement writing to csv file with quaternion orientation.
 - Improve stationary detection with stationary window and robust statistics.
+- Evaluate and document repetition detection strategies.  

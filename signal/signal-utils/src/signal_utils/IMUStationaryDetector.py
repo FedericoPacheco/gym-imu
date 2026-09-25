@@ -28,8 +28,15 @@ pre/post multiplication should NOT affect the norms.
 
 class IMUStationaryDetector:
 
-    def __init__(self, reader=IMUSampleReader()):
+    def __init__(
+        self,
+        kAccel: float = 1.0,
+        kGyro: float = 1.0,
+        reader=IMUSampleReader(),
+    ):
         self.reader = reader
+        self.kAccel = kAccel
+        self.kGyro = kGyro
         self.accelTol = float("-inf")
         self.gyroTol = float("-inf")
         self.accelCenter = float("-inf")
@@ -80,8 +87,16 @@ class IMUStationaryDetector:
 
 
 class InstantaneousIMUStationaryDetector(IMUStationaryDetector):
-    ACCEL_STDS = 3
-    GYRO_STDS = 3
+    DFLT_ACCEL_STDS = 3
+    DFLT_GYRO_STDS = 3
+
+    def __init__(
+        self,
+        reader=IMUSampleReader(),
+        kAccel: float = DFLT_ACCEL_STDS,
+        kGyro: float = DFLT_GYRO_STDS,
+    ):
+        super().__init__(kAccel=kAccel, kGyro=kGyro, reader=reader)
 
     def computeTolerances(self, capturePaths: list[str], doPrintResults=True):
         if not capturePaths or len(capturePaths) == 0:
@@ -108,11 +123,11 @@ class InstantaneousIMUStationaryDetector(IMUStationaryDetector):
 
         self.accelCenter = np.mean(accelNorms)
         accelNormsStdev = np.std(accelNorms)
-        self.accelTol = self.ACCEL_STDS * accelNormsStdev
+        self.accelTol = self.kAccel * accelNormsStdev
 
         self.gyroCenter = np.mean(gyroNorms)
         gyroNormsStdev = np.std(gyroNorms)
-        self.gyroTol = self.GYRO_STDS * gyroNormsStdev
+        self.gyroTol = self.kGyro * gyroNormsStdev
 
         if doPrintResults:
             print(
@@ -166,8 +181,8 @@ class InstantaneousIMUStationaryDetector(IMUStationaryDetector):
 
 
 class WindowedIMUStationaryDetector(IMUStationaryDetector):
-    ACCEL_MADS = 3 * 1.4826
-    GYRO_MADS = 3 * 1.4826
+    DFLT_ACCEL_MADS = 3 * 1.4826
+    DFLT_GYRO_MADS = 6 * 1.4826
 
     # Short but meaningful:
     # 7.5 samples at 30 Hz
@@ -178,9 +193,11 @@ class WindowedIMUStationaryDetector(IMUStationaryDetector):
     def __init__(
         self,
         samplingFrequency: float,
+        kAccel: float = DFLT_ACCEL_MADS,
+        kGyro: float = DFLT_GYRO_MADS,
         reader=IMUSampleReader(),
     ):
-        super().__init__(reader=reader)
+        super().__init__(reader=reader, kAccel=kAccel, kGyro=kGyro)
         self.windowSize = math.floor(self.WINDOW_TIME_SECONDS * samplingFrequency)
 
     def computeTolerances(self, capturePaths: list[str], doPrintResults=True):
@@ -202,8 +219,8 @@ class WindowedIMUStationaryDetector(IMUStationaryDetector):
         self.gyroCenter = np.median(gyroNorms)
         accelMad = np.median(np.abs(accelNorms - self.accelCenter))
         gyroMad = np.median(np.abs(gyroNorms - self.gyroCenter))
-        self.accelTol = self.ACCEL_MADS * accelMad
-        self.gyroTol = self.GYRO_MADS * gyroMad
+        self.accelTol = self.kAccel * accelMad
+        self.gyroTol = self.kGyro * gyroMad
 
         if doPrintResults:
             print(

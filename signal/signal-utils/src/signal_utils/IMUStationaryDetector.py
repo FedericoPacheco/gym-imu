@@ -181,8 +181,8 @@ class InstantaneousIMUStationaryDetector(IMUStationaryDetector):
 
 
 class WindowedIMUStationaryDetector(IMUStationaryDetector):
-    DFLT_ACCEL_MADS = 3 * 1.4826
-    DFLT_GYRO_MADS = 6 * 1.4826
+    DFLT_ACCEL_MADS = 5
+    DFLT_GYRO_MADS = 50
 
     # Short but meaningful:
     # 7.5 samples at 30 Hz

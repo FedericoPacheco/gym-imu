@@ -27,6 +27,7 @@ Other rules:
 
 ### Next
 
+- Update readme's signal processing section and merge branch.
 - Make decision about buying new IMU sensor (e.g. BMI270, ICM-42688-P, ISM330DHCX, BMI323, BNO085, ICM-20948) and microcontroller (e.g. ESP32 s3). Write ADR with rationale.
 
 ### Backlog

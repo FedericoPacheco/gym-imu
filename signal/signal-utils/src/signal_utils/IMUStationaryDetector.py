@@ -30,10 +30,11 @@ class IMUStationaryDetector:
 
     def __init__(self, reader=IMUSampleReader()):
         self.reader = reader
-        self.accelTol = -1.0
-        self.gyroTol = -1.0
-        self.accelCenter = -1.0
-        self.gyroCenter = -1.0
+        self.accelTol = float("-inf")
+        self.gyroTol = float("-inf")
+        self.accelCenter = float("-inf")
+        self.gyroCenter = float("-inf")
+        self.reset()
 
     @abstractmethod
     def computeTolerances(self, capturePaths: list[str], doPrintResults=True):
@@ -52,6 +53,7 @@ class IMUStationaryDetector:
         pass
 
     def areStationarySamples(self, a: np.ndarray, w: np.ndarray) -> np.ndarray:
+        self.reset()
         return np.array(
             [self.isStationarySample(a[i, :], w[i, :]) for i in range(len(a))]
         )
@@ -179,7 +181,6 @@ class WindowedIMUStationaryDetector(IMUStationaryDetector):
         reader=IMUSampleReader(),
     ):
         super().__init__(reader=reader)
-        self.stationaryCount = 0
         self.windowSize = math.floor(self.WINDOW_TIME_SECONDS * samplingFrequency)
 
     def computeTolerances(self, capturePaths: list[str], doPrintResults=True):

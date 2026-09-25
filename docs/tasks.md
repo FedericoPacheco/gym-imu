@@ -23,12 +23,12 @@ Other rules:
 
 ### In Progress
 
-- Improve stationary detection.
-- Review velocity jupyter notebook documentation and zero velocity updates for possible improvements.
+- Evaluate high-pass filtering to separate real exercise acceleration for later velocity estimation.  
 
 ### Next
 
-- Make decision about buying new IMU sensor and microcontroller.
+- Review velocity jupyter notebook documentation and zero velocity updates for possible improvements.
+- Make decision about buying new IMU sensor (e.g. BMI270, ICM-42688-P, ISM330DHCX, BMI323, BNO085, ICM-20948) and microcontroller (e.g. ESP32 s3). Write ADR with rationale.
 
 ### Backlog
 
@@ -40,6 +40,7 @@ Other rules:
 - Perform spectral analysis to diagnose aliasing. Provide a recommendation of minimum sampling frequency.
 - Perform spectral analysis with the hardware low-pass filter configured with different cutoff frequencies to understand its behavior. Analyze both stationary and moving captures.
 - Evaluate whether to remove or not the remaining freeRTOS direct calls, replacing them with my own abstractions.
+- Investigate ESP-IDF DSP library: <https://components.espressif.com/components/espressif/esp-dsp/versions/1.8.2/readme>, <https://docs.espressif.com/projects/esp-dsp/en/latest/esp32/esp-dsp-apis.html#>
 
 - Implement on a jupyter notebook a simple rep-counting mechanism and evaluate it on real captures, comparing it against video references.
 - Implement simple rep-counting mechanism on the device and test for performance.
@@ -56,6 +57,7 @@ Other rules:
 - Try out ways to reduce power comsumption on the device: microcontroller sleep, turning off IMU sensor, reducing processor frequency, configure unused IO lines, etc.
 - Improve setup documentation aiming for easy reproducibility by others.
 - Add license to project.
+- Order links at learning sources file.
 
 ### Done
 
@@ -117,3 +119,4 @@ Other rules:
 - Choose new orientation filter (Mahony, Madgwick, etc.) to overcome complementary filter limitations and write ADR with rationale.
 - Implement Mahony filter on jupyter notebook and review gravity removal results.
 - Implement writing to csv file with quaternion orientation.
+- Improve stationary detection with stationary window and robust statistics.

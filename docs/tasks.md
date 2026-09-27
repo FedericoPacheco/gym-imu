@@ -23,11 +23,10 @@ Other rules:
 
 ### In Progress
 
-- Review velocity jupyter notebook documentation and zero velocity updates for possible improvements.
+- Update readme's signal processing section and merge branch.
 
 ### Next
 
-- Update readme's signal processing section and merge branch.
 - Make decision about buying new IMU sensor (e.g. BMI270, ICM-42688-P, ISM330DHCX, BMI323, BNO085, ICM-20948) and microcontroller (e.g. ESP32 s3). Write ADR with rationale.
 
 ### Backlog
@@ -120,3 +119,4 @@ Other rules:
 - Implement writing to csv file with quaternion orientation.
 - Improve stationary detection with stationary window and robust statistics.
 - Evaluate and document repetition detection strategies.  
+- Review velocity jupyter notebook documentation and zero velocity updates for possible improvements.

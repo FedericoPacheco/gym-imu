@@ -31,7 +31,7 @@ Pros:
 
 Cons:
 
-* Requires tuning $K_{i}$ and $K_{p}$ gains carefully.
+* Requires tuning $K_{I}$ and $K_{P}$ gains carefully.
 * May not shield a 10x improvement in residual acceleration.
 
 *Madgwick*:

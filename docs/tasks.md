@@ -23,25 +23,23 @@ Other rules:
 
 ### In Progress
 
-Update README.md with new information about the signal processing pipeline.
-
 ### Next
+
+- Make decision about buying new IMU sensor (e.g. BMI270, ICM-42688-P, ISM330DHCX, BMI323, BNO085, ICM-20948) and microcontroller (e.g. ESP32 s3). Write ADR with rationale.
 
 ### Backlog
 
-- Perform spectral analysis to diagnose aliasing. Provide a recommendation of minimum sampling frequency.
-- Implement complementary filter on the device and test for performance.
-- Implement gravity removal strategy on the device and test for performance.
-- Implement velocity estimation with drift-control on the device and test for performance.
-- Implement on a jupyter notebook a simple rep-counting mechanism and evaluate it on real captures, comparing it against video references.
-- Implement simple rep-counting mechanism on the device and test for performance.
+- Implement velocity estimation  on the device and test for performance.
 - Fine tune transmission parameters to optimize for latency.
 - Fine tune pipe sizes to optimize for data preservation.
 - Fine tune tasks priorities and ISR behaviors to optimize for latency and responsiveness.
 - Fine tune IMU parameters to optimize for throughput.
-- Perform spectral analysis with the hardware low-pass filter configured with different cutoff frequencies to understand its behavior. Analyze both stationary and moving captures.
+- Perform spectral analysis to diagnose aliasing. Provide a recommendation of minimum sampling frequency.
+- Perform spectral analysis with the MPU6050's hardware low-pass filter configured with different cutoff frequencies to understand its behavior. Analyze both stationary and moving captures.
+- Evaluate whether to remove or not the remaining freeRTOS direct calls, replacing them with my own abstractions.
+- Investigate ESP-IDF DSP library: <https://components.espressif.com/components/espressif/esp-dsp/versions/1.8.2/readme>, <https://docs.espressif.com/projects/esp-dsp/en/latest/esp32/esp-dsp-apis.html#>
 
-- Review if error macros work with variable arguments
+- Implement on a jupyter notebook a repetition detection algorithm and evaluate it on real captures, comparing it against video references.
 - Fork I2C and MPU libraries on github and apply changes there. Then include as dependencies in the platformIO file.
 - Remove unnecessary includes to reduce compiled code size.
 - Extract control logic from `src/main.cpp` to separate class.
@@ -54,6 +52,8 @@ Update README.md with new information about the signal processing pipeline.
 - Try out ways to reduce power comsumption on the device: microcontroller sleep, turning off IMU sensor, reducing processor frequency, configure unused IO lines, etc.
 - Improve setup documentation aiming for easy reproducibility by others.
 - Add license to project.
+- Order links at learning sources file.
+- Review if error macros work with variable arguments.
 
 ### Done
 
@@ -105,3 +105,17 @@ Update README.md with new information about the signal processing pipeline.
 - Implement simple and fast noise-reduction/low-pass filter on acceleration to improve velocity estimation.
 - Evaluate and implement additional low/moderate effort interventions to improve velocity estimation.
 - Evaluate and implement refinements for orientation estimation.
+- Update README.md with new information about the signal processing pipeline.
+- Create utility to make assertions on complete time series, using output .csv files from the offline analysis notebooks.
+- Update calibration implementation on the device and test for performance.
+- Implement noise reduction on the device and test for performance.
+- Implement complementary filter on the device and test for performance.
+- Implement gravity removal strategy on the device and test for performance.
+- Attempt to improve complementary filter (Euler kinematical equations, handling gimbal lock, better orientation branch choosing, etc).
+- Choose new orientation filter (Mahony, Madgwick, etc.) to overcome complementary filter limitations and write ADR with rationale.
+- Implement Mahony filter on jupyter notebook and review gravity removal results.
+- Implement writing to csv file with quaternion orientation.
+- Improve stationary detection with stationary window and robust statistics.
+- Evaluate and document repetition detection strategies.  
+- Review velocity jupyter notebook documentation and zero velocity updates for possible improvements.
+- Update readme's signal processing section and merge branch.

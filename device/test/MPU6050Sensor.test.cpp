@@ -301,9 +301,9 @@ TEST(MPU6050Sensor_onReadTaskNotification,
   EXPECT_CALL(*pipe, push(_))
       .Times(1)
       .WillOnce(DoAll(WithArg<0>([](const IMUSample &sample) {
-                        EXPECT_FLOAT_EQ(sample.a.x, 1.0f * MPU6050Sensor::g);
-                        EXPECT_FLOAT_EQ(sample.a.y, 2.0f * MPU6050Sensor::g);
-                        EXPECT_FLOAT_EQ(sample.a.z, 3.0f * MPU6050Sensor::g);
+                        EXPECT_FLOAT_EQ(sample.a.x, 1.0f * g);
+                        EXPECT_FLOAT_EQ(sample.a.y, 2.0f * g);
+                        EXPECT_FLOAT_EQ(sample.a.z, 3.0f * g);
                         EXPECT_FLOAT_EQ(sample.w.roll, 5.0f);
                         EXPECT_FLOAT_EQ(sample.w.pitch, 10.0f);
                         EXPECT_FLOAT_EQ(sample.w.yaw, 15.0f);

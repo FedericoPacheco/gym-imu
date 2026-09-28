@@ -191,12 +191,20 @@
 - <https://www.youtube.com/watch?v=WzLJDjfm2Xo>
 - <https://www.youtube.com/watch?v=SrLcvAw1iW4>
 - <https://en.wikipedia.org/wiki/Atan2>
+- <https://www.youtube.com/watch?v=-OyRCgv-hPs>
+- <https://www.youtube.com/watch?v=GJBc6z6p0KQ>
+- <https://www.youtube.com/watch?v=9GZjtfYOXao>
+- <https://www.youtube.com/watch?v=uTabQKD2WMs>
 
 ### Quaternions
 
 - <https://en.wikipedia.org/wiki/Quaternions_and_spatial_rotation>
 - <https://www.youtube.com/watch?v=d4EgbgTm0Bg>
 - <https://www.youtube.com/watch?v=zjMuIxRvygQ>
+- <https://www.youtube.com/playlist?list=PLpzmRsG7u_gr0FO12cBWj-15_e0yqQQ1U>
+- <http://youtube.com/watch?v=98Mfe-Vfgo0>
+- <https://eater.net/quaternions>
+- <https://www.youtube.com/watch?v=CecyVl9iXKM>
 
 ## Human motion
 
@@ -211,3 +219,15 @@
 ## Signals
 
 - <https://www.youtube.com/watch?v=L6YJqhbsuFY>
+
+## Orientation filters reference implementations / library
+
+- <https://ahrs.readthedocs.io/en/latest/index.html>
+- <https://ahrs.readthedocs.io/en/latest/filters/madgwick.html>
+- <https://ahrs.readthedocs.io/en/latest/filters/mahony.html>
+
+## Mahony filter
+
+- <https://medium.com/@k66115704/imu-mahony-filter-explanation-1ae75bf033ab>
+- <https://husainlokhandwala.in/2026/08/09/attitude-filter-comparison.html>
+- <https://itohi.com/snippets/filters/sensor-fusion-mahony/>

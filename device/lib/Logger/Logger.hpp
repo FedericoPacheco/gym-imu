@@ -10,6 +10,17 @@
 #include <cstdio>
 #include <cstring>
 
+/*
+Note: if logs don't behave as expected, make sure to
+check the logging level from esp-idf itself:
+
+pio run -t menuconfig
+Then look for: Component config > Log > Log Level > Default log verbosity
+
+For the final product, consider disabling them completely:
+they won't be seen without UART connection anyway, and the introduce a
+small overhead on the device.
+*/
 class UARTLogger : public LoggerPort {
 private:
   static const int MAX_LOG_MESSAGE_LENGTH = 192;

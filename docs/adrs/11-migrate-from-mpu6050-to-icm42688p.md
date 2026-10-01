@@ -12,7 +12,7 @@ Accepted
 
 ### Experience with current sensor
 
-I'm currently using a [MPU6050](../datasheets/MPU6050%20datasheet.pdf), and I've experienced the following issues after working on velocity estimation:
+I'm currently using a [MPU6050](../datasheets/MPU6050%20datasheet.pdf), Based on measurements from my own captures, I've experienced a series of issues after working on velocity estimation:
 
 * The sensor is a clone/counterfeit, so performance is probably worse than a genuine MPU6050, which has been discontinued many years ago.
 * The genuine sensor itself prioritizes low cost and general-purpose usage over high-precision.
@@ -83,7 +83,7 @@ Other sources:
 
 ## Decision
 
-Choose the ICM-42688-P due to its relatively low cost, higher availability and improved performance metrics, as detailed in the comparison below (values retrieved from the respective datasheets):
+Choose the ICM-42688-P due to its relatively low cost, higher availability and improved performance metrics, as detailed in the comparison below (typical values retrieved from the respective datasheets):
 
 **Gyroscope**:
 
@@ -125,7 +125,7 @@ Choose the ICM-42688-P due to its relatively low cost, higher availability and i
 | Temperature sensor | Yes | Yes |
 | Motion features | Pedometer, support for gesture recognition, panning, zooming, scrolling, taps, shaking | Pedometer, tilt detection, tap detection, wake on motion, significant motion detection |
 
-The ICM-42688-P improves many sources of errors (bias, noise, non-linearity, cross-axis sensitivity, variation over temperature), has better sensitivity, and offers timestamps. All these features help with better velocity estimation.
+The ICM-42688-P improves many sources of errors (bias, noise, non-linearity, cross-axis sensitivity, variation over temperature), has better sensitivity, and offers timestamps. My hypothesis is that these improvements will translate into more accurate velocity estimation.
 
 Regarding the device driver for the sensor, there are a couple of options:
 
@@ -133,9 +133,9 @@ Regarding the device driver for the sensor, there are a couple of options:
 * <https://github.com/Barsy-Barsevich/ICM42688_Barsotion>: almost non-existent documentation + spare comments in russian. For some reason has code referring to Kalman and the FFT. No releases. Specific to my sensor. Its FIFO subroutine appears to use an SPI-specific read routine despite also offering I2C support.
 * <https://github.com/nickchen110/ICM42688_SensorAPI>: maybe the cleanest but very incomplete (I2C only, raw reads, config, power down, no FIFO support), relatively recent activity (8 months ago). Released on the ESP registry: <https://components.espressif.com/components/nickchen110/icm42688/versions/1.0.3/readme>.
 
-All options, in case they are used, will probably require a more thorough code review, adaptation and testing. Because of this, I'll attempt to write a custom driver tailored to the specific needs, having the previous drivers and the sensor datasheet as reference. The rest of the system should remain unchanged provided the code implements the IMUSensorPort adapter and streams samples to queue connecting to the task with the IMUSignalProcessor instance.
+All options, in case they are used, will probably require a more thorough code review, adaptation and testing. Because of this, I'll attempt to write a custom driver tailored to the specific needs, having the previous drivers and the sensor datasheet as reference. The rest of the system should remain unchanged provided the code implements the IMUSensorPort adapter and streams samples to the queue connecting to the task with the IMUSignalProcessor instance.
 
-After writing the driver, assemble a new version of the prototype and carry it to the gym to record a new set of IMU data. These captures can later be analyzed with the existent offline processing jupyter notebooks to address the accuracy improvements.
+After writing the driver, assemble a new version of the prototype and carry it to the gym to record a new set of IMU data. These captures can later be analyzed with the existent offline processing jupyter notebooks to address the accuracy improvements. At a minimum, the sensor should perform incrementally better under equivalent captures.
 
 ## Consequences
 

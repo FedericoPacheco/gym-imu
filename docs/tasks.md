@@ -23,11 +23,10 @@ Other rules:
 
 ### In Progress
 
-- Organize docs/misc folder. Separate books, slides, papers into different folders. Update references (jupyter notebooks, ADRs).
+- Organize online-sources.md file.
 
 ### Next
 
-- Organize online-sources.md file.
 - Identify saved captures as coming from the mpu6050 sensor, either in the filename or via a subfolder. Update references and capture notebooks.
 
 ### Backlog
@@ -130,3 +129,4 @@ Other rules:
 - Update readme's signal processing section and merge branch.
 - Make decision about buying a new IMU sensor (e.g. BMI270, ICM-42688-P, ISM330DHCX, BMI323, BNO085, ICM-20948).
 - Make decision about buying a new microcontroller (e.g. ESP32 s3).
+- Organize docs/misc folder. Separate books, slides, papers into different folders. Update references (jupyter notebooks, ADRs).

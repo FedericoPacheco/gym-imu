@@ -1,241 +1,212 @@
-# Learning sources
+# Online sources
 
 ## Essential
 
-- PlatformIO: <https://docs.platformio.org/en/latest/>
-- ESP-IDF: <https://docs.espressif.com/projects/esp-idf/en/stable/esp32c3/index.html>
-- FreeRTOS: <https://www.freertos.org/Documentation/00-Overview>
-- C++ Reference: <https://en.cppreference.com/index.html>
-- Cplusplus Reference: <https://cplusplus.com/reference/>
-- YT series on C++: <https://www.youtube.com/playlist?list=PLlrATfBNZ98dudnM48yfGUldqGD0S4FFb>
-- Numpy Reference: <https://numpy.org/doc/stable/reference/>
-- Scipy Reference: <https://docs.scipy.org/doc/scipy/reference/>
+- [PlatformIO docs](https://docs.platformio.org/en/latest/)
+- [ESP-IDF docs](https://docs.espressif.com/projects/esp-idf/en/stable/esp32c3/index.html)
+- [FreeRTOS docs](https://www.freertos.org/Documentation/00-Overview)
+- [C++ Reference](https://en.cppreference.com/index.html)
+- [Cplusplus Reference](https://cplusplus.com/reference/)
+- [C++ - The Cherno (YT)](https://www.youtube.com/playlist?list=PLlrATfBNZ98dudnM48yfGUldqGD0S4FFb)
+- [Python docs](https://docs.python.org/3/)
+- [Numpy Reference](https://numpy.org/doc/stable/reference/)
+- [Scipy Reference](https://docs.scipy.org/doc/scipy/reference/)
+- [Scipy tutorials](https://docs.scipy.org/doc/scipy/tutorial/index.html)
 
-## ESP32 variants
+## Device
 
-- <https://www.youtube.com/watch?v=MEhoZ--nOgw>
-- <https://www.youtube.com/watch?v=u5unB24lhC4>
-- <https://www.youtube.com/watch?v=HMnb16XfRMw>
+### ESP32 variants
 
-## ESP32-C3 Supermini
+- [What ESP32 to buy & use? ESP32 S2,S3,C3,C6,H2... - PrivAI Compute Labs](https://www.youtube.com/watch?v=MEhoZ--nOgw)
+- [ESP32 Guide 2024 | Choosing and Using an ESP32 Board - DroneBot Workshop](https://www.youtube.com/watch?v=u5unB24lhC4)
+- [Seeeduino XIAO Family - All the Seeeduino XIAO Boards - DroneBot Workshop](https://www.youtube.com/watch?v=HMnb16XfRMw)
+- [Getting Started with the ESP32-C3 Super Mini - Random Nerd Tutorials](https://randomnerdtutorials.com/getting-started-esp32-c3-super-mini/)
+- [The SMALLEST ESP32 Board | Getting Started with XIAO ESP32 C3 | ESP32 Projects - techniesms](https://www.youtube.com/watch?v=PZZYTYN8hjc)
+- [Getting Started with Seeed Studio XIAO ESP32C3](https://wiki.seeedstudio.com/XIAO_ESP32C3_Getting_Started/)
+- [Seeed Studio XIAO ESP32C3 - PlatformIO](https://docs.platformio.org/en/latest/boards/espressif32/seeed_xiao_esp32c3.html)
 
-- <https://randomnerdtutorials.com/getting-started-esp32-c3-super-mini/>
+## Development on VSCode
 
-## XIAO ESP32-C3
-
-- <https://www.youtube.com/watch?v=PZZYTYN8hjc>
-- <https://wiki.seeedstudio.com/XIAO_ESP32C3_Getting_Started/>
-- <https://docs.platformio.org/en/latest/boards/espressif32/seeed_xiao_esp32c3.html>
-
-## Develop device code on VSCode
-
-- <https://randomnerdtutorials.com/vs-code-platformio-ide-esp32-esp8266-arduino/>
-- <https://docs.platformio.org/en/latest/integration/ide/vscode.html>
+- [Getting Started with VS Code and PlatformIO IDE for ESP32 and ESP8266 (Windows, Mac OS X, Linux Ubuntu)](https://randomnerdtutorials.com/vs-code-platformio-ide-esp32-esp8266-arduino/)
+- [PlatformIO IDE for VSCode](https://docs.platformio.org/en/latest/integration/ide/vscode.html)
 
 ## Testing
 
-- <https://docs.platformio.org/en/latest/advanced/unit-testing/index.html>
-- <http://youtube.com/watch?v=UOGMNRcV9-4>
-- <https://www.youtube.com/watch?v=z-uWt5wVVkU>
-- <https://docs.espressif.com/projects/esp-idf/en/stable/esp32c3/api-guides/unit-tests.html>
-- <https://docs.espressif.com/projects/esp-idf/en/stable/esp32c3/api-guides/host-apps.html>
-- <https://www.freertos.org/Documentation/02-Kernel/03-Supported-devices/04-Demos/03-Emulation-and-simulation/Linux/FreeRTOS-simulator-for-Linux>
-- <https://github.com/meekrosoft/fff>
-- <https://google.github.io/googletest/primer.html>
+- [Unit testing - PlatformIO](https://docs.platformio.org/en/latest/advanced/unit-testing/index.html)
+- [Testing code coverage in C using GCOV - Antshiv Robotics](http://youtube.com/watch?v=UOGMNRcV9-4)
+- [You Can't Unit Test C, Right? - LinuxConfAu 2018 Sydney Australia](https://www.youtube.com/watch?v=z-uWt5wVVkU)
+- [Unit Testing in ESP32-C3 - Espressif](https://docs.espressif.com/projects/esp-idf/en/stable/esp32c3/api-guides/unit-tests.html)
+- [Running ESP-IDF Applications on Host - Espressif](https://docs.espressif.com/projects/esp-idf/en/stable/esp32c3/api-guides/host-apps.html)
+- [Posix/Linux Simulator Demo for FreeRTOS using GCC](https://www.freertos.org/Documentation/02-Kernel/03-Supported-devices/04-Demos/03-Emulation-and-simulation/Linux/FreeRTOS-simulator-for-Linux)
+- [Fake Function Framework (fff) - Github](https://github.com/meekrosoft/fff)
+- [GoogleTest Primer](https://google.github.io/googletest/primer.html)
 
 ## MPU-6050
 
-- <https://randomnerdtutorials.com/esp32-mpu-6050-accelerometer-gyroscope-arduino/>
-- <https://github.com/ElectronicCats/mpu6050>
-- <https://github.com/natanaeljr/esp32-MPU-driver>
-- <https://github.com/rfetick/MPU6050_light>
-- <https://invensense.tdk.com/products/motion-tracking/6-axis/mpu-6050/>
+- [ESP32 with MPU-6050 Accelerometer, Gyroscope and Temperature Sensor (Arduino) - Random Nerd Tutorials](https://randomnerdtutorials.com/esp32-mpu-6050-accelerometer-gyroscope-arduino/)
+- [MPU6050 by Electronic Cats - Library for Arduino - Github](https://github.com/ElectronicCats/mpu6050)
+- [ESP32 MPU driver - Github](https://github.com/natanaeljr/esp32-MPU-driver)
+- [MPU6050_light - Github](https://github.com/rfetick/MPU6050_light)
 
 ## Button
 
-- <https://roboticsbackend.com/arduino-input_pullup-pinmode/>
+- [Arduino INPUT_PULLUP Explained (pinMode) - The Robotics Back-End](https://roboticsbackend.com/arduino-input_pullup-pinmode/)
 
 ## Multiple workspaces on VSCode
 
-- <https://code.visualstudio.com/docs/editing/workspaces/multi-root-workspaces>
+- [Multi-root Workspaces - VSCode](https://code.visualstudio.com/docs/editing/workspaces/multi-root-workspaces)
 
 ## Multimeter
 
-- <https://www.youtube.com/watch?v=EvAq9zqRB5I>
-- <https://www.youtube.com/watch?v=4lAyzRxsbDc>
+- [How To Use A Multimeter: The VERY Basics! - Simple Electronics](https://www.youtube.com/watch?v=EvAq9zqRB5I)
+- [How to use a multimeter like a pro! The Ultimate guide - The Engineering Mindset](https://www.youtube.com/watch?v=4lAyzRxsbDc)
 
 ## Arduino vs ESP-IDF vs PlatformIO
 
-- <https://www.youtube.com/watch?v=yvWbvnj3_ss>
-- <https://www.youtube.com/watch?v=iKLJv6rvpTs>
+- [ESP-IDF vs Arduino IDE: Which is Better for ESP32? - RoboCircuits](https://www.youtube.com/watch?v=yvWbvnj3_ss)
+- [Why Use PlatformIO instead of Arduino? (ESP32 + Arduino series) - Simply Explained](https://www.youtube.com/watch?v=iKLJv6rvpTs)
 
 ## Digital inputs
 
-- <https://randomnerdtutorials.com/esp-idf-esp32-gpio-inputs/>
+- [ESP-IDF: ESP32 GPIO – Read Digital Inputs - Random Nerd Tutorials](https://randomnerdtutorials.com/esp-idf-esp32-gpio-inputs/)
 
 ## Protoboards
 
-- <https://www.youtube.com/watch?v=5tydtZl95dE>
-- <https://www.youtube.com/watch?v=F9Krq7seV1g>
-- <https://www.youtube.com/watch?v=la5BafeXsUI>
-- <https://www.youtube.com/watch?v=a3wDEcORRR4>
+- [Breadboards vs Protoboards vs PCBs | Zero to Maker Workshop - Core Electronics](https://www.youtube.com/watch?v=5tydtZl95dE)
+- [From Solderless Breadboard to Soldered Circuit - Electronics with Becky Stern | Digi-Key Electronics - DigiKey](https://www.youtube.com/watch?v=F9Krq7seV1g)
+- [How to Make a Circuit Board (Beginner's Guide) - Hardware Unknown](https://www.youtube.com/watch?v=la5BafeXsUI)
+- [Perfboard Soldering Tutorial | Make Your Arduino Circuit Permanent - Marc de Vinck](https://www.youtube.com/watch?v=a3wDEcORRR4)
 
 ## Soldering/Desoldering
 
-- <https://www.youtube.com/watch?v=3jAw41LRBxU>
-- <https://www.youtube.com/watch?v=VxMV6wGS3NY>
-- <https://www.youtube.com/watch?v=gGSeSk8QWsE>
+- [HOW TO SOLDER! (Beginner's Guide) - HackMakeMod](https://www.youtube.com/watch?v=3jAw41LRBxU)
+- [How to Solder properly || Through-hole (THT) & Surface-mount (SMD) - GreatScott!](https://www.youtube.com/watch?v=VxMV6wGS3NY)
+- [How to Desolder with a Desoldering Pump/Solder Sucker - RimstarOrg](https://www.youtube.com/watch?v=gGSeSk8QWsE)
 
 ## Fake / clone / counterfeit MPU6050
 
-- <https://forum.pjrc.com/index.php?threads/not-initialize-mpu6050-failed-to-find-mpu6050-chip.67594/>
-- <https://forum.arduino.cc/t/mpu-6050-a-module-problems-who-am-i-reports-0x98-not-0x68-as-it-should-fake-mpu-6050/861956>
-- <https://www.eevblog.com/forum/projects/counterfeit-mpu6050-chips-from-china/>
-- <https://www.reddit.com/r/arduino/comments/1jxenjb/fake_clone_mpu6050/>
-- <https://www.reddit.com/r/arduino/comments/1jqtqk2/finally_happened_to_me_i_got_scammed/>
+- [Failed to find MPU6050 chip](https://forum.pjrc.com/index.php?threads/not-initialize-mpu6050-failed-to-find-mpu6050-chip.67594/)
+- [MPU 6050(A) module problems - WHO_AM_I reports 0x98, not 0x68 as it should. Fake MPU 6050](https://forum.arduino.cc/t/mpu-6050-a-module-problems-who-am-i-reports-0x98-not-0x68-as-it-should-fake-mpu-6050/861956)
+- [Counterfeit MPU6050 chips from China](https://www.eevblog.com/forum/projects/counterfeit-mpu6050-chips-from-china/)
+- [Fake clone mpu6050?](https://www.reddit.com/r/arduino/comments/1jxenjb/fake_clone_mpu6050/)
+- [Finally happened to me! I got “scammed”](https://www.reddit.com/r/arduino/comments/1jqtqk2/finally_happened_to_me_i_got_scammed/)
 
 ## BLE
 
-- <https://www.youtube.com/watch?v=0Q_4q1zU6Zc>
-- <https://www.youtube.com/watch?v=0Yvd_k0hbVs>
-- <https://www.youtube.com/watch?v=EIo5aZ3c89Q>
-- <https://github.com/espressif/esp-idf/tree/master/examples/bluetooth>
-- <https://mynewt.apache.org/latest/network/>
-- <https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/ble/index.html>
-- <https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/ble/overview.html>
-- <https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/ble/get-started/ble-introduction.html>
-- <https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/ble/get-started/ble-device-discovery.html>
-- <https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/ble/get-started/ble-connection.html>
-- <https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/ble/get-started/ble-data-exchange.html>
+- [Bluetooth Classic & BLE with ESP32](https://www.youtube.com/watch?v=0Q_4q1zU6Zc)
+- [BLE with ESP32 tutorial part 1: the Server](https://www.youtube.com/watch?v=0Yvd_k0hbVs)
+- [ESP32 BLE Data Exchange Tutorial with ESP-IDF: Menuconfig and Code Implementation Explained](https://www.youtube.com/watch?v=EIo5aZ3c89Q)
+- [ESP-IDF Bluetooth Examples](https://github.com/espressif/esp-idf/tree/master/examples/bluetooth)
+- [BLE User Guide - Apache Mynewt](https://mynewt.apache.org/latest/network/)
+- [Bluetooth Low Energy - ESP-IDF Programming Guide](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/ble/index.html)
+- [BLE Overview - ESP-IDF Programming Guide](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/ble/overview.html)
+- [BLE Introduction - ESP-IDF Programming Guide](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/ble/get-started/ble-introduction.html)
+- [BLE Device Discovery - ESP-IDF Programming Guide](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/ble/get-started/ble-device-discovery.html)
+- [BLE Connection - ESP-IDF Programming Guide](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/ble/get-started/ble-connection.html)
+- [BLE Data Exchange - ESP-IDF Programming Guide](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/ble/get-started/ble-data-exchange.html)
 
 ## 3D printing / CAD / enclosure
 
-- <https://www.youtube.com/watch?v=2vFdwz4U1VQ>
-- <https://www.youtube.com/watch?v=Vx0Z6LplaMU>
-- <https://www.youtube.com/watch?v=NtXmLKDJydo>
-- <https://openscad.org/>
-- <https://www.youtube.com/watch?v=lAjmVMYUelA>
-- <https://www.youtube.com/watch?v=i4oJTfp18eg>
-- <https://www.youtube.com/watch?v=jzs2Zo_mc4c>
-- <https://www.youtube.com/watch?v=LMyhFwJscI0>
-- <https://www.youtube.com/watch?v=sd9RtwkLWwE>
-- <https://en.wikipedia.org/wiki/ISO_metric_screw_thread>
-- <https://www.mcmaster.com/>
-- <https://www.youtube.com/watch?v=vsHpiHhB3RU>
-- <https://www.youtube.com/watch?v=yEQYirGvWCs>
-- <https://www.youtube.com/watch?v=QhZTc1x1-pM>
-- <https://www.youtube.com/watch?v=rnTwT-ifLkU>
-- <https://www.youtube.com/watch?v=3NOc-h0P_e8>
+- [3D PRINTING 101: The ULTIMATE Beginner's Guide](https://www.youtube.com/watch?v=2vFdwz4U1VQ)
+- [What Is 3D Printing and How Does It Work? | Mashable Explains](https://www.youtube.com/watch?v=Vx0Z6LplaMU)
+- [Top 7 Best 3D Print Modeling Software for Beginners](https://www.youtube.com/watch?v=NtXmLKDJydo)
+- [OpenSCAD - The Programmers Solid 3D CAD Modeller](https://openscad.org/)
+- [Creating Project Enclosures - Electronics with Becky Stern | DigiKey](https://www.youtube.com/watch?v=lAjmVMYUelA)
+- [Design enclosures for electronics (using mechanical mindset)](https://www.youtube.com/watch?v=i4oJTfp18eg)
+- [Circuit Skills: Electronics Enclosures](https://www.youtube.com/watch?v=jzs2Zo_mc4c)
+- [What screws to use in your 3D Print](https://www.youtube.com/watch?v=LMyhFwJscI0)
+- [What are the Different Types of Screws & When To Use Them!!](https://www.youtube.com/watch?v=sd9RtwkLWwE)
+- [ISO metric screw thread - Wikipedia](https://en.wikipedia.org/wiki/ISO_metric_screw_thread)
+- [McMaster-Carr](https://www.mcmaster.com/)
+- [Ultimate Guide to Connecting 3D Printed Parts | Pins, Fins, Slots, & Snaps](https://www.youtube.com/watch?v=vsHpiHhB3RU)
+- [Which Glue When? [video 542]](https://www.youtube.com/watch?v=yEQYirGvWCs)
+- [How to Sew by Hand for BEGINNERS!](https://www.youtube.com/watch?v=QhZTc1x1-pM)
+- [Learn How To Sew, Easy Sewing Class For Beginners!](https://www.youtube.com/watch?v=rnTwT-ifLkU)
+- [For Beginners: How to Sew a Box X Stitch](https://www.youtube.com/watch?v=3NOc-h0P_e8)
 
 ## Python quirks
 
 ### Asyncio
 
-- <https://www.youtube.com/watch?v=Qb9s3UiMSTA>
-- <https://docs.python.org/3/library/asyncio.html>
+- [Asyncio in Python - Full Tutorial](https://www.youtube.com/watch?v=Qb9s3UiMSTA)
+- [asyncio - Asynchronous I/O](https://docs.python.org/3/library/asyncio.html)
 
 ### Bleak (BLE client)
 
-- <https://bleak.readthedocs.io/en/latest/usage.html>
-
-### Bytes, structs, arrays
-
-- <https://docs.python.org/3/library/stdtypes.html#binary-sequence-types-bytes-bytearray-memoryview>
-- <https://docs.python.org/3/library/struct.html>
-- <https://docs.python.org/3/library/array.html>
-
-### Stats
-
-- <https://docs.python.org/3/library/statistics.html>
-- <https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.hist.html>
-- <https://docs.scipy.org/doc/scipy/reference/stats.html>
-
-### Scipy signal processing / numpy
-
-- <https://docs.scipy.org/doc/scipy/reference/signal.html>
-- <https://docs.scipy.org/doc/scipy/tutorial/signal.html>
-- <https://docs.scipy.org/doc/scipy/reference/fft.html>
-- <https://docs.scipy.org/doc/scipy/tutorial/fft.html>
-- <https://numpy.org/doc/stable/reference/routines.array-creation.html>
+- [Usage - bleak](https://bleak.readthedocs.io/en/latest/usage.html)
 
 ## IMU calibration
 
-- <https://www.researchgate.net/publication/230959638_An_enhanced_multi-position_calibration_method_for_consumer-grade_inertial_measurement_units_applied_and_tested>
-- <https://www.cl.cam.ac.uk/techreports/UCAM-CL-TR-696.pdf>
-- <https://miis.maths.ox.ac.uk/633/1/p5_mms.pdf> (!)
-- <https://cookierobotics.com/061/> (!)
-- <https://www.youtube.com/watch?v=AheaTd_l5Is>
-- <https://www.youtube.com/watch?v=MODiqfW-ibQ>
+- [Accelerometer Calibration](https://cookierobotics.com/061/)
+- [Affine transformations in 5 minutes](https://www.youtube.com/watch?v=AheaTd_l5Is)
+- [Algebra Lineal - Pseudoinversa de una matriz - Jesús Soto](https://www.youtube.com/watch?v=MODiqfW-ibQ)
 
 ## Sensor fusion
 
-- <https://www.youtube.com/watch?v=6AoJ8wr8G6A>
-- <http://www.geekmomprojects.com/gyroscopes-and-accelerometers-on-a-chip/>
-- <https://www.analog.com/en/resources/app-notes/an-1057.html>
-- <https://www.geekmomprojects.com/wp-content/uploads/2022/03/filter.pdf>
-- <https://ocw.mit.edu/courses/16-333-aircraft-stability-and-control-fall-2004/9bc94307e01f85dbdfee05e87851361a_lecture_15.pdf>
-- <https://www.youtube.com/watch?v=whSw42XddsU>
+- [Estimating angle with a complementary filter](https://www.youtube.com/watch?v=6AoJ8wr8G6A)
+- [Gyroscopes and Accelerometers on a Chip](http://www.geekmomprojects.com/gyroscopes-and-accelerometers-on-a-chip/)
+- [Drone Control and the Complementary Filter](https://www.youtube.com/watch?v=whSw42XddsU)
 
 ## Orientantion in 3D space
 
 ### Euler angles
 
-- <https://en.wikipedia.org/wiki/Rotation_matrix>
-- <https://en.wikipedia.org/wiki/Euler%27s_rotation_theorem>
-- <https://en.wikipedia.org/wiki/Euler_angles>
-- <https://en.wikipedia.org/wiki/Gimbal_lock>
-- <https://web.mit.edu/2.05/www/Handout/HO2.PDF>
-- <https://www.youtube.com/watch?v=2Cwa6hfn2K0>
-- <https://www.youtube.com/watch?v=gzliGOj9P7w>
-- <https://www.youtube.com/watch?v=zc8b2Jo7mno>
-- <https://www.youtube.com/watch?v=WzLJDjfm2Xo>
-- <https://www.youtube.com/watch?v=SrLcvAw1iW4>
-- <https://en.wikipedia.org/wiki/Atan2>
-- <https://www.youtube.com/watch?v=-OyRCgv-hPs>
-- <https://www.youtube.com/watch?v=GJBc6z6p0KQ>
-- <https://www.youtube.com/watch?v=9GZjtfYOXao>
-- <https://www.youtube.com/watch?v=uTabQKD2WMs>
+- [Rotation matrix - Wikipedia](https://en.wikipedia.org/wiki/Rotation_matrix)
+- [Euler's rotation theorem - Wikipedia](https://en.wikipedia.org/wiki/Euler%27s_rotation_theorem)
+- [Euler angles - Wikipedia](https://en.wikipedia.org/wiki/Euler_angles)
+- [Gimbal lock - Wikipedia](https://en.wikipedia.org/wiki/Gimbal_lock)
+- [Euler ZYX Convention](https://web.mit.edu/2.05/www/Handout/HO2.PDF)
+- [Euler Angles Explained | Numerical Methods with Python 7](https://www.youtube.com/watch?v=2Cwa6hfn2K0)
+- [Principal Rotations for Euler Angles | Numerical Methods with Python 6](https://www.youtube.com/watch?v=gzliGOj9P7w)
+- [Euler (gimbal lock) Explained](https://www.youtube.com/watch?v=zc8b2Jo7mno)
+- [Rotation Matrix Explained: Direction Cosine Matrix for Rigid Body Attitude | AOE 3144 Lecture 12](https://www.youtube.com/watch?v=WzLJDjfm2Xo)
+- [Euler Angles Explained: Yaw, Pitch, Roll and the 12 Conventions | Lecture 13](https://www.youtube.com/watch?v=SrLcvAw1iW4)
+- [atan2 - Wikipedia](https://en.wikipedia.org/wiki/Atan2)
+- [Vector Derivatives (the Equation of Coriolis) and the Angular Velocity Vector](https://www.youtube.com/watch?v=-OyRCgv-hPs)
+- [Euler Angles and the Euler Rotation Sequence](https://www.youtube.com/watch?v=GJBc6z6p0KQ)
+- [Computing Euler Angles: The Euler Kinematical Equations and Poisson's Kinematical Equations](https://www.youtube.com/watch?v=9GZjtfYOXao)
+- [Velocity & Acceleration in Non-Inertial Reference Frames (Coriolis & Centrifugal Acceleration)](https://www.youtube.com/watch?v=uTabQKD2WMs)
 
 ### Quaternions
 
-- <https://en.wikipedia.org/wiki/Quaternions_and_spatial_rotation>
-- <https://www.youtube.com/watch?v=d4EgbgTm0Bg>
-- <https://www.youtube.com/watch?v=zjMuIxRvygQ>
-- <https://www.youtube.com/playlist?list=PLpzmRsG7u_gr0FO12cBWj-15_e0yqQQ1U>
-- <http://youtube.com/watch?v=98Mfe-Vfgo0>
-- <https://eater.net/quaternions>
-- <https://www.youtube.com/watch?v=CecyVl9iXKM>
+- [Quaternions and spatial rotation - Wikipedia](https://en.wikipedia.org/wiki/Quaternions_and_spatial_rotation)
+- [Visualizing the 4d numbers Quaternions](https://www.youtube.com/watch?v=d4EgbgTm0Bg)
+- [Quaternions and 3d rotation, explained interactively](https://www.youtube.com/watch?v=zjMuIxRvygQ)
+- [Quaternions](https://www.youtube.com/playlist?list=PLpzmRsG7u_gr0FO12cBWj-15_e0yqQQ1U)
+- [Computing Euler Angles: Tracking Attitude Using Quaternions](http://youtube.com/watch?v=98Mfe-Vfgo0)
+- [Visualizing quaternions | Ben Eater](https://eater.net/quaternions)
+- [[IONLAB Lectures] Quaternion Kinematics](https://www.youtube.com/watch?v=CecyVl9iXKM)
 
 ## Human motion
 
-- <https://valdperformance.com/news/sampling-frequency-how-much-is-enough>
+- [Sampling Frequency: How much is enough? | VALD Performance](https://valdperformance.com/news/sampling-frequency-how-much-is-enough)
 
 ## Stats
 
-- <https://www.youtube.com/watch?v=k7IctLRiZmo>
-- <https://www.youtube.com/watch?v=XV_W1w4Nwoc>
-- <https://en.wikipedia.org/wiki/Ranking>
+- [Pearson correlation [Simply explained]](https://www.youtube.com/watch?v=k7IctLRiZmo)
+- [Spearman Rank Correlation [Simply explained]](https://www.youtube.com/watch?v=XV_W1w4Nwoc)
+- [Ranking - Wikipedia](https://en.wikipedia.org/wiki/Ranking)
 
 ## Signals
 
-- <https://www.youtube.com/watch?v=L6YJqhbsuFY>
+- [How to Measure a Time Delay Using Cross Correlation?](https://www.youtube.com/watch?v=L6YJqhbsuFY)
 
 ## Orientation filters reference implementations / library
 
-- <https://ahrs.readthedocs.io/en/latest/index.html>
-- <https://ahrs.readthedocs.io/en/latest/filters/madgwick.html>
-- <https://ahrs.readthedocs.io/en/latest/filters/mahony.html>
+- [AHRS: Attitude and Heading Reference Systems](https://ahrs.readthedocs.io/en/latest/index.html)
+- [Madgwick Orientation Filter](https://ahrs.readthedocs.io/en/latest/filters/madgwick.html)
+- [Mahony Orientation Filter](https://ahrs.readthedocs.io/en/latest/filters/mahony.html)
 
 ## Mahony filter
 
-- <https://medium.com/@k66115704/imu-mahony-filter-explanation-1ae75bf033ab>
-- <https://husainlokhandwala.in/2026/08/09/attitude-filter-comparison.html>
-- <https://itohi.com/snippets/filters/sensor-fusion-mahony/>
+- [IMU Mahony Filter Explanation](https://medium.com/@k66115704/imu-mahony-filter-explanation-1ae75bf033ab)
+- [Complementary vs. Mahony vs. EKF: Choosing the Right Attitude Estimator for Your Drone](https://husainlokhandwala.in/2026/08/09/attitude-filter-comparison.html)
+- [Mahony Filter - Orientation Estimation](https://itohi.com/snippets/filters/sensor-fusion-mahony/)
 
 ## Kalman filter
 
-- <https://www.youtube.com/watch?v=HCd-leV8OkU>
-- <https://www.youtube.com/watch?v=qCZ2UTgLM_g>
-- <https://www.youtube.com/watch?v=DbE4PMgqp3s>
-- <https://www.youtube.com/watch?v=-DiZGpAh7T4>
-- <https://www.youtube.com/watch?v=zFmO_b05jU4>
+- [Kalman Filter for Beginners Explained: Recursive Filters & MATLAB | Part 1](https://www.youtube.com/watch?v=HCd-leV8OkU)
+- [Kalman Filter for Beginners, Part 2 - Estimation and Prediction Process & MATLAB Example](https://www.youtube.com/watch?v=qCZ2UTgLM_g)
+- [Kalman Filter for Beginners Part 3: Attitude Estimation with Gyro and Accelerometer (MATLAB)](https://www.youtube.com/watch?v=DbE4PMgqp3s)
+- [Kalman Filter - VISUALLY EXPLAINED!](https://www.youtube.com/watch?v=-DiZGpAh7T4)
+- [Why Kalman Filters Work So Well](https://www.youtube.com/watch?v=zFmO_b05jU4)

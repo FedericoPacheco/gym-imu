@@ -81,7 +81,7 @@ extern "C" void app_main() {
   UARTLogger processorLogger("Processor", LogLevel::DEBUG);
   auto processorRunner = std::make_unique<FreeRTOSLoopRunner>(
       "processTask", PROCESS_TASK_STACK_SIZE, PROCESS_TASK_PRIORITY,
-      pdMS_TO_TICKS(25));
+      pdMS_TO_TICKS(5));
   std::unique_ptr<IMUCalibrator> calibrator =
       std::make_unique<MPU6050AffineCalibrator>();
   std::unique_ptr<IMUNoiseReducer> noiseReducer =
@@ -98,7 +98,7 @@ extern "C" void app_main() {
   UARTLogger bleLogger("BLE", LogLevel::WARN);
   auto bleLoopRunner = std::make_unique<FreeRTOSLoopRunner>(
       "transmitTask", TRANSMIT_TASK_STACK_SIZE, TRANSMIT_TASK_PRIORITY,
-      pdMS_TO_TICKS(100));
+      pdMS_TO_TICKS(50));
   BLE *ble =
       BLE::getInstance(&bleLogger, transmissionPipe, std::move(bleLoopRunner));
   if (ble == nullptr) {
@@ -109,7 +109,7 @@ extern "C" void app_main() {
   UARTLogger bleLogger("BLE", LogLevel::INFO);
   auto bleLoopRunner = std::make_unique<FreeRTOSLoopRunner>(
       "transmitTask", TRANSMIT_TASK_STACK_SIZE, TRANSMIT_TASK_PRIORITY,
-      pdMS_TO_TICKS(100));
+      pdMS_TO_TICKS(50));
   BLE *ble =
       BLE::getInstance(&bleLogger, samplingPipe, std::move(bleLoopRunner));
   if (ble == nullptr) {
@@ -124,7 +124,7 @@ extern "C" void app_main() {
   processor.beginProcessing();
 #endif
   while (true) {
-    vTaskDelay(pdMS_TO_TICKS(1000));
+    vTaskDelay(pdMS_TO_TICKS(500));
     // Toggle sampling when user presses button, but only if a client is
     // connected
     if (button->wasPressedAsync() && ble->isConnected()) {

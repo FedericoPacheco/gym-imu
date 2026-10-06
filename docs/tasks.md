@@ -23,15 +23,12 @@ Other rules:
 
 ### In Progress
 
-- Organize online-sources.md file.
+- Identify saved captures as coming from the mpu6050 sensor, either in the filename or via a subfolder. Update references and capture notebooks.
 
 ### Next
 
-- Identify saved captures as coming from the mpu6050 sensor, either in the filename or via a subfolder. Update references and capture notebooks.
-
 ### Backlog
 
-- Add titles to all links referenced in jupyter notebooks.
 - Install dependencies on laptop and improve setup documentation aiming for easy reproducibility.
 - Update IMUSampleReceiver python class to use new numpy format and call the IMUSampleWriter class.
 - Remove unnecessary code from the signal subfolder (e.g. IMUSampleTimeSeriesPlotter python class).
@@ -130,3 +127,5 @@ Other rules:
 - Make decision about buying a new IMU sensor (e.g. BMI270, ICM-42688-P, ISM330DHCX, BMI323, BNO085, ICM-20948).
 - Make decision about buying a new microcontroller (e.g. ESP32 s3).
 - Organize docs/misc folder. Separate books, slides, papers into different folders. Update references (jupyter notebooks, ADRs).
+- Organize online-sources.md file.
+- Add titles to all links referenced in jupyter notebooks.

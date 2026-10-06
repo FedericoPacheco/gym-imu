@@ -140,19 +140,16 @@
 
 ## Signal processing
 
+Mainly referenced on Jupyter Notebooks. The remaining ones are left here.
+
 ### Python
 
 - [Asyncio in Python - Full Tutorial](https://www.youtube.com/watch?v=Qb9s3UiMSTA)
 - [asyncio - Asynchronous I/O](https://docs.python.org/3/library/asyncio.html)
 - [Bleak BLE client](https://bleak.readthedocs.io/en/latest/usage.html)
 
-### Human motion
-
-- [Sampling Frequency: How much is enough? | VALD Performance](https://valdperformance.com/news/sampling-frequency-how-much-is-enough)
-
 ### Calibration
 
-- [Accelerometer Calibration](https://cookierobotics.com/061/)
 - [Affine transformations in 5 minutes](https://www.youtube.com/watch?v=AheaTd_l5Is)
 - [Algebra Lineal - Pseudoinversa de una matriz - Jesús Soto](https://www.youtube.com/watch?v=MODiqfW-ibQ)
 
@@ -160,31 +157,21 @@
 
 #### Euler Angles
 
-- [Rotation matrix - Wikipedia](https://en.wikipedia.org/wiki/Rotation_matrix)
 - [Euler's rotation theorem - Wikipedia](https://en.wikipedia.org/wiki/Euler%27s_rotation_theorem)
 - [Euler angles - Wikipedia](https://en.wikipedia.org/wiki/Euler_angles)
-- [Gimbal lock - Wikipedia](https://en.wikipedia.org/wiki/Gimbal_lock)
 - [Euler ZYX Convention](https://web.mit.edu/2.05/www/Handout/HO2.PDF)
 - [Euler Angles Explained | Numerical Methods with Python 7](https://www.youtube.com/watch?v=2Cwa6hfn2K0)
 - [Principal Rotations for Euler Angles | Numerical Methods with Python 6](https://www.youtube.com/watch?v=gzliGOj9P7w)
-- [Euler (gimbal lock) Explained](https://www.youtube.com/watch?v=zc8b2Jo7mno)
 - [Rotation Matrix Explained: Direction Cosine Matrix for Rigid Body Attitude | AOE 3144 Lecture 12](https://www.youtube.com/watch?v=WzLJDjfm2Xo)
 - [Euler Angles Explained: Yaw, Pitch, Roll and the 12 Conventions | Lecture 13](https://www.youtube.com/watch?v=SrLcvAw1iW4)
-- [atan2 - Wikipedia](https://en.wikipedia.org/wiki/Atan2)
 - [Vector Derivatives (the Equation of Coriolis) and the Angular Velocity Vector](https://www.youtube.com/watch?v=-OyRCgv-hPs)
-- [Euler Angles and the Euler Rotation Sequence](https://www.youtube.com/watch?v=GJBc6z6p0KQ)
-- [Computing Euler Angles: The Euler Kinematical Equations and Poisson's Kinematical Equations](https://www.youtube.com/watch?v=9GZjtfYOXao)
-- [Velocity & Acceleration in Non-Inertial Reference Frames (Coriolis & Centrifugal Acceleration)](https://www.youtube.com/watch?v=uTabQKD2WMs)
 
 #### Quaternions
 
 - [Quaternions and spatial rotation - Wikipedia](https://en.wikipedia.org/wiki/Quaternions_and_spatial_rotation)
-- [Visualizing the 4d numbers Quaternions](https://www.youtube.com/watch?v=d4EgbgTm0Bg)
 - [Quaternions and 3d rotation, explained interactively](https://www.youtube.com/watch?v=zjMuIxRvygQ)
 - [Quaternions](https://www.youtube.com/playlist?list=PLpzmRsG7u_gr0FO12cBWj-15_e0yqQQ1U)
 - [Computing Euler Angles: Tracking Attitude Using Quaternions](http://youtube.com/watch?v=98Mfe-Vfgo0)
-- [Visualizing quaternions | Ben Eater](https://eater.net/quaternions)
-- [[IONLAB Lectures] Quaternion Kinematics](https://www.youtube.com/watch?v=CecyVl9iXKM)
 
 ### Sensor fusion for orientation
 
@@ -192,13 +179,6 @@
 
 - [Estimating angle with a complementary filter](https://www.youtube.com/watch?v=6AoJ8wr8G6A)
 - [Gyroscopes and Accelerometers on a Chip](http://www.geekmomprojects.com/gyroscopes-and-accelerometers-on-a-chip/)
-- [Drone Control and the Complementary Filter](https://www.youtube.com/watch?v=whSw42XddsU)
-
-#### Mahony filter
-
-- [IMU Mahony Filter Explanation](https://medium.com/@k66115704/imu-mahony-filter-explanation-1ae75bf033ab)
-- [Complementary vs. Mahony vs. EKF: Choosing the Right Attitude Estimator for Your Drone](https://husainlokhandwala.in/2026/08/09/attitude-filter-comparison.html)
-- [Mahony Filter - Orientation Estimation](https://itohi.com/snippets/filters/sensor-fusion-mahony/)
 
 #### Kalman filter
 
@@ -212,7 +192,6 @@
 
 - [AHRS: Attitude and Heading Reference Systems](https://ahrs.readthedocs.io/en/latest/index.html)
 - [Madgwick Orientation Filter](https://ahrs.readthedocs.io/en/latest/filters/madgwick.html)
-- [Mahony Orientation Filter](https://ahrs.readthedocs.io/en/latest/filters/mahony.html)
 
 ### Statistics
 

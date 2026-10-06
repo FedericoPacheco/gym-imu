@@ -23,15 +23,14 @@ Other rules:
 
 ### In Progress
 
-- Identify saved captures as coming from the mpu6050 sensor, either in the filename or via a subfolder. Update references and capture notebooks.
+- Remove unnecessary code from the signal subfolder (e.g. IMUSampleTimeSeriesPlotter python class).
+- Install dependencies on laptop and improve setup documentation aiming for easy reproducibility.
 
 ### Next
 
-### Backlog
-
-- Install dependencies on laptop and improve setup documentation aiming for easy reproducibility.
 - Update IMUSampleReceiver python class to use new numpy format and call the IMUSampleWriter class.
-- Remove unnecessary code from the signal subfolder (e.g. IMUSampleTimeSeriesPlotter python class).
+
+### Backlog
 
 - Investigate why some transmitted BLE packets are lost periodically.
 - Fork I2C and MPU libraries, apply changes there and upload them to github. Then include them as dependencies in the platformIO file.
@@ -129,3 +128,4 @@ Other rules:
 - Organize docs/misc folder. Separate books, slides, papers into different folders. Update references (jupyter notebooks, ADRs).
 - Organize online-sources.md file.
 - Add titles to all links referenced in jupyter notebooks.
+- Identify saved captures as coming from the mpu6050 sensor, either in the filename or via a subfolder. Update references and capture notebooks.

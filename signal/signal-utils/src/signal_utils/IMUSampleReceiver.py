@@ -128,11 +128,16 @@ class IMUSampleReceiver:
 
         subscribed = False
         try:
+            # BlueZ: Linux bluetooth backend. 
+            # At least on my laptop, it fails unless StartNotify 
+            # is used instead of AcquireNotify. 
+            # The additional parameter shouldn't affect windows.
             await self.client.start_notify(
                 self.IMU_CHARACTERISTIC_UUID,
                 lambda _characteristic, data: self._onImuNotification(
                     _characteristic, data
                 ),
+                bluez={"use_start_notify": True},
             )
             subscribed = True
             print("Subscribed to IMU notifications")
@@ -198,8 +203,8 @@ class IMUSampleReceiver:
             lastSeq = self.seqQueue[-1]
             print(
                 f"Notification #{self.totalNotificationCount}, sample from batch: "
-                f"f: ({lastF[0]}, {lastF[1]}, {lastF[2]}), ",
-                f"w: ({lastW[0]}, {lastW[1]}, {lastW[2]}), ",
+                f"f: ({lastF[0]:.6f}, {lastF[1]:.6f}, {lastF[2]:.6f}), ",
+                f"w: ({lastW[0]:.6f}, {lastW[1]:.6f}, {lastW[2]:.6f}), ",
                 f"seq: {lastSeq}",
             )
             self.notificationCount = 0

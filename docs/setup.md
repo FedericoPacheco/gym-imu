@@ -195,7 +195,7 @@ OS: Linux Ubuntu 24.04
 1. Create and activate virtual environment:
 
     ```bash
-    python -m venv venv
+    python3 -m venv venv
     source venv/bin/activate    # Linux
     .\venv\Scripts\activate.ps1 # Windows
     ```

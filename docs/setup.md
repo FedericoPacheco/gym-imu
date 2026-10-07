@@ -8,7 +8,15 @@ Open the [project workspace](../.vscode/gym-imu.code-workspace) in VS Code.
 
 ### Automated
 
-For a mostly automated firmware setup and upload on Ubuntu, run `./device/install-firmware.sh` from the repository root. Pass `--build-only` to build without uploading. The script installs system and PlatformIO dependencies, fetches the external components, configures serial-port access, and builds or uploads the firmware. If the VS Code CLI is unavailable, install the PlatformIO IDE extension manually. If the script reports that you were added to the `dialout` group, log out and back in, then rerun it.
+Run:
+```bash
+./device/install-firmware.sh
+```
+Pass `--build-only` to build without uploading. 
+
+If the VS Code CLI is unavailable, install the extensions manually. 
+If the script reports that you were added to the `dialout` group, log out and back in, then rerun it.
+If something else fails, perform a manual installation as described below.
 
 Note: script generated with AI.
 
@@ -131,6 +139,21 @@ Note: script generated with AI.
 
 ## Signal processing
 
+### Automated
+
+Run:
+```bash
+./signal/install-signal.sh
+source signal/venv/bin/activate
+```
+
+If the VS Code CLI is unavailable, install the extensions manually. 
+If something else fails, perform a manual installation as described below.
+
+Note: script generated with AI.
+
+### Manual
+
 1. Create and activate virtual environment:
 
     ```bash
@@ -147,6 +170,7 @@ Note: script generated with AI.
 
     This also installs the local `signal-utils` package in editable mode.
 
-3. Install extension: Black Formatter by Microsoft
-4. Install extension: Jupyter by Microsoft
-5. Install extension: Edit CSV by janisdd
+3. Install extensions: 
+    - Black Formatter by Microsoft
+    - Jupyter by Microsoft
+    - Edit CSV by janisdd

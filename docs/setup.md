@@ -6,6 +6,14 @@ Open the [project workspace](../.vscode/gym-imu.code-workspace) in VS Code.
 
 ## Firmware
 
+### Automated
+
+For a mostly automated firmware setup and upload on Ubuntu, run `./device/install-firmware.sh` from the repository root. Pass `--build-only` to build without uploading. The script installs system and PlatformIO dependencies, fetches the external components, configures serial-port access, and builds or uploads the firmware. If the VS Code CLI is unavailable, install the PlatformIO IDE extension manually. If the script reports that you were added to the `dialout` group, log out and back in, then rerun it.
+
+Note: script generated with AI.
+
+### Manual
+
 1. Install python:
 
     1.1. Check version:

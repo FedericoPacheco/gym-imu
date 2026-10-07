@@ -2,7 +2,7 @@
 
 OS: Linux Ubuntu 24.04
 
-## Firmware Development Environment
+## Firmware
 
 1. Install python:
 
@@ -113,10 +113,9 @@ OS: Linux Ubuntu 24.04
     4.1. Create folder and download repos:
 
     ```bash
-        cd device
-        mkdir -p components
-        git clone https://github.com/natanaeljr/esp32-MPU-driver.git MPU
-        git clone https://github.com/natanaeljr/esp32-I2Cbus.git I2Cbus
+        cd device/components
+        git clone https://github.com/FedericoPacheco/esp32-MPU-driver MPU
+        git clone https://github.com/FedericoPacheco/esp32-I2Cbus I2Cbus
     ```
 
     4.2. Configure driver:
@@ -130,43 +129,6 @@ OS: Linux Ubuntu 24.04
         - Communication Protocol > I2C
         - Digital Motion Processor (DMP) > Enable
     Press "S" to save config
-
-    4.3. If building error fails due to missing `i2c1` object, wrap every usage of `i2c1` with:
-
-    ```c++
-        #if SOC_I2C_NUM > 1
-        // code using i2c1
-        #endif
-    ```
-
-    Commit the changes:
-
-    ```bash
-        cd device/components/I2Cbus
-        git add .
-        git commit -m "fix(I2Cbus): resolve compatibility with esp32-c3"
-    ```
-
-    The esp32-c3 microcontroller only has one I2C bus.
-
-    4.4. If the sensor fails to initialize, add another valid "who am i" value to `MPU.testConnection()`:
-
-    ```c++
-      ...
-      #if defined CONFIG_MPU6000 || defined CONFIG_MPU6050 || defined CONFIG_MPU9150
-        return (wai == 0x68 || wai == ...) ? ESP_OK : ESP_ERR_NOT_FOUND;
-      ...
-    ```
-
-    Get the wai value by reviewing the logs on the serial monitor, or with `sensor.whoAmI()`.
-
-    Commit the changes:
-
-    ```bash
-        cd device/components/MPU
-        git add .
-        git commit -m "fix(MPU): add support for fake/clone/counterfeit MPU6050 device"
-    ```
 
 5. Flash device with firmware:
     5.1. Plug the device while pressing the BOOT button.
@@ -190,7 +152,7 @@ OS: Linux Ubuntu 24.04
 
 5. Inside OpenSCAD, check "Design" > "Automatic Reload and Preview"
 
-## Signal reception, analysis and processing
+## Signal processing
 
 1. Create and activate virtual environment:
 

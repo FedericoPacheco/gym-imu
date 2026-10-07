@@ -23,14 +23,15 @@ Other rules:
 
 ### In Progress
 
+- Fork I2C and MPU libraries, apply changes there and upload them to github. Then include them as dependencies in the platformIO file.
 - Install dependencies on laptop and improve setup documentation aiming for easy reproducibility.
 
 ### Next
 
+- Investigate why some transmitted BLE packets are lost periodically.
+
 ### Backlog
 
-- Investigate why some transmitted BLE packets are lost periodically.
-- Fork I2C and MPU libraries, apply changes there and upload them to github. Then include them as dependencies in the platformIO file.
 - Make the SignalProcessor class a singleton as the BLE or MPU6050Sensor classes.
 - Evaluate whether to remove or not the remaining freeRTOS direct calls, replacing them with my own abstractions.
 - Remove unnecessary "includes" on the firmware to reduce compiled code size.

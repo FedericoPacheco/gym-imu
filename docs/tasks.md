@@ -24,11 +24,11 @@ Other rules:
 ### In Progress
 
 - Remove unnecessary code from the signal subfolder (e.g. IMUSampleTimeSeriesPlotter python class).
-- Install dependencies on laptop and improve setup documentation aiming for easy reproducibility.
+- Update IMUSampleReceiver python class to use new numpy format and call the IMUSampleWriter class.
 
 ### Next
 
-- Update IMUSampleReceiver python class to use new numpy format and call the IMUSampleWriter class.
+- Install dependencies on laptop and improve setup documentation aiming for easy reproducibility.
 
 ### Backlog
 

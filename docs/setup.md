@@ -1,6 +1,8 @@
 # Setup
 
-OS: Linux Ubuntu 24.04
+OS: Linux (tested on Ubuntu 24.04/26.04)
+
+Open the [project workspace](../.vscode/gym-imu.code-workspace) in VS Code.
 
 ## Firmware
 
@@ -88,29 +90,9 @@ OS: Linux Ubuntu 24.04
     clang-tidy --version
     ```
 
-    3.3. Configure in VSCode:
-    File > Preferences > Settings:
-        - Search "Editor: Default Formatter" > Select "clangd".
-        - Search "Format On Save" > Enable (check the box).
-        - Search "C_Cpp: Code Analysis Clang Tidy: Enabled" > Enable (check the box).
-        - Search "C_Cpp: Intelli Sense Engine" > Select "Disabled".
-        - Search "Platformio-ide: Auto Rebuild Autocomplete Index" > Disable (uncheck the box).
-        - Search "Clangd: Path" > Set to "/usr/bin/clangd".
-        - Search "Clangd: Arguments" > Add:
-            - `--background-index`
-            - `--clang-tidy`
-            - `--header-insertion=iwyu`
-            - `--completion-style=detailed`
-            - `--compile-commands-dir=${workspaceFolder}/.pio/build/device`
-            - Search "Clangd: Fallback Flags" > Add:
-            - `"-I${workspaceFolder}/include"`
-            - `"-I${workspaceFolder}/lib"`
-            - `"-I${workspaceFolder}/components"`
-
     Note: couldn't make clangd refactors work :(
 
 4. Install external dependencies not available in PlatformIO:
-    4.1. Create folder and download repos:
 
     ```bash
         cd device/components
@@ -118,21 +100,7 @@ OS: Linux Ubuntu 24.04
         git clone https://github.com/FedericoPacheco/esp32-I2Cbus I2Cbus
     ```
 
-    4.2. Configure driver:
-
-    ```bash
-        pio run -t menuconfig
-    ```
-
-    Select: MPU driver:
-        - MPU chip model > MPU6050
-        - Communication Protocol > I2C
-        - Digital Motion Processor (DMP) > Enable
-    Press "S" to save config
-
-5. Flash device with firmware:
-    5.1. Plug the device while pressing the BOOT button.
-    5.2. Open PlatformIO > device > General:
+5. Flash device with firmware: open PlatformIO > device > General:
      - Build
      - Upload / Upload and Monitor
 
@@ -146,7 +114,7 @@ OS: Linux Ubuntu 24.04
 
 2. Install the BOSL2 library (tools, shapes, and helpers to make OpenScad easier to use): <https://github.com/BelfrySCAD/BOSL2/?tab=readme-ov-file#installation>
 
-3. Install NopSCADlib (parts for 3D printsrs and enclosures for electronics): <https://github.com/nophead/NopSCADlib/blob/master/docs/usage.md#installation>
+3. Install NopSCADlib (parts for 3D printers and enclosures for electronics): <https://github.com/nophead/NopSCADlib/blob/master/docs/usage.md#installation>
 
 4. Install VS Code Extension: OpenSCAD Language Support
 

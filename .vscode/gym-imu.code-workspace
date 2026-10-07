@@ -8,6 +8,9 @@
 		},
 		{
 			"path": "../signal"
+		},
+		{
+			"path": "."
 		}
 	],
 	"settings": {

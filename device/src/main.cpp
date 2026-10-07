@@ -20,6 +20,8 @@
 #include <QueuePipe.hpp>
 #include <memory>
 
+// Configure project: pio run -t menuconfig
+
 extern "C" void app_main() {
   /* Note:
    Do NOT use the ESP_INTR_FLAG_IRAM here. Depending on timing, it produces the

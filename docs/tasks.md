@@ -23,12 +23,9 @@ Other rules:
 
 ### In Progress
 
-- Fork I2C and MPU libraries, apply changes there and upload them to github. Then include them as dependencies in the platformIO file.
-- Install dependencies on laptop and improve setup documentation aiming for easy reproducibility.
+- Investigate why some transmitted BLE packets are lost periodically.
 
 ### Next
-
-- Investigate why some transmitted BLE packets are lost periodically.
 
 ### Backlog
 
@@ -129,3 +126,5 @@ Other rules:
 - Identify saved captures as coming from the mpu6050 sensor, either in the filename or via a subfolder. Update references and capture notebooks.
 - Remove unnecessary code from the signal subfolder (e.g. IMUSampleTimeSeriesPlotter python class).
 - Update IMUSampleReceiver python class to use new numpy format and delegate writing to the IMUSampleWriter class.
+- Fork I2C and MPU libraries, apply changes there and upload them to github.
+- Install dependencies on laptop, improve setup documentation and create convenience scripts aiming for easy reproducibility.

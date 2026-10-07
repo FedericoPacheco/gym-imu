@@ -100,7 +100,7 @@ if [[ -x "$HOME/.platformio/penv/bin" ]]; then
   fi
 fi
 
-"$PIO" platform install espressif32
+"$PIO" pkg install -e device
 
 if command -v code >/dev/null 2>&1; then
   code --install-extension platformio.platformio-ide

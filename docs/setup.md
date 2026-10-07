@@ -57,10 +57,11 @@ Note: script generated with AI.
     platformio --version
     ```
 
-    2.5. Install esp32 dependencies:
+    2.5. Install the pinned device dependencies from the `device` directory:
 
     ```bash
-    pio platform install espressif32
+    cd device
+    pio pkg install -e device
     ```
 
     2.6. Grant access to the serial port:
@@ -112,7 +113,7 @@ Note: script generated with AI.
      - Build
      - Upload / Upload and Monitor
 
-## Enclosure
+## Enclosure (optional)
 
 1. Install OpenSCAD:
 

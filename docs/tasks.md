@@ -23,12 +23,9 @@ Other rules:
 
 ### In Progress
 
-- Remove unnecessary code from the signal subfolder (e.g. IMUSampleTimeSeriesPlotter python class).
-- Update IMUSampleReceiver python class to use new numpy format and call the IMUSampleWriter class.
+- Install dependencies on laptop and improve setup documentation aiming for easy reproducibility.
 
 ### Next
-
-- Install dependencies on laptop and improve setup documentation aiming for easy reproducibility.
 
 ### Backlog
 
@@ -129,3 +126,5 @@ Other rules:
 - Organize online-sources.md file.
 - Add titles to all links referenced in jupyter notebooks.
 - Identify saved captures as coming from the mpu6050 sensor, either in the filename or via a subfolder. Update references and capture notebooks.
+- Remove unnecessary code from the signal subfolder (e.g. IMUSampleTimeSeriesPlotter python class).
+- Update IMUSampleReceiver python class to use new numpy format and delegate writing to the IMUSampleWriter class.

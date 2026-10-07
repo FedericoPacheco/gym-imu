@@ -1,10 +1,10 @@
-from array import array
 import asyncio
 import contextlib
 import struct
 from typing import Any
-
+from collections import deque
 from bleak import BleakClient, BleakScanner
+import numpy as np
 
 
 class IMUSampleReceiver:
@@ -16,7 +16,8 @@ class IMUSampleReceiver:
 
     # DATA FORMAT
     # Device sends batches of IMU samples within each BLE notification as raw bytes in little-endian format.
-    # Refer to IMUSensorPort.hpp for the exact C++ struct.
+    # Refer to IMUSensorPort.hpp for the exact C++ struct
+    # Docs: https://docs.python.org/3/library/struct.html
     IMU_SAMPLE_STRUCT = struct.Struct("<ffffffI")  # 6 floats, 1 unsigned int
 
     # TIMING PARAMETERS
@@ -97,32 +98,27 @@ class IMUSampleReceiver:
             print("Disconnected from the device")
 
     async def receive(
-        self, exportedFileName: str = "motionData.csv"
-    ) -> dict[str, array | dict[str, array]]:
-
+        self,
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         await self._listenForNotifications()
-        self._computeLostSamples()
-        self._export(exportedFileName)
+        seq = np.array(self.seqQueue, dtype=np.uint32)
+        f = np.array(self.fQueue, dtype=np.float32)
+        w = np.array(self.wQueue, dtype=np.float32)
 
-        return {
-            "a": {"x": self.ax[:], "y": self.ay[:], "z": self.az[:]},
-            "w": {"roll": self.roll[:], "pitch": self.pitch[:], "yaw": self.yaw[:]},
-            "seq": self.seq[:],
-        }
+        self._computeLostSamples(seq)
+
+        return (seq, f, w)
 
     async def _listenForNotifications(self):
         if not self.isConnected():
             raise RuntimeError("Device not connected")
         assert self.client is not None
 
-        # Prefer C-typed arrays over Python lists/dictionaries for better performance and lower memory overhead
-        self.seq = array("I")
-        self.ax = array("f")
-        self.ay = array("f")
-        self.az = array("f")
-        self.roll = array("f")
-        self.pitch = array("f")
-        self.yaw = array("f")
+        # deque: append the stream of samples at the end at O(1) cost.
+        # At the end of the capture, convert to numpy array at O(n) cost.
+        self.seqQueue = deque()
+        self.fQueue = deque()
+        self.wQueue = deque()
 
         self.notificationCount = 0
         self.totalNotificationCount = 0
@@ -165,7 +161,7 @@ class IMUSampleReceiver:
                     await self.client.stop_notify(self.IMU_CHARACTERISTIC_UUID)
                 print("Unsubscribed from IMU notifications")
 
-    def _onImuNotification(self, _characteristic: Any, data: bytearray) -> None:
+    def _onImuNotification(self, characteristic: Any, data: bytearray) -> None:
         payload = memoryview(data)
         payloadSize = payload.nbytes
 
@@ -176,21 +172,17 @@ class IMUSampleReceiver:
             raise ValueError("Invalid payload size")
 
         for (
-            sampleAx,
-            sampleAy,
-            sampleAz,
-            sampleRoll,
-            samplePitch,
-            sampleYaw,
-            sampleSeq,
+            ax,
+            ay,
+            az,
+            roll,
+            pitch,
+            yaw,
+            seq,
         ) in self.IMU_SAMPLE_STRUCT.iter_unpack(payload):
-            self.ax.append(sampleAx)
-            self.ay.append(sampleAy)
-            self.az.append(sampleAz)
-            self.roll.append(sampleRoll)
-            self.pitch.append(samplePitch)
-            self.yaw.append(sampleYaw)
-            self.seq.append(sampleSeq)
+            self.fQueue.append(np.array([ax, ay, az]))
+            self.wQueue.append(np.array([roll, pitch, yaw]))
+            self.seqQueue.append(seq)
 
         self.totalNotificationCount += 1
         self.notificationCount += 1
@@ -201,58 +193,35 @@ class IMUSampleReceiver:
             self.receivedFirstSampleEvent.set()
 
         if self.notificationCount >= self.LOGGING_PERIOD_IN_NOTIFICATIONS:
+            lastF = self.fQueue[-1]
+            lastW = self.wQueue[-1]
+            lastSeq = self.seqQueue[-1]
             print(
                 f"Notification #{self.totalNotificationCount}, sample from batch: "
-                f"ax: {self.ax[-1]}, ay: {self.ay[-1]}, az: {self.az[-1]}, "
-                f"roll: {self.roll[-1]}, pitch: {self.pitch[-1]}, yaw: {self.yaw[-1]}, "
-                f"sequence: {self.seq[-1]}"
+                f"f: ({lastF[0]}, {lastF[1]}, {lastF[2]}), ",
+                f"w: ({lastW[0]}, {lastW[1]}, {lastW[2]}), ",
+                f"seq: {lastSeq}",
             )
             self.notificationCount = 0
 
-    def _computeLostSamples(self) -> None:
-        if len(self.seq) == 0:
+    def _computeLostSamples(self, seq: np.ndarray) -> None:
+        if len(seq) == 0:
             print("No samples received, skipping lost sample computation.")
             return
 
         diff = 0
         total = 0
-        lost = array("I")
-        for i in range(1, len(self.seq)):
-            diff = self.seq[i] - self.seq[i - 1]
+        lost = []
+        for i in range(1, len(seq)):
+            diff = seq[i] - seq[i - 1]
             if diff > 1:
                 total += diff - 1
                 for j in range(1, diff):
-                    lost.append(self.seq[i - 1] + j)
+                    lost.append(seq[i - 1] + j)
 
         print(
             "SAMPLE LOSS ANALYSIS:\n"
             f"Sequence numbers: {','.join(map(str, lost))}\n"
             f"Periodicity: {','.join(str(lost[i] - lost[i - 1]) for i in range(1, len(lost)))}\n"
-            f"Total: {total} ({total*100.0/len(self.seq):.2f}%)"
+            f"Total: {total} ({total*100.0/len(seq):.2f}%)"
         )
-
-    def _export(self, fileName: str) -> None:
-        with open(fileName, "w", encoding="utf-8") as f:
-            FIELDS = "seq,ax,ay,az,wroll,wpitch,wyaw"
-            f.write(f"{FIELDS}\n")
-            for (
-                sampleSeq,
-                sampleAx,
-                sampleAy,
-                sampleAz,
-                sampleRoll,
-                samplePitch,
-                sampleYaw,
-            ) in zip(
-                self.seq,
-                self.ax,
-                self.ay,
-                self.az,
-                self.roll,
-                self.pitch,
-                self.yaw,
-            ):
-                f.write(
-                    f"{sampleSeq},{sampleAx},{sampleAy},{sampleAz},{sampleRoll},{samplePitch},{sampleYaw}\n"
-                )
-        print(f"Motion data saved to {fileName}")

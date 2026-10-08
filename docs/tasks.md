@@ -27,8 +27,6 @@ Other rules:
 
 ### Backlog
 
-- Evaluate whether to remove or not the remaining freeRTOS direct calls, replacing them with my own abstractions.
-
 - Implement Quaternion class and Mahony filter on the device.
 - Implement velocity estimation (trapezoidal integration, ZUPTs when stationary, velocity hold when zero acceleration) on the device.
 - Fine tune BLE transmission parameters, pipe sizes, and task priorities/ISR behaviors, and other relevant system parameters to optimize for throughput after completing basic signal processing pipeline on device.
@@ -128,3 +126,4 @@ Other rules:
 they are more prone to become outdated/stale.
 - Remove unnecessary "includes" on the firmware to attempt to reduce compiled code size.
 - Review C++ compiler warnings and fix them if necessary. Result: probably analyzer false positives.
+- Evaluate whether to remove or not the remaining freeRTOS direct calls, replacing them with my own abstractions. Result: only present in the logger and main. Probably unnecessary.

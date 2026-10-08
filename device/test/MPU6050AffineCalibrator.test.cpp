@@ -13,20 +13,22 @@ Misc docs:
 
 const std::array<testsupport::SeriesCase, 3> testCases = {{
     {.name = "dips-1",
-     .inputPath = "../signal/0-capture/real-exercises/apr-28-2026/dips-1.csv",
+     .inputPath =
+         "../signal/0-capture/real-exercises/apr-28-2026/mpu6050-dips-1.csv",
      .expectedPath = "../signal/1-calibration/output/"
-                     "dips-1-calib-affine-sixf-tilted-a-online-w.csv"},
+                     "mpu6050-dips-1-calib-affine-sixf-tilted-a-online-w.csv"},
     {.name = "pull-ups-1",
-     .inputPath =
-         "../signal/0-capture/real-exercises/apr-28-2026/pull-ups-1.csv",
-     .expectedPath = "../signal/1-calibration/output/"
-                     "pull-ups-1-calib-affine-sixf-tilted-a-online-w.csv"},
-    {.name = "90-deg-push-ups-1",
-     .inputPath =
-         "../signal/0-capture/real-exercises/apr-28-2026/90-deg-push-ups-1.csv",
+     .inputPath = "../signal/0-capture/real-exercises/apr-28-2026/"
+                  "mpu6050-pull-ups-1.csv",
      .expectedPath =
          "../signal/1-calibration/output/"
-         "90-deg-push-ups-1-calib-affine-sixf-tilted-a-online-w.csv"},
+         "mpu6050-pull-ups-1-calib-affine-sixf-tilted-a-online-w.csv"},
+    {.name = "90-deg-push-ups-1",
+     .inputPath = "../signal/0-capture/real-exercises/apr-28-2026/"
+                  "mpu6050-90-deg-push-ups-1.csv",
+     .expectedPath =
+         "../signal/1-calibration/output/"
+         "mpu6050-90-deg-push-ups-1-calib-affine-sixf-tilted-a-online-w.csv"},
 }};
 
 TEST(MPU6050AffineCalibrator_calibrate, CalibratesSeriesCorrectly) {

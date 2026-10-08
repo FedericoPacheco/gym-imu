@@ -9,22 +9,23 @@
 const std::array<testsupport::SeriesCase, 3> testCases = {{
     {.name = "dips-2",
      .inputPath = "../signal/1-calibration/output/"
-                  "dips-2-calib-affine-sixf-tilted-a-online-w.csv",
+                  "mpu6050-dips-2-calib-affine-sixf-tilted-a-online-w.csv",
      .expectedPath =
          "../signal/2-noiseReduction/output/"
-         "dips-2-calib-affine-sixf-tilted-a-online-w-filt-box5.csv"},
+         "mpu6050-dips-2-calib-affine-sixf-tilted-a-online-w-filt-box5.csv"},
     {.name = "pull-ups-2",
      .inputPath = "../signal/1-calibration/output/"
-                  "pull-ups-2-calib-affine-sixf-tilted-a-online-w.csv",
-     .expectedPath =
-         "../signal/2-noiseReduction/output/"
-         "pull-ups-2-calib-affine-sixf-tilted-a-online-w-filt-box5.csv"},
+                  "mpu6050-pull-ups-2-calib-affine-sixf-tilted-a-online-w.csv",
+     .expectedPath = "../signal/2-noiseReduction/output/"
+                     "mpu6050-pull-ups-2-calib-affine-sixf-tilted-a-online-w-"
+                     "filt-box5.csv"},
     {.name = "90-deg-push-ups-2",
-     .inputPath = "../signal/1-calibration/output/"
-                  "90-deg-push-ups-2-calib-affine-sixf-tilted-a-online-w.csv",
-     .expectedPath =
-         "../signal/2-noiseReduction/output/"
-         "90-deg-push-ups-2-calib-affine-sixf-tilted-a-online-w-filt-box5.csv"},
+     .inputPath =
+         "../signal/1-calibration/output/"
+         "mpu6050-90-deg-push-ups-2-calib-affine-sixf-tilted-a-online-w.csv",
+     .expectedPath = "../signal/2-noiseReduction/output/"
+                     "mpu6050-90-deg-push-ups-2-calib-affine-sixf-tilted-a-"
+                     "online-w-filt-box5.csv"},
 }};
 
 TEST(MPU6050NoiseReducer_filter, FiltersSeriesCorrectly) {

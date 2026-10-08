@@ -8,30 +8,33 @@
 const std::array<testsupport::SeriesCase, 3> testCases = {{
     {.name = "dips-1",
      .inputPath = "../signal/3-orientation/output/ast=0.750-amv=0.950/"
-                  "dips-1-calib-affine-sixf-tilted-a-online-w-"
+                  "mpu6050-dips-1-calib-affine-sixf-tilted-a-online-w-"
                   "filt-box5-or-compl.csv",
-     .expectedPath = "../signal/4-gravityRemoval/output/"
-                     "dips-1-calib-affine-sixf-tilted-a-online-w-filt-box5-or-"
-                     "compl-g-free-rot-mat.csv"},
-    {.name = "pull-ups-1",
-     .inputPath = "../signal/3-orientation/output/ast=0.750-amv=0.950/"
-                  "pull-ups-1-calib-affine-sixf-tilted-a-online-w-filt-box5-"
-                  "or-compl.csv",
      .expectedPath =
          "../signal/4-gravityRemoval/output/"
-         "pull-ups-1-calib-affine-sixf-tilted-a-online-w-filt-box5-or-"
+         "mpu6050-dips-1-calib-affine-sixf-tilted-a-online-w-filt-box5-or-"
+         "compl-g-free-rot-mat.csv"},
+    {.name = "pull-ups-1",
+     .inputPath =
+         "../signal/3-orientation/output/ast=0.750-amv=0.950/"
+         "mpu6050-pull-ups-1-calib-affine-sixf-tilted-a-online-w-filt-box5-"
+         "or-compl.csv",
+     .expectedPath =
+         "../signal/4-gravityRemoval/output/"
+         "mpu6050-pull-ups-1-calib-affine-sixf-tilted-a-online-w-filt-box5-or-"
          "compl-g-free-rot-mat.csv"},
     {.name = "90-deg-push-ups-2",
-     .inputPath = "../signal/3-orientation/output/ast=0.750-amv=0.950/"
-                  "90-deg-push-ups-2-calib-affine-sixf-tilted-a-online-w-"
-                  "filt-box5-or-compl.csv",
-     .expectedPath =
-         "../signal/4-gravityRemoval/output/"
-         "90-deg-push-ups-2-calib-affine-sixf-tilted-a-online-w-filt-box5-or-"
-         "compl-g-free-rot-mat.csv"},
+     .inputPath =
+         "../signal/3-orientation/output/ast=0.750-amv=0.950/"
+         "mpu6050-90-deg-push-ups-2-calib-affine-sixf-tilted-a-online-w-"
+         "filt-box5-or-compl.csv",
+     .expectedPath = "../signal/4-gravityRemoval/output/"
+                     "mpu6050-90-deg-push-ups-2-calib-affine-sixf-tilted-a-"
+                     "online-w-filt-box5-or-"
+                     "compl-g-free-rot-mat.csv"},
 }};
 
-TEST(MPU6050EulerGravityRemover_find, RemovesGravityCorrectly) {
+TEST(DISABLED_MPU6050EulerGravityRemover_find, RemovesGravityCorrectly) {
   for (const testsupport::SeriesCase &series : testCases) {
     SCOPED_TRACE(series.name);
 

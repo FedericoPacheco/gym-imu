@@ -16,51 +16,29 @@
 
 /*
 Overview:
-A class to interface with the MPU6050 IMU sensor, providing synchronous and
-asynchronous sample reading capabilities.
+A class to interface with the MPU6050 IMU sensor that stores samples in a pipe
+for later consumption by other tasks. Also provides sync/async reading
+capabilities, but they are not currently use directly in the project.
 
 How it works:
 - Initializes and configures the MPU6050 sensor over I2C, as well as its FIFO
 buffer and interrupt configuration.
-- On syncronous read, it fetches the latest accelerometer and gyroscope data
-from the sensor and converts them into physical units.
-- On asynchronous read, it leverages FreeRTOS tasks, notifications and a pipe
-(queue under the hood) to handle data reading in the background. An interrupt
-service routine (ISR) is triggered when new data is available, notifying the
-read task to fetch and process the data, which is then stored in a pipe for
-later retrieval. This process can be turned on and off with a dedicated flag.
+- It leverages FreeRTOS tasks, notifications and a pipe (queue under the hood)
+to handle data reading in the background. An interrupt service routine (ISR)
+ is triggered when new data is available, notifying the read task to fetch
+and process the data, which is finally stored in a pipe for later retrieval.
+This process can be turned on and off with a dedicated flag.
+- On synchronous read, it fetches the latest accelerometer and gyroscope data
+directly from the sensor's registers.
+- On asynchronous read, it pops one sample from the pipe, if available.
 
 How to use:
-Sync:
-...
-IMUSensorPort *imu = MPU6050Sensor::getInstance(&logger, &pipe,
-std::move(sensorPort), std::move(i2cPort));
-while (true)
-{
-  auto sampleOpt = imu->readSync();
-  imu->readSync(); if (sampleOpt) {
-    // Process sample...
-  }
-}
-Async:
-gpio_install_isr_service(0); // Install ISR service once globally
-IMUSensorPort *imu = MPU6050Sensor::getInstance(&logger, &pipe,
-std::move(sensorPort), std::move(i2cPort));
-imu->beginAsync();
-while (true) {
-  auto sampleOpt = imu->readAsync();
-  if (sampleOpt) {
-    // Process sample...
-  }
-}
-imu->stopAsync();
+Refer to main.cpp
 
 Notes:
-Requires to edit the MPU.testConnection() method to accept other
-WHO_AM_I values due to the sensor being fake/clone/counterfeit (see setup.md
-for details). This may affect the quality and reliability of the sensor data,
-but it's accepted due to the difficulty and cost of getting better hardware
-here in Argentina.
+The underlying driver's MPU.testConnection() method has been modified to accept
+other WHO_AM_I values due to the sensor being fake/clone/counterfeit. This is
+a workaround for the limitations of the available hardware here in Argentina.
 */
 
 class MPU6050Sensor : public IMUSensorPort {

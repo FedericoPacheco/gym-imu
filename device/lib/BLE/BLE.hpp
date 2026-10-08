@@ -18,6 +18,7 @@
 Overview:
 An application layer class to manage Bluetooth Low Energy (BLE) communication,
 including initialization, advertising to other devices, and data transmission.
+Consumes samples provided from an incoming pipe.
 
 How it works:
 The first time getInstance() is called, it creates a singleton instance that:
@@ -28,7 +29,7 @@ management.
 4. Sets up GATT (Generic Attribute Profile) for defining services and
 characteristics. Currently there's one service and one characteristic for
 sending IMU samples.
-5. Creates FreeRTOS tasks for handling BLE events and transmitting data.
+5. Initializes FreeRTOS tasks for handling BLE events and transmitting data.
 6. Starts advertising to allow other devices to discover and connect, passing
 information such as device name, appearance, supported services (currently
 notifications, a stream of data sent from the device with no ACK from the
@@ -36,23 +37,11 @@ client), address, connection/discovery mode, etc. Allows only one connection.
 The transmit task waits until there are enough samples in the pipe (based on
 negotiated MTU) and then sends them as a notification to connected
 clients.
+Data can be received on the phone with the app nRF Connect, via a custom phone
+app (yet to be developed) or with the IMUSampleReceiver python class.
 
 How to use:
-UARTLogger logger((LogLevel::DEBUG));
-std::shared_ptr<Pipe<IMUSample, TRANSMISSION_PIPE_SIZE>> pipe =
-    QueuePipe<IMUSample, TRANSMISSION_PIPE_SIZE>::create(&logger);
-auto transmitRunner = std::make_unique<FreeRTOSLoopRunner>(
-  "transmitTask", TRANSMIT_TASK_STACK_SIZE,
-  TRANSMIT_TASK_PRIORITY, pdMS_TO_TICKS(100));
-unique_ptr<BLE> ble = BLE::getInstance(&logger, pipe,
-                     std::move(transmitRunner));
-... if (ble->isConnected()) {
-  ble->beginTransmission(); // receives samples from the pipe and sends them to
-  the client
-}
-... ble->stopTransmission();
-
-Data can be received on the phone with the app nRF Connect.
+Refer to main.cpp
 
 Notes:
 Notifications, not allowing reads from the client, and only allowing a single

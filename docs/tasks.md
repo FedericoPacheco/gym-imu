@@ -23,19 +23,19 @@ Other rules:
 
 ### In Progress
 
+- Remove unnecessary "includes" on the firmware to reduce compiled code size.
+
 ### Next
 
 ### Backlog
 
-- Remove unnecessary "includes" on the firmware to reduce compiled code size.
 - Evaluate whether to remove or not the remaining freeRTOS direct calls, replacing them with my own abstractions.
-- Move class docs to separate markdown files (documentation as code).
 
 - Implement Quaternion class and Mahony filter on the device.
 - Implement velocity estimation (trapezoidal integration, ZUPTs when stationary, velocity hold when zero acceleration) on the device.
 - Fine tune BLE transmission parameters, pipe sizes, and task priorities/ISR behaviors, and other relevant system parameters to optimize for throughput after completing basic signal processing pipeline on device.
 
-- Implement a Kalman filter variant (classic, extended, unscented) on a jupyter notebook to compute orientation. Compare it against the Mahony Filter and complementary filter.
+- Implement a Kalman filter variant (classic, extended, unscented, etc.) on a jupyter notebook to compute orientation. Compare it against the Mahony Filter and complementary filter.
 - Implement a repetition detection algorithm on a jupyter notebook and evaluate it on real captures, comparing it against video references.
 - Investigate ESP-IDF DSP library: <https://components.espressif.com/components/espressif/esp-dsp/versions/1.8.2/readme>, <https://docs.espressif.com/projects/esp-dsp/en/latest/esp32/esp-dsp-apis.html#>
 
@@ -47,6 +47,7 @@ Other rules:
 - Generate linker map file to address ways to reduce code size on the device.
 - Try out ways to reduce power comsumption on the device: microcontroller sleep, turning off IMU sensor, reducing processor frequency, configure unused IO lines, etc.
 - Review if error macros work with variable arguments.
+- Review C++ compiler warnings and fix them if necessary.
 
 ### Done
 
@@ -126,3 +127,5 @@ Other rules:
 - Make the SignalProcessor class a singleton as the BLE or MPU6050Sensor classes.
 - Fix broken signal processing tests on the device.
 - Add license to project.
+- Review class docs and consider moving them to separate markdown files (documentation as code). Decision: it's better to leave them near the code, otherwise
+they are more prone to become outdated/stale.

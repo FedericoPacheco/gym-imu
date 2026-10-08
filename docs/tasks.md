@@ -23,15 +23,12 @@ Other rules:
 
 ### In Progress
 
-- Fix broken signal processing tests on the device.
-
 ### Next
 
 ### Backlog
 
 - Remove unnecessary "includes" on the firmware to reduce compiled code size.
 - Evaluate whether to remove or not the remaining freeRTOS direct calls, replacing them with my own abstractions.
-- Add license to project.
 - Move class docs to separate markdown files (documentation as code).
 
 - Implement Quaternion class and Mahony filter on the device.
@@ -127,3 +124,5 @@ Other rules:
 - Install dependencies on laptop, improve setup documentation and create convenience scripts aiming for easy reproducibility.
 - Investigate why some transmitted BLE packets are lost periodically.
 - Make the SignalProcessor class a singleton as the BLE or MPU6050Sensor classes.
+- Fix broken signal processing tests on the device.
+- Add license to project.

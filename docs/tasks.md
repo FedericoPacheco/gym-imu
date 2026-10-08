@@ -23,8 +23,6 @@ Other rules:
 
 ### In Progress
 
-- Investigate why some transmitted BLE packets are lost periodically.
-
 ### Next
 
 ### Backlog
@@ -128,3 +126,4 @@ Other rules:
 - Update IMUSampleReceiver python class to use new numpy format and delegate writing to the IMUSampleWriter class.
 - Fork I2C and MPU libraries, apply changes there and upload them to github.
 - Install dependencies on laptop, improve setup documentation and create convenience scripts aiming for easy reproducibility.
+- Investigate why some transmitted BLE packets are lost periodically.

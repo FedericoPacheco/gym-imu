@@ -469,11 +469,12 @@ void BLE::transmitLoopFunction(void *arg) {
 
   while (self->pipe->itemsFilled() >= currentBatchSize) {
     batchCount = 0;
-    optionalBatchSample = self->pipe->pop(false);
-    while (batchCount < currentBatchSize &&
-           (optionalBatchSample != std::nullopt)) {
-      batchSamples[batchCount] = optionalBatchSample.value();
+    while (batchCount < currentBatchSize) {
       optionalBatchSample = self->pipe->pop(false);
+      if (!optionalBatchSample.has_value()) {
+        break;
+      }
+      batchSamples[batchCount] = optionalBatchSample.value();
       batchCount++;
     }
 

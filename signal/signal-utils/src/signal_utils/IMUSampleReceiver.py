@@ -27,7 +27,8 @@ class IMUSampleReceiver:
     # MISCELLANEOUS
     # samplingPeriod / samplesPerBLEPacket -> 1 log/second
     # Adjust in sync with the firmware settings.
-    LOGGING_PERIOD_IN_NOTIFICATIONS = 100 / 6  
+    LOGGING_PERIOD_IN_NOTIFICATIONS = int(100 / 6)
+
     def __init__(
         self,
         listenDurationSeconds: float = 30.0,
@@ -130,9 +131,9 @@ class IMUSampleReceiver:
 
         subscribed = False
         try:
-            # BlueZ: Linux bluetooth backend. 
-            # At least on my laptop, it fails unless StartNotify 
-            # is used instead of AcquireNotify. 
+            # BlueZ: Linux bluetooth backend.
+            # At least on my laptop, it fails unless StartNotify
+            # is used instead of AcquireNotify.
             # The additional parameter shouldn't affect windows.
             await self.client.start_notify(
                 self.IMU_CHARACTERISTIC_UUID,
@@ -237,9 +238,12 @@ class IMUSampleReceiver:
                 for j in range(1, diff):
                     lost.append(seq[i - 1] + j)
 
-        print(
-            "SAMPLE LOSS ANALYSIS:\n"
-            f"Sequence numbers: {','.join(map(str, lost))}\n"
-            f"Periodicity: {','.join(str(lost[i] - lost[i - 1]) for i in range(1, len(lost)))}\n"
-            f"Total: {total} ({total*100.0/len(seq):.2f}%)"
-        )
+        print("(INNER) SAMPLE LOSS ANALYSIS:")
+        if total == 0:
+            print("No lost samples detected.")
+        else:
+            print(
+                f"Sequence numbers: {', '.join(map(str, lost))}\n"
+                f"Periodicity: {', '.join(str(lost[i] - lost[i - 1]) for i in range(1, len(lost)))}\n"
+                f"Total: {total} ({total*100.0/len(seq):.2f}%)"
+            )

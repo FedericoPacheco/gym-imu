@@ -109,7 +109,8 @@ private:
   // MTU: maximum transmission unit, the largest payload size that can be sent
   // in a single BLE packet
   static constexpr int DEFAULT_MTU = 23;
-  // Effetive payload = MTU (maximum transmission unit) - 3 bytes for ATT header
+  // Effective payload = MTU (maximum transmission unit) - 3 bytes for ATT
+  // header
   static constexpr int PREFERRED_MTU = std::min(
       static_cast<int>(sizeof(IMUSample) * PREFERRED_BATCH_SEND_SIZE + 3), 512);
   // Time between data exchanges when connected, between 7.5ms and 4s

@@ -1,5 +1,7 @@
+#include <cstdint>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include <vector>
 
 #include "doubles/ESPIDFDouble.hpp"
 #include "doubles/FreeRTOSDouble.hpp"
@@ -348,6 +350,56 @@ TEST(BLE_transmitLoopFunction,
   instance->stopTransmission();
 
   EXPECT_EQ(nimbleGattServerNotifyCustom_fake.call_count, 1u);
+}
+
+TEST(BLE_transmitLoopFunction, DoesntLoseSamplesDuringTwoTransmissionRounds) {
+  auto deps = buildDefaultDependencies();
+  auto *runnerRaw =
+      static_cast<DeterministicLoopRunner *>(deps.transmitRunner.get());
+  auto *pipeRaw = deps.pipe.get();
+  static std::vector<std::vector<IMUSample>> capturedTransmissionBatches;
+  capturedTransmissionBatches.clear();
+  nimbleMbufFromFlat_fake.custom_fake = [](const void *data, uint16_t length) {
+    const auto *samples = static_cast<const IMUSample *>(data);
+    const size_t sampleCount = length / sizeof(IMUSample);
+    capturedTransmissionBatches.emplace_back(samples, samples + sampleCount);
+    return &nimbleBuffer;
+  };
+
+  EXPECT_CALL(*pipeRaw, itemsFilled())
+      .WillOnce(Return(static_cast<uint32_t>(TEST_BATCH_SIZE)))
+      .WillOnce(Return(static_cast<uint32_t>(TEST_BATCH_SIZE)))
+      .WillRepeatedly(Return(0));
+  uint32_t nextSequence = 0;
+  EXPECT_CALL(*pipeRaw, pop(false))
+      .Times(2 * TEST_BATCH_SIZE)
+      .WillRepeatedly([&nextSequence]() {
+        return std::optional<IMUSample>(IMUSample{
+            .a = {0.0f, 0.0f, 0.0f},
+            .w = {0.0f, 0.0f, 0.0f},
+            .seq = nextSequence++,
+        });
+      });
+
+  BLE *instance = getInstanceWith(std::move(deps));
+  runStackSyncCallback();
+  connectClient();
+  subscribeClientToImuCharacteristic();
+  setBatchSizeToTestValue();
+  instance->beginTransmission();
+  runnerRaw->runOneStep();
+  runnerRaw->runOneStep();
+  instance->stopTransmission();
+
+  ASSERT_EQ(capturedTransmissionBatches.size(), 2u);
+  for (uint32_t batch = 0; batch < 2; batch++) {
+    ASSERT_EQ(capturedTransmissionBatches[batch].size(), TEST_BATCH_SIZE);
+    for (uint32_t s = 0; s < TEST_BATCH_SIZE; s++) {
+      EXPECT_EQ(capturedTransmissionBatches[batch][s].seq,
+                batch * TEST_BATCH_SIZE + s);
+    }
+  }
+  EXPECT_EQ(nimbleGattServerNotifyCustom_fake.call_count, 2u);
 }
 
 TEST(BLE_transmitLoopFunction, SendsNoNotificationWhenBufferCreationFails) {

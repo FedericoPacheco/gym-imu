@@ -23,8 +23,6 @@ Other rules:
 
 ### In Progress
 
-- Review C++ compiler warnings and fix them if necessary.
-
 ### Next
 
 ### Backlog
@@ -129,3 +127,4 @@ Other rules:
 - Review class docs and consider moving them to separate markdown files (documentation as code). Decision: it's better to leave them near the code, otherwise
 they are more prone to become outdated/stale.
 - Remove unnecessary "includes" on the firmware to attempt to reduce compiled code size.
+- Review C++ compiler warnings and fix them if necessary. Result: probably analyzer false positives.

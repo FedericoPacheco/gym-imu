@@ -23,19 +23,17 @@ Other rules:
 
 ### In Progress
 
-- Make the SignalProcessor class a singleton as the BLE or MPU6050Sensor classes.
+- Fix broken signal processing tests on the device.
 
 ### Next
 
 ### Backlog
 
-- Evaluate whether to remove or not the remaining freeRTOS direct calls, replacing them with my own abstractions.
 - Remove unnecessary "includes" on the firmware to reduce compiled code size.
-
+- Evaluate whether to remove or not the remaining freeRTOS direct calls, replacing them with my own abstractions.
 - Add license to project.
 - Move class docs to separate markdown files (documentation as code).
 
-- Fix complementary filter broken tests (delete class or update implementation).
 - Implement Quaternion class and Mahony filter on the device.
 - Implement velocity estimation (trapezoidal integration, ZUPTs when stationary, velocity hold when zero acceleration) on the device.
 - Fine tune BLE transmission parameters, pipe sizes, and task priorities/ISR behaviors, and other relevant system parameters to optimize for throughput after completing basic signal processing pipeline on device.
@@ -128,3 +126,4 @@ Other rules:
 - Fork I2C and MPU libraries, apply changes there and upload them to github.
 - Install dependencies on laptop, improve setup documentation and create convenience scripts aiming for easy reproducibility.
 - Investigate why some transmitted BLE packets are lost periodically.
+- Make the SignalProcessor class a singleton as the BLE or MPU6050Sensor classes.

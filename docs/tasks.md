@@ -23,7 +23,7 @@ Other rules:
 
 ### In Progress
 
-- Remove unnecessary "includes" on the firmware to reduce compiled code size.
+- Review C++ compiler warnings and fix them if necessary.
 
 ### Next
 
@@ -47,7 +47,6 @@ Other rules:
 - Generate linker map file to address ways to reduce code size on the device.
 - Try out ways to reduce power comsumption on the device: microcontroller sleep, turning off IMU sensor, reducing processor frequency, configure unused IO lines, etc.
 - Review if error macros work with variable arguments.
-- Review C++ compiler warnings and fix them if necessary.
 
 ### Done
 
@@ -129,3 +128,4 @@ Other rules:
 - Add license to project.
 - Review class docs and consider moving them to separate markdown files (documentation as code). Decision: it's better to leave them near the code, otherwise
 they are more prone to become outdated/stale.
+- Remove unnecessary "includes" on the firmware to attempt to reduce compiled code size.

@@ -25,8 +25,9 @@ class IMUSampleReceiver:
     FIRST_SAMPLE_TIMEOUT_SECONDS = 90.0
 
     # MISCELLANEOUS
-    LOGGING_PERIOD_IN_NOTIFICATIONS = 10
-
+    # samplingPeriod / samplesPerBLEPacket -> 1 log/second
+    # Adjust in sync with the firmware settings.
+    LOGGING_PERIOD_IN_NOTIFICATIONS = 100 / 6  
     def __init__(
         self,
         listenDurationSeconds: float = 30.0,
@@ -120,6 +121,7 @@ class IMUSampleReceiver:
         self.fQueue = deque()
         self.wQueue = deque()
 
+        self.logQueue = deque()
         self.notificationCount = 0
         self.totalNotificationCount = 0
 
@@ -157,7 +159,14 @@ class IMUSampleReceiver:
                 ) from e
 
             print(f"Receiving samples for {self.listenDurationSeconds:.0f} seconds...")
-            await asyncio.sleep(self.listenDurationSeconds)
+            loop = asyncio.get_running_loop()
+            captureDeadline = loop.time() + self.listenDurationSeconds
+            remaining = captureDeadline - loop.time()
+            while remaining > 0:
+                await asyncio.sleep(min(0.1, remaining))
+                self._printQueuedLogs()
+                remaining = captureDeadline - loop.time()
+            self._printQueuedLogs()
             print("Capture window completed")
         finally:
             self.receivedFirstSampleEvent = None
@@ -165,6 +174,10 @@ class IMUSampleReceiver:
                 with contextlib.suppress(Exception):
                     await self.client.stop_notify(self.IMU_CHARACTERISTIC_UUID)
                 print("Unsubscribed from IMU notifications")
+
+    def _printQueuedLogs(self) -> None:
+        while self.logQueue:
+            print(self.logQueue.popleft())
 
     def _onImuNotification(self, characteristic: Any, data: bytearray) -> None:
         payload = memoryview(data)
@@ -201,11 +214,11 @@ class IMUSampleReceiver:
             lastF = self.fQueue[-1]
             lastW = self.wQueue[-1]
             lastSeq = self.seqQueue[-1]
-            print(
+            self.logQueue.append(
                 f"Notification #{self.totalNotificationCount}, sample from batch: "
-                f"f: ({lastF[0]:.6f}, {lastF[1]:.6f}, {lastF[2]:.6f}), ",
-                f"w: ({lastW[0]:.6f}, {lastW[1]:.6f}, {lastW[2]:.6f}), ",
-                f"seq: {lastSeq}",
+                f"f: ({lastF[0]:.6f}, {lastF[1]:.6f}, {lastF[2]:.6f}), "
+                f"w: ({lastW[0]:.6f}, {lastW[1]:.6f}, {lastW[2]:.6f}), "
+                f"seq: {lastSeq}"
             )
             self.notificationCount = 0
 

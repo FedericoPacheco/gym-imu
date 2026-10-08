@@ -14,7 +14,7 @@ Other rules:
 - Next: 2-3 tasks max, keep it focused.
 - Backlog and Done: unlimited.
 - Task duration: break down big tasks into smaller ones, 1-2 days max each.
-- History: create PRs and separate branches for non-trivial tasks, self-review them, add link here to PR, and merge directly to main.
+- History: create PRs and separate branches for non-trivial tasks, self-review them and merge directly to main.
 - Main: working code. No development branch to keep it simple.
 
 ---------------
@@ -25,34 +25,23 @@ Other rules:
 
 ### Next
 
-- Make decision about buying new IMU sensor (e.g. BMI270, ICM-42688-P, ISM330DHCX, BMI323, BNO085, ICM-20948) and microcontroller (e.g. ESP32 s3). Write ADR with rationale.
-
 ### Backlog
 
-- Implement velocity estimation  on the device and test for performance.
-- Fine tune transmission parameters to optimize for latency.
-- Fine tune pipe sizes to optimize for data preservation.
-- Fine tune tasks priorities and ISR behaviors to optimize for latency and responsiveness.
-- Fine tune IMU parameters to optimize for throughput.
-- Perform spectral analysis to diagnose aliasing. Provide a recommendation of minimum sampling frequency.
-- Perform spectral analysis with the MPU6050's hardware low-pass filter configured with different cutoff frequencies to understand its behavior. Analyze both stationary and moving captures.
-- Evaluate whether to remove or not the remaining freeRTOS direct calls, replacing them with my own abstractions.
+- Implement Quaternion class and Mahony filter on the device.
+- Implement velocity estimation (trapezoidal integration, ZUPTs when stationary, velocity hold when zero acceleration) on the device.
+- Fine tune BLE transmission parameters, pipe sizes, and task priorities/ISR behaviors, and other relevant system parameters to optimize for throughput after completing basic signal processing pipeline on device.
+
+- Implement a Kalman filter variant (classic, extended, unscented, etc.) on a jupyter notebook to compute orientation. Compare it against the Mahony Filter and complementary filter.
+- Implement a repetition detection algorithm on a jupyter notebook and evaluate it on real captures, comparing it against video references.
 - Investigate ESP-IDF DSP library: <https://components.espressif.com/components/espressif/esp-dsp/versions/1.8.2/readme>, <https://docs.espressif.com/projects/esp-dsp/en/latest/esp32/esp-dsp-apis.html#>
 
-- Implement on a jupyter notebook a repetition detection algorithm and evaluate it on real captures, comparing it against video references.
-- Fork I2C and MPU libraries on github and apply changes there. Then include as dependencies in the platformIO file.
-- Remove unnecessary includes to reduce compiled code size.
+- Perform spectral analysis to diagnose aliasing. Provide a recommendation of minimum sampling frequency.
 - Extract control logic from `src/main.cpp` to separate class.
 - Read EPS-IDF docs (<https://docs.espressif.com/projects/esp-idf/en/stable/esp32/api-guides/ble/index.html#security>) and add basic security to BLE class.
-- Move class docs to separate markdown files (documentation as code).
 - Create hardware-in-the-loop tests sending commands to the device through serial and verifying readings transmitted through BLE.
 - Avoid dynamic memory allocation to better address memory usage on the device.
 - Generate linker map file to address ways to reduce code size on the device.
-- Address ways to avoid floating-point operations on the device (ESP32-C3 has no FPU).
 - Try out ways to reduce power comsumption on the device: microcontroller sleep, turning off IMU sensor, reducing processor frequency, configure unused IO lines, etc.
-- Improve setup documentation aiming for easy reproducibility by others.
-- Add license to project.
-- Order links at learning sources file.
 - Review if error macros work with variable arguments.
 
 ### Done
@@ -119,3 +108,22 @@ Other rules:
 - Evaluate and document repetition detection strategies.  
 - Review velocity jupyter notebook documentation and zero velocity updates for possible improvements.
 - Update readme's signal processing section and merge branch.
+- Make decision about buying a new IMU sensor (e.g. BMI270, ICM-42688-P, ISM330DHCX, BMI323, BNO085, ICM-20948).
+- Make decision about buying a new microcontroller (e.g. ESP32 s3).
+- Organize docs/misc folder. Separate books, slides, papers into different folders. Update references (jupyter notebooks, ADRs).
+- Organize online-sources.md file.
+- Add titles to all links referenced in jupyter notebooks.
+- Identify saved captures as coming from the mpu6050 sensor, either in the filename or via a subfolder. Update references and capture notebooks.
+- Remove unnecessary code from the signal subfolder (e.g. IMUSampleTimeSeriesPlotter python class).
+- Update IMUSampleReceiver python class to use new numpy format and delegate writing to the IMUSampleWriter class.
+- Fork I2C and MPU libraries, apply changes there and upload them to github.
+- Install dependencies on laptop, improve setup documentation and create convenience scripts aiming for easy reproducibility.
+- Investigate why some transmitted BLE packets are lost periodically.
+- Make the SignalProcessor class a singleton as the BLE or MPU6050Sensor classes.
+- Fix broken signal processing tests on the device.
+- Add license to project.
+- Review class docs and consider moving them to separate markdown files (documentation as code). Decision: it's better to leave them near the code, otherwise
+they are more prone to become outdated/stale.
+- Remove unnecessary "includes" on the firmware to attempt to reduce compiled code size.
+- Review C++ compiler warnings and fix them if necessary. Result: probably analyzer false positives.
+- Evaluate whether to remove or not the remaining freeRTOS direct calls, replacing them with my own abstractions. Result: only present in the logger and main. Probably unnecessary.

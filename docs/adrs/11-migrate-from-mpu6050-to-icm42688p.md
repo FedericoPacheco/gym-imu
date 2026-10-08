@@ -54,28 +54,28 @@ I'll also stick to MEMS technology since that's what generally available from su
 
 Fit the main need of the project: give accurate and reliable readings.
 
-* [*TDK ICM-45686*](../datasheets/ds-000577-icm-45686-datasheet.pdf): not available.
-* [*ST LSM6DSV16X*](../datasheets/DS_lsm6dsv16x.pdf): not available.
-* [*Analog Devices ADIS16507*](../datasheets/ADIS16507.pdf): not available.
-* [*ICM-42688-P*](../datasheets/DS-000347%20ICM-42688-P%20v1.9.pdf): about 17 USD/each (conversion: 1USD = 1500ARS).
+* [*TDK ICM-45686*](../assets/datasheets/ds-000577-icm-45686-datasheet.pdf): not available.
+* [*ST LSM6DSV16X*](../assets/datasheets/DS_lsm6dsv16x.pdf): not available.
+* [*Analog Devices ADIS16507*](../assets/datasheets/ADIS16507.pdf): not available.
+* [*ICM-42688-P*](../assets/datasheets/DS-000347%20ICM-42688-P%20v1.9.pdf): about 17 USD/each (conversion: 1USD = 1500ARS).
 
 #### Industrial applications
 
 High reliability under harsh conditions (temperature, vibration, and shock). Not necessary considering a typical gym environment with moderate temperatures (10° C to 30° C) and regular levels of vibration and shock.
 
-* [*TDK IIM-42653*](../datasheets/ds-000529-iim-42653-datasheet.pdf): not available.
-* [*ST ISM330DHCX*](../datasheets/DS_ism330dhcx.pdf): about 68USD/each.
+* [*TDK IIM-42653*](../assets/datasheets/ds-000529-iim-42653-datasheet.pdf): not available.
+* [*ST ISM330DHCX*](../assets/datasheets/DS_ism330dhcx.pdf): about 68USD/each.
 
 #### General purpose, low power, or with magnetometer
 
 The magnetometer can be used for computing absolute heading, but this is probably unnecessary for VBT and it may be affected due to ferromagnetic gym equipment, which alters the local magnetic field. "General purpose" may mean that the sensor does not meet the accuracy requirements for high-performance motion tracking. The Bosch BNO family specifically offers built-in vendor-specific sensor fusion. While convenient, it limits flexibility to apply custom algorithms.
 
-* [*TDK ICM-20948*](../datasheets/ds-000189-icm-20948-datasheet.pdf): about 19USD/each.
-* [*Bosch BMI270*](../datasheets/bst-bmi270-ds000.pdf): not available.
-* [*Bosch BMI323*](../datasheets/bst-bmi323-ds000.PDF): about 18 USD/each.
-* [*Bosch BNO055*](../datasheets/bst-bno055-ds000.pdf): about 36 USD/each.
-* [*Bosch BNO080/BNO085*](../datasheets/BNO080_085-Datasheet.pdf): about 40 USD/each.
-* [*ST LSM6DS3*](../datasheets/st_imu_lsm6ds3_datasheet.pdf): about 41 USD/each.
+* [*TDK ICM-20948*](../assets/datasheets/ds-000189-icm-20948-datasheet.pdf): about 19USD/each.
+* [*Bosch BMI270*](../assets/datasheets/bst-bmi270-ds000.pdf): not available.
+* [*Bosch BMI323*](../assets/datasheets/bst-bmi323-ds000.PDF): about 18 USD/each.
+* [*Bosch BNO055*](../assets/datasheets/bst-bno055-ds000.pdf): about 36 USD/each.
+* [*Bosch BNO080/BNO085*](../assets/datasheets/BNO080_085-Datasheet.pdf): about 40 USD/each.
+* [*ST LSM6DS3*](../assets/datasheets/st_imu_lsm6ds3_datasheet.pdf): about 41 USD/each.
 
 Other sources:
 

@@ -56,9 +56,9 @@ Kalman filter variants (Extended Kalman Filter (EKF), Unscented Kalman Filter (U
 Sources:
 
 * GPT-5.6 Terra
-* [A Comparative Analysis of Sensor Fusion Algorithms for Miniature IMU Measurements](../misc/A%20Comparative%20Analysis%20of%20Sensor%20Fusion%20Algorithms%20for%20Miniature%20IMU%20Measurements%20-%20Cocoli,%20Badia.pdf)
-* [Nonlinear Complementary Filters on the Special Orthogonal Group](../misc/Nonlinear%20Complementary%20Filters%20on%20the%20Special%20Orthogonal%20Group%20-%20Robert%20Mahony.pdf)
-* [An efficient orientation filter for inertial and inertial/magnetic sensor arrays](../misc/An%20efficient%20orientation%20filter%20for%20inertial%20and%20inertial-magnetic%20sensor%20arrays%20-%20Sebastian%20Madgwick.pdf)
+* [A Comparative Analysis of Sensor Fusion Algorithms for Miniature IMU Measurements](../assets/papers/A%20Comparative%20Analysis%20of%20Sensor%20Fusion%20Algorithms%20for%20Miniature%20IMU%20Measurements%20-%20Cocoli,%20Badia.pdf)
+* [Nonlinear Complementary Filters on the Special Orthogonal Group](../assets/papers/Nonlinear%20Complementary%20Filters%20on%20the%20Special%20Orthogonal%20Group%20-%20Robert%20Mahony.pdf)
+* [An efficient orientation filter for inertial and inertial/magnetic sensor arrays](../assets/papers/An%20efficient%20orientation%20filter%20for%20inertial%20and%20inertial-magnetic%20sensor%20arrays%20-%20Sebastian%20Madgwick.pdf)
 * [AHRS: Attitude and Heading Reference Systems](https://ahrs.readthedocs.io/en/latest/index.html)
 * [AHRS: Madgwick Filter Documentation](https://ahrs.readthedocs.io/en/latest/filters/madgwick.html#orientation-from-imu)
 * [AHRS: Mahony Filter Documentation](https://ahrs.readthedocs.io/en/latest/filters/mahony.html)

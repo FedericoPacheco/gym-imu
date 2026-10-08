@@ -1,8 +1,26 @@
 # Setup
 
-OS: Linux Ubuntu 24.04
+OS: Linux (tested on Ubuntu 24.04/26.04)
 
-## Firmware Development Environment
+Open the [project workspace](../.vscode/gym-imu.code-workspace) in VS Code.
+
+## Firmware
+
+### Automated
+
+Run:
+```bash
+./device/install-firmware.sh
+```
+Pass `--build-only` to build without uploading. 
+
+If the VS Code CLI is unavailable, install the extensions manually. 
+If the script reports that you were added to the `dialout` group, log out and back in, then rerun it.
+If something else fails, perform a manual installation as described below.
+
+Note: script generated with AI.
+
+### Manual
 
 1. Install python:
 
@@ -47,10 +65,11 @@ OS: Linux Ubuntu 24.04
     platformio --version
     ```
 
-    2.5. Install esp32 dependencies:
+    2.5. Install the pinned device dependencies from the `device` directory:
 
     ```bash
-    pio platform install espressif32
+    cd device
+    pio pkg install -e device
     ```
 
     2.6. Grant access to the serial port:
@@ -88,93 +107,21 @@ OS: Linux Ubuntu 24.04
     clang-tidy --version
     ```
 
-    3.3. Configure in VSCode:
-    File > Preferences > Settings:
-        - Search "Editor: Default Formatter" > Select "clangd".
-        - Search "Format On Save" > Enable (check the box).
-        - Search "C_Cpp: Code Analysis Clang Tidy: Enabled" > Enable (check the box).
-        - Search "C_Cpp: Intelli Sense Engine" > Select "Disabled".
-        - Search "Platformio-ide: Auto Rebuild Autocomplete Index" > Disable (uncheck the box).
-        - Search "Clangd: Path" > Set to "/usr/bin/clangd".
-        - Search "Clangd: Arguments" > Add:
-            - `--background-index`
-            - `--clang-tidy`
-            - `--header-insertion=iwyu`
-            - `--completion-style=detailed`
-            - `--compile-commands-dir=${workspaceFolder}/.pio/build/device`
-            - Search "Clangd: Fallback Flags" > Add:
-            - `"-I${workspaceFolder}/include"`
-            - `"-I${workspaceFolder}/lib"`
-            - `"-I${workspaceFolder}/components"`
-
     Note: couldn't make clangd refactors work :(
 
 4. Install external dependencies not available in PlatformIO:
-    4.1. Create folder and download repos:
 
     ```bash
-        cd device
-        mkdir -p components
-        git clone https://github.com/natanaeljr/esp32-MPU-driver.git MPU
-        git clone https://github.com/natanaeljr/esp32-I2Cbus.git I2Cbus
+        cd device/components
+        git clone https://github.com/FedericoPacheco/esp32-MPU-driver MPU
+        git clone https://github.com/FedericoPacheco/esp32-I2Cbus I2Cbus
     ```
 
-    4.2. Configure driver:
-
-    ```bash
-        pio run -t menuconfig
-    ```
-
-    Select: MPU driver:
-        - MPU chip model > MPU6050
-        - Communication Protocol > I2C
-        - Digital Motion Processor (DMP) > Enable
-    Press "S" to save config
-
-    4.3. If building error fails due to missing `i2c1` object, wrap every usage of `i2c1` with:
-
-    ```c++
-        #if SOC_I2C_NUM > 1
-        // code using i2c1
-        #endif
-    ```
-
-    Commit the changes:
-
-    ```bash
-        cd device/components/I2Cbus
-        git add .
-        git commit -m "fix(I2Cbus): resolve compatibility with esp32-c3"
-    ```
-
-    The esp32-c3 microcontroller only has one I2C bus.
-
-    4.4. If the sensor fails to initialize, add another valid "who am i" value to `MPU.testConnection()`:
-
-    ```c++
-      ...
-      #if defined CONFIG_MPU6000 || defined CONFIG_MPU6050 || defined CONFIG_MPU9150
-        return (wai == 0x68 || wai == ...) ? ESP_OK : ESP_ERR_NOT_FOUND;
-      ...
-    ```
-
-    Get the wai value by reviewing the logs on the serial monitor, or with `sensor.whoAmI()`.
-
-    Commit the changes:
-
-    ```bash
-        cd device/components/MPU
-        git add .
-        git commit -m "fix(MPU): add support for fake/clone/counterfeit MPU6050 device"
-    ```
-
-5. Flash device with firmware:
-    5.1. Plug the device while pressing the BOOT button.
-    5.2. Open PlatformIO > device > General:
+5. Flash device with firmware: open PlatformIO > device > General:
      - Build
      - Upload / Upload and Monitor
 
-## Enclosure
+## Enclosure (optional)
 
 1. Install OpenSCAD:
 
@@ -184,18 +131,33 @@ OS: Linux Ubuntu 24.04
 
 2. Install the BOSL2 library (tools, shapes, and helpers to make OpenScad easier to use): <https://github.com/BelfrySCAD/BOSL2/?tab=readme-ov-file#installation>
 
-3. Install NopSCADlib (parts for 3D printsrs and enclosures for electronics): <https://github.com/nophead/NopSCADlib/blob/master/docs/usage.md#installation>
+3. Install NopSCADlib (parts for 3D printers and enclosures for electronics): <https://github.com/nophead/NopSCADlib/blob/master/docs/usage.md#installation>
 
 4. Install VS Code Extension: OpenSCAD Language Support
 
 5. Inside OpenSCAD, check "Design" > "Automatic Reload and Preview"
 
-## Signal reception, analysis and processing
+## Signal processing
+
+### Automated
+
+Run:
+```bash
+./signal/install-signal.sh
+source signal/venv/bin/activate
+```
+
+If the VS Code CLI is unavailable, install the extensions manually. 
+If something else fails, perform a manual installation as described below.
+
+Note: script generated with AI.
+
+### Manual
 
 1. Create and activate virtual environment:
 
     ```bash
-    python -m venv venv
+    python3 -m venv venv
     source venv/bin/activate    # Linux
     .\venv\Scripts\activate.ps1 # Windows
     ```
@@ -208,6 +170,7 @@ OS: Linux Ubuntu 24.04
 
     This also installs the local `signal-utils` package in editable mode.
 
-3. Install extension: Black Formatter by Microsoft
-4. Install extension: Jupyter by Microsoft
-5. Install extension: Edit CSV by janisdd
+3. Install extensions: 
+    - Black Formatter by Microsoft
+    - Jupyter by Microsoft
+    - Edit CSV by janisdd

@@ -36,6 +36,7 @@ public:
 
 TEST(IMUSignalProcessor_processingLoopFunction,
      RunsAllOperationsOnASingleSampleSuccessfully) {
+  IMUSignalProcessor::resetInstanceForTests();
   auto inputPipe = std::make_shared<NiceMock<PipeDouble>>();
   auto outputPipe = std::make_shared<NiceMock<PipeDouble>>();
   auto runner = std::make_unique<DeterministicLoopRunner>();
@@ -67,16 +68,17 @@ TEST(IMUSignalProcessor_processingLoopFunction,
   EXPECT_CALL(*remover, remove(_, _)).Times(1);
   EXPECT_CALL(*outputPipe, push(_)).Times(1).WillOnce(Return(true));
 
-  auto processor =
-      IMUSignalProcessor(inputPipe, outputPipe, std::move(runner), &logger,
-                         std::move(calibrator), std::move(noiseReducer),
-                         std::move(orientationFinder), std::move(remover));
-  processor.beginProcessing();
+  auto *processor = IMUSignalProcessor::getInstance(
+      inputPipe, outputPipe, std::move(runner), &logger, std::move(calibrator),
+      std::move(noiseReducer), std::move(orientationFinder),
+      std::move(remover));
+  processor->beginProcessing();
   runnerRaw->runOneStep();
-  processor.stopProcessing();
+  processor->stopProcessing();
 }
 
 TEST(IMUSignalProcessor_processingLoopFunction, DoesNotPushOnNullSamples) {
+  IMUSignalProcessor::resetInstanceForTests();
   auto inputPipe = std::make_shared<NiceMock<PipeDouble>>();
   auto outputPipe = std::make_shared<NiceMock<PipeDouble>>();
   auto runner = std::make_unique<DeterministicLoopRunner>();
@@ -94,13 +96,13 @@ TEST(IMUSignalProcessor_processingLoopFunction, DoesNotPushOnNullSamples) {
   EXPECT_CALL(*remover, remove(_, _)).Times(0);
   EXPECT_CALL(*outputPipe, push(_)).Times(0);
 
-  auto processor =
-      IMUSignalProcessor(inputPipe, outputPipe, std::move(runner), &logger,
-                         std::move(calibrator), std::move(noiseReducer),
-                         std::move(orientationFinder), std::move(remover));
-  processor.beginProcessing();
+  auto *processor = IMUSignalProcessor::getInstance(
+      inputPipe, outputPipe, std::move(runner), &logger, std::move(calibrator),
+      std::move(noiseReducer), std::move(orientationFinder),
+      std::move(remover));
+  processor->beginProcessing();
   runnerRaw->runOneStep();
-  processor.stopProcessing();
+  processor->stopProcessing();
 }
 
 } // namespace

@@ -92,10 +92,14 @@ extern "C" void app_main() {
       std::make_unique<MPU6050ComplementaryOrientationFinder>();
   std::unique_ptr<IMUEulerGravityRemover> gravityRemover =
       std::make_unique<MPU6050EulerGravityRemover>();
-  IMUSignalProcessor processor(
+  IMUSignalProcessor *processor = IMUSignalProcessor::getInstance(
       samplingPipe, transmissionPipe, std::move(processorRunner),
       &processorLogger, std::move(calibrator), std::move(noiseReducer),
       std::move(orientationFinder), std::move(gravityRemover));
+  if (processor == nullptr) {
+    processorLogger.error("Failed to initialize IMU signal processor");
+    return;
+  }
 
   UARTLogger bleLogger("BLE", LogLevel::WARN);
   auto bleLoopRunner = std::make_unique<FreeRTOSLoopRunner>(
@@ -123,7 +127,7 @@ extern "C" void app_main() {
   bool doSample = false;
   button->enableAsync();
 #ifdef PROCESS_SIGNAL
-  processor.beginProcessing();
+  processor->beginProcessing();
 #endif
   while (true) {
     vTaskDelay(pdMS_TO_TICKS(500));
@@ -162,7 +166,7 @@ extern "C" void app_main() {
     }
   }
 #ifdef PROCESS_SIGNAL
-  processor.stopProcessing();
+  processor->stopProcessing();
 #endif
   button->disableAsync();
 }

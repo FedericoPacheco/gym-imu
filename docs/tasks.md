@@ -23,11 +23,12 @@ Other rules:
 
 ### In Progress
 
+- Make the SignalProcessor class a singleton as the BLE or MPU6050Sensor classes.
+
 ### Next
 
 ### Backlog
 
-- Make the SignalProcessor class a singleton as the BLE or MPU6050Sensor classes.
 - Evaluate whether to remove or not the remaining freeRTOS direct calls, replacing them with my own abstractions.
 - Remove unnecessary "includes" on the firmware to reduce compiled code size.
 

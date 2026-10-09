@@ -21,19 +21,19 @@ Other rules:
 
 ## Tasks
 
+- Implement Quaternion class and Mahony filter on the device.
+
 ### In Progress
 
 ### Next
 
 ### Backlog
 
-- Implement Quaternion class and Mahony filter on the device.
 - Implement velocity estimation (trapezoidal integration, ZUPTs when stationary, velocity hold when zero acceleration) on the device.
 - Fine tune BLE transmission parameters, pipe sizes, and task priorities/ISR behaviors, and other relevant system parameters to optimize for throughput after completing basic signal processing pipeline on device.
 
 - Implement a Kalman filter variant (classic, extended, unscented, etc.) on a jupyter notebook to compute orientation. Compare it against the Mahony Filter and complementary filter.
 - Implement a repetition detection algorithm on a jupyter notebook and evaluate it on real captures, comparing it against video references.
-- Investigate ESP-IDF DSP library: <https://components.espressif.com/components/espressif/esp-dsp/versions/1.8.2/readme>, <https://docs.espressif.com/projects/esp-dsp/en/latest/esp32/esp-dsp-apis.html#>
 
 - Perform spectral analysis to diagnose aliasing. Provide a recommendation of minimum sampling frequency.
 - Extract control logic from `src/main.cpp` to separate class.
@@ -127,3 +127,9 @@ they are more prone to become outdated/stale.
 - Remove unnecessary "includes" on the firmware to attempt to reduce compiled code size.
 - Review C++ compiler warnings and fix them if necessary. Result: probably analyzer false positives.
 - Evaluate whether to remove or not the remaining freeRTOS direct calls, replacing them with my own abstractions. Result: only present in the logger and main. Probably unnecessary.
+- Investigate ESP-IDF DSP library. Result: use it for linear algebra at least. Since it's a little bit barebones and cumbersome to work with, at most write a small wrapper class for convenience that forwards calls and possibly adds some custom code (e.g. cross product, which isn't available). Gains: between x2 and x5 roughly, using handwritten assembly with SIMD or vector instruction sets that beat compiler-generated ANSI C code, even with optimization flags enabled. Sources:
+  - <https://components.espressif.com/components/espressif/esp-dsp/versions/1.8.2/readme>
+  - <https://docs.espressif.com/projects/esp-dsp/en/latest/esp32/esp-dsp-library.html>
+  - <https://docs.espressif.com/projects/esp-dsp/en/latest/esp32/esp-dsp-benchmarks.html>
+  - <https://docs.espressif.com/projects/esp-dsp/en/latest/esp32/esp-dsp-examples.html>
+  - <https://docs.espressif.com/projects/esp-dsp/en/latest/esp32/esp-dsp-apis.html>

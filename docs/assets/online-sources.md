@@ -180,13 +180,16 @@ Mainly referenced on Jupyter Notebooks. The remaining ones are left here.
 - [Estimating angle with a complementary filter](https://www.youtube.com/watch?v=6AoJ8wr8G6A)
 - [Gyroscopes and Accelerometers on a Chip](http://www.geekmomprojects.com/gyroscopes-and-accelerometers-on-a-chip/)
 
-#### Kalman filter
+#### Kalman filter variants
 
 - [Kalman Filter for Beginners Explained: Recursive Filters & MATLAB | Part 1](https://www.youtube.com/watch?v=HCd-leV8OkU)
 - [Kalman Filter for Beginners, Part 2 - Estimation and Prediction Process & MATLAB Example](https://www.youtube.com/watch?v=qCZ2UTgLM_g)
 - [Kalman Filter for Beginners Part 3: Attitude Estimation with Gyro and Accelerometer (MATLAB)](https://www.youtube.com/watch?v=DbE4PMgqp3s)
 - [Kalman Filter - VISUALLY EXPLAINED!](https://www.youtube.com/watch?v=-DiZGpAh7T4)
 - [Why Kalman Filters Work So Well](https://www.youtube.com/watch?v=zFmO_b05jU4)
+- [The Unscented Kalman Filter (UKF): A Full Tutorial. PS. Sampling Methods are Amazing](https://www.youtube.com/watch?v=c_6WDC66aVk)
+- [Unscented Kalman Filter Explained Without Equations](https://www.youtube.com/watch?v=6jwIGEs3AJo)
+- [Video 5: The Unscented Kalman Filter](https://www.youtube.com/watch?v=D8OgcFIlPjw)
 
 #### Reference implementations
 

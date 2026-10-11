@@ -1,7 +1,7 @@
 #include "IMUSampleCsv.hpp"
 #include "IMUSensorPort.hpp"
 #include <Constants.hpp>
-#include <MPU6050AffineCalibrator.hpp>
+#include <MPU6050AccelAffineWOnlineBiasCalibrator.hpp>
 #include <array>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -31,11 +31,12 @@ const std::array<testsupport::SeriesCase, 3> testCases = {{
          "mpu6050-90-deg-push-ups-1-calib-affine-sixf-tilted-a-online-w.csv"},
 }};
 
-TEST(MPU6050AffineCalibrator_calibrate, CalibratesSeriesCorrectly) {
+TEST(MPU6050AccelAffineWOnlineBiasCalibrator_calibrate,
+     CalibratesSeriesCorrectly) {
   for (const testsupport::SeriesCase &series : testCases) {
     SCOPED_TRACE(series.name);
 
-    MPU6050AffineCalibrator calibrator;
+    MPU6050AccelAffineWOnlineBiasCalibrator calibrator;
     std::vector<IMUSample> rawSamples =
         testsupport::readIMUSamplesFromCSV(series.inputPath);
     const std::vector<IMUSample> expectedSamples =

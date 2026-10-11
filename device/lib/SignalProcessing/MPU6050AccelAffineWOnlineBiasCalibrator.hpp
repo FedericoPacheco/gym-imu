@@ -3,7 +3,7 @@
 #include <MPU6050StationaryChecker.hpp>
 
 // For details, refer to: signal/1-calibration
-class MPU6050AffineCalibrator : public IMUCalibrator {
+class MPU6050AccelAffineWOnlineBiasCalibrator : public IMUCalibrator {
 private:
   static constexpr float A_AFFINE_TRANSF[4][3] = {
       {1.00081528f, -0.01812657f, 0.01910186f},
@@ -19,20 +19,24 @@ private:
                     W_STATIONARY_BIAS[2]};
 
 public:
-  MPU6050AffineCalibrator() = default;
-  ~MPU6050AffineCalibrator() = default;
+  MPU6050AccelAffineWOnlineBiasCalibrator() = default;
+  ~MPU6050AccelAffineWOnlineBiasCalibrator() = default;
 
   void calibrate(IMUSample &sample) override {
     if (MPU6050StationaryChecker::isStationaryPreCalibration(sample) &&
         sample.seq > 1) {
       this->wBias[0] =
-          MPU6050AffineCalibrator::W_ALPHA * this->wBias[0] +
-          (1.0f - MPU6050AffineCalibrator::W_ALPHA) * sample.w.roll;
+          MPU6050AccelAffineWOnlineBiasCalibrator::W_ALPHA * this->wBias[0] +
+          (1.0f - MPU6050AccelAffineWOnlineBiasCalibrator::W_ALPHA) *
+              sample.w.roll;
       this->wBias[1] =
-          MPU6050AffineCalibrator::W_ALPHA * this->wBias[1] +
-          (1.0f - MPU6050AffineCalibrator::W_ALPHA) * sample.w.pitch;
-      this->wBias[2] = MPU6050AffineCalibrator::W_ALPHA * this->wBias[2] +
-                       (1.0f - MPU6050AffineCalibrator::W_ALPHA) * sample.w.yaw;
+          MPU6050AccelAffineWOnlineBiasCalibrator::W_ALPHA * this->wBias[1] +
+          (1.0f - MPU6050AccelAffineWOnlineBiasCalibrator::W_ALPHA) *
+              sample.w.pitch;
+      this->wBias[2] =
+          MPU6050AccelAffineWOnlineBiasCalibrator::W_ALPHA * this->wBias[2] +
+          (1.0f - MPU6050AccelAffineWOnlineBiasCalibrator::W_ALPHA) *
+              sample.w.yaw;
     }
     sample.w.roll -= this->wBias[0];
     sample.w.pitch -= this->wBias[1];

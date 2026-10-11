@@ -23,7 +23,6 @@ Other rules:
 
 ### In Progress
 
-- Review double precision usage on the device. Change to float explicitly everywhere.
 - Implement Mahony filter on the device.
 
 ### Next
@@ -135,3 +134,4 @@ they are more prone to become outdated/stale.
   - <https://docs.espressif.com/projects/esp-dsp/en/latest/esp32/esp-dsp-examples.html>
   - <https://docs.espressif.com/projects/esp-dsp/en/latest/esp32/esp-dsp-apis.html>
 - Implement Quaternion class on the device.
+- Review double precision usage on the device. Change to float explicitly everywhere.

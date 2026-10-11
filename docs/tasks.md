@@ -21,11 +21,14 @@ Other rules:
 
 ## Tasks
 
-- Implement Quaternion class and Mahony filter on the device.
-
 ### In Progress
 
+- Implement Quaternion class on the device.
+
 ### Next
+
+- Review double precision usage on the device. Change to float explicitly everywhere.
+- Implement Mahony filter on the device.
 
 ### Backlog
 

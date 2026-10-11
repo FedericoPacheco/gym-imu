@@ -1,8 +1,8 @@
 #pragma once
 #include <Constants.hpp>
 #include <IMUCalibrator.hpp>
-#include <IMUEulerGravityRemover.hpp>
-#include <IMUEulerOrientationFinder.hpp>
+#include <IMUGravityRemover.hpp>
+#include <IMUOrientationFinder.hpp>
 #include <IMUNoiseReducer.hpp>
 #include <IMUSensorPort.hpp>
 #include <LoggerPort.hpp>
@@ -22,8 +22,8 @@ public:
       std::unique_ptr<LoopRunner> runner, LoggerPort *logger,
       std::unique_ptr<IMUCalibrator> calibrator,
       std::unique_ptr<IMUNoiseReducer> noiseReducer,
-      std::unique_ptr<IMUEulerOrientationFinder> orientationFinder,
-      std::unique_ptr<IMUEulerGravityRemover> gravityRemover) {
+      std::unique_ptr<IMUOrientationFinder<EulerOrientationSample>> orientationFinder,
+      std::unique_ptr<IMUGravityRemover<EulerOrientationSample>> gravityRemover) {
 
     // Protect instance creation with a mutex to ensure thread safety
     if (IMUSignalProcessor::instanceState.semaphoreHandle == nullptr) {
@@ -75,8 +75,8 @@ private:
   LoggerPort *logger;
   std::unique_ptr<IMUCalibrator> calibrator;
   std::unique_ptr<IMUNoiseReducer> noiseReducer;
-  std::unique_ptr<IMUEulerOrientationFinder> orientationFinder;
-  std::unique_ptr<IMUEulerGravityRemover> gravityRemover;
+  std::unique_ptr<IMUOrientationFinder<EulerOrientationSample>> orientationFinder;
+  std::unique_ptr<IMUGravityRemover<EulerOrientationSample>> gravityRemover;
 
   struct InstanceState {
     std::unique_ptr<IMUSignalProcessor> instance;
@@ -92,8 +92,8 @@ private:
       std::unique_ptr<LoopRunner> runner, LoggerPort *logger,
       std::unique_ptr<IMUCalibrator> calibrator,
       std::unique_ptr<IMUNoiseReducer> noiseReducer,
-      std::unique_ptr<IMUEulerOrientationFinder> orientationFinder,
-      std::unique_ptr<IMUEulerGravityRemover> gravityRemover)
+      std::unique_ptr<IMUOrientationFinder<EulerOrientationSample>> orientationFinder,
+      std::unique_ptr<IMUGravityRemover<EulerOrientationSample>> gravityRemover)
       : inputPipe(inputPipe), outputPipe(outputPipe), runner(std::move(runner)),
         logger(logger), calibrator(std::move(calibrator)),
         noiseReducer(std::move(noiseReducer)),

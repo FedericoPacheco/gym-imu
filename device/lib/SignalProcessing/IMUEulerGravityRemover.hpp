@@ -1,6 +1,6 @@
 #pragma once
 #include <Constants.hpp>
-#include <IMUEulerGravityRemover.hpp>
+#include <IMUGravityRemover.hpp>
 #include <numbers>
 
 /*
@@ -8,7 +8,7 @@ Misc docs:
 * https://en.cppreference.com/cpp/numeric/math/sin
 */
 
-class MPU6050EulerGravityRemover : public IMUEulerGravityRemover {
+class IMUEulerGravityRemover : public IMUGravityRemover<EulerOrientationSample> {
 public:
   void remove(IMUSample &sample, EulerOrientationSample &orientation) override {
     float rollRad = orientation.roll * std::numbers::pi_v<float> / 180.0f;

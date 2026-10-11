@@ -1,6 +1,6 @@
 #pragma once
 #include <Constants.hpp>
-#include <IMUEulerOrientationFinder.hpp>
+#include <IMUOrientationFinder.hpp>
 #include <MPU6050StationaryChecker.hpp>
 #include <numbers>
 
@@ -13,7 +13,7 @@ Misc docs:
 * https://en.cppreference.com/cpp/numeric/math/fmod
 
 */
-class MPU6050ComplementaryOrientationFinder : public IMUEulerOrientationFinder {
+class MPU6050ComplementaryOrientationFinder : public IMUOrientationFinder<EulerOrientationSample> {
 private:
   static constexpr float ALPHA_STATIONARY = 0.75f;
   static constexpr float ALPHA_MOVING = 0.95f;

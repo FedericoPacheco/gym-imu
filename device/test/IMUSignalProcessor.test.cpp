@@ -1,8 +1,8 @@
-#include "IMUEulerOrientationFinder.hpp"
+#include "IMUOrientationFinder.hpp"
 #include "doubles/LoggerDouble.hpp"
 #include "doubles/PipeDouble.hpp"
 #include <DeterministicLoopRunner.hpp>
-#include <IMUEulerGravityRemover.hpp>
+#include <IMUGravityRemover.hpp>
 #include <IMUSignalProcessor.hpp>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -24,11 +24,11 @@ class IMUNoiseReducerDouble : public IMUNoiseReducer {
 public:
   MOCK_METHOD(void, filter, (IMUSample & sample));
 };
-class IMUEulerOrientationFinderDouble : public IMUEulerOrientationFinder {
+class IMUOrientationFinderDouble : public IMUOrientationFinder<EulerOrientationSample> {
 public:
   MOCK_METHOD(EulerOrientationSample, find, (IMUSample & sample));
 };
-class IMUEulerGravityRemoverDouble : public IMUEulerGravityRemover {
+class IMUGravityRemoverDouble : public IMUGravityRemover<EulerOrientationSample> {
 public:
   MOCK_METHOD(void, remove,
               (IMUSample & sample, EulerOrientationSample &orientation));
@@ -40,8 +40,8 @@ struct IMUSignalProcessorDependencies {
   std::unique_ptr<DeterministicLoopRunner> runner;
   std::unique_ptr<NiceMock<IMUCalibratorDouble>> calibrator;
   std::unique_ptr<NiceMock<IMUNoiseReducerDouble>> noiseReducer;
-  std::unique_ptr<NiceMock<IMUEulerOrientationFinderDouble>> orientationFinder;
-  std::unique_ptr<NiceMock<IMUEulerGravityRemoverDouble>> remover;
+  std::unique_ptr<NiceMock<IMUOrientationFinderDouble>> orientationFinder;
+  std::unique_ptr<NiceMock<IMUGravityRemoverDouble>> remover;
 };
 IMUSignalProcessorDependencies buildDefaultDependencies() {
   auto inputPipe = std::make_shared<NiceMock<PipeDouble>>();
@@ -50,8 +50,8 @@ IMUSignalProcessorDependencies buildDefaultDependencies() {
   auto calibrator = std::make_unique<NiceMock<IMUCalibratorDouble>>();
   auto noiseReducer = std::make_unique<NiceMock<IMUNoiseReducerDouble>>();
   auto orientationFinder =
-      std::make_unique<NiceMock<IMUEulerOrientationFinderDouble>>();
-  auto remover = std::make_unique<NiceMock<IMUEulerGravityRemoverDouble>>();
+      std::make_unique<NiceMock<IMUOrientationFinderDouble>>();
+  auto remover = std::make_unique<NiceMock<IMUGravityRemoverDouble>>();
 
   return {inputPipe,
           outputPipe,

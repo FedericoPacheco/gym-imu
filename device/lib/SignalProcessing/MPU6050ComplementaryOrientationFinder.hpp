@@ -1,7 +1,7 @@
 #pragma once
 #include <Constants.hpp>
 #include <IMUEulerOrientationFinder.hpp>
-#include <StationaryChecker.hpp>
+#include <MPU6050StationaryChecker.hpp>
 #include <numbers>
 
 /*
@@ -110,7 +110,7 @@ public:
           predAngleGyro.pitch +
           wrapInDegrees(predAngleAccel.pitch - predAngleGyro.pitch);
 
-      if (StationaryChecker::isStationaryPreOrientation(sample)) {
+      if (MPU6050StationaryChecker::isStationaryPreOrientation(sample)) {
         predAngleCompl.roll = ALPHA_STATIONARY * predAngleGyro.roll +
                               (1.0f - ALPHA_STATIONARY) * predAngleAccel.roll;
         predAngleCompl.pitch = ALPHA_STATIONARY * predAngleGyro.pitch +

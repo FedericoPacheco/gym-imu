@@ -1,5 +1,4 @@
 #include <IMUNoiseReducer.hpp>
-#include <StationaryChecker.hpp>
 #include <array>
 
 /*

@@ -1,6 +1,6 @@
 #pragma once
 #include <IMUCalibrator.hpp>
-#include <StationaryChecker.hpp>
+#include <MPU6050StationaryChecker.hpp>
 
 // For details, refer to: signal/1-calibration
 class MPU6050AffineCalibrator : public IMUCalibrator {
@@ -23,7 +23,7 @@ public:
   ~MPU6050AffineCalibrator() = default;
 
   void calibrate(IMUSample &sample) override {
-    if (StationaryChecker::isStationaryPreCalibration(sample) &&
+    if (MPU6050StationaryChecker::isStationaryPreCalibration(sample) &&
         sample.seq > 1) {
       this->wBias[0] =
           MPU6050AffineCalibrator::W_ALPHA * this->wBias[0] +

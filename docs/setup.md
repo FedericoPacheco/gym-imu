@@ -9,12 +9,14 @@ Open the [project workspace](../.vscode/gym-imu.code-workspace) in VS Code.
 ### Automated
 
 Run:
+
 ```bash
 ./device/install-firmware.sh
 ```
-Pass `--build-only` to build without uploading. 
 
-If the VS Code CLI is unavailable, install the extensions manually. 
+Pass `--build-only` to build without uploading.
+
+If the VS Code CLI is unavailable, install the extensions manually.
 If the script reports that you were added to the `dialout` group, log out and back in, then rerun it.
 If something else fails, perform a manual installation as described below.
 
@@ -115,6 +117,7 @@ Note: script generated with AI.
         cd device/components
         git clone https://github.com/FedericoPacheco/esp32-MPU-driver MPU
         git clone https://github.com/FedericoPacheco/esp32-I2Cbus I2Cbus
+        git clone https://github.com/espressif/esp-dsp.git ESP-DSP
     ```
 
 5. Flash device with firmware: open PlatformIO > device > General:
@@ -142,12 +145,13 @@ Note: script generated with AI.
 ### Automated
 
 Run:
+
 ```bash
 ./signal/install-signal.sh
 source signal/venv/bin/activate
 ```
 
-If the VS Code CLI is unavailable, install the extensions manually. 
+If the VS Code CLI is unavailable, install the extensions manually.
 If something else fails, perform a manual installation as described below.
 
 Note: script generated with AI.
@@ -170,7 +174,7 @@ Note: script generated with AI.
 
     This also installs the local `signal-utils` package in editable mode.
 
-3. Install extensions: 
+3. Install extensions:
     - Black Formatter by Microsoft
     - Jupyter by Microsoft
     - Edit CSV by janisdd

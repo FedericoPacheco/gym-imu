@@ -18,7 +18,7 @@ private:
   static constexpr float ALPHA_STATIONARY = 0.75f;
   static constexpr float ALPHA_MOVING = 0.95f;
   static constexpr float dt = 1.0f / SAMPLING_FREQUENCY_HZ;
-  static constexpr float ATAN2_A_TOL = 0.15;
+  static constexpr float ATAN2_A_TOL = 0.15f;
 
   IMUSample prevSample;
   EulerOrientationSample prevOrientation;
@@ -37,8 +37,8 @@ private:
   computeAccelAngleCandidates(AccelerationSample a) {
     EulerOrientationSample mainAngles, alternativeAngles;
 
-    mainAngles.roll = 180.0f / std::numbers::pi * modAtan2(a.y, a.z);
-    mainAngles.pitch = 180.0f / std::numbers::pi *
+    mainAngles.roll = 180.0f / std::numbers::pi_v<float> * modAtan2(a.y, a.z);
+    mainAngles.pitch = 180.0f / std::numbers::pi_v<float> *
                        modAtan2(-a.x, std::sqrt(a.y * a.y + a.z * a.z));
     mainAngles.yaw = 0.0f; // Placeholder
 

@@ -19,8 +19,8 @@ class MPU6050NoiseReducer : public IMUNoiseReducer {
 private:
   static const int WINDOW_SUM_LENGTH = 5;
 
-  std::array<double, 3> windowSumGyro = {0.0, 0.0, 0.0};
-  std::array<double, 3> windowSumAccel = {0.0, 0.0, 0.0};
+  std::array<float, 3> windowSumGyro = {0.0f, 0.0f, 0.0f};
+  std::array<float, 3> windowSumAccel = {0.0f, 0.0f, 0.0f};
   std::array<IMUSample, WINDOW_SUM_LENGTH> windowSamples;
   int windowLength = 0;
   int windowIdx = 0;

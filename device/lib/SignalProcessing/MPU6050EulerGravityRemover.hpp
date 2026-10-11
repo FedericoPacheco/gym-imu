@@ -11,8 +11,8 @@ Misc docs:
 class MPU6050EulerGravityRemover : public IMUEulerGravityRemover {
 public:
   void remove(IMUSample &sample, EulerOrientationSample &orientation) override {
-    float rollRad = orientation.roll * std::numbers::pi / 180.0f;
-    float pitchRad = orientation.pitch * std::numbers::pi / 180.0f;
+    float rollRad = orientation.roll * std::numbers::pi_v<float> / 180.0f;
+    float pitchRad = orientation.pitch * std::numbers::pi_v<float> / 180.0f;
 
     sample.a.x = sample.a.x + g * std::sin(pitchRad);
     sample.a.y = sample.a.y - g * std::sin(rollRad) * std::cos(pitchRad);

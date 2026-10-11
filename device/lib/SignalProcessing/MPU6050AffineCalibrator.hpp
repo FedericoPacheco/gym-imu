@@ -38,8 +38,6 @@ public:
     sample.w.pitch -= this->wBias[1];
     sample.w.yaw -= this->wBias[2];
 
-    // Emulate matrix multiplication to avoid importing a linear algebra library
-    // just for this, saving space.
     const float axRaw = sample.a.x;
     const float ayRaw = sample.a.y;
     const float azRaw = sample.a.z;

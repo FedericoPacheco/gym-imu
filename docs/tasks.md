@@ -23,12 +23,10 @@ Other rules:
 
 ### In Progress
 
-- Implement Quaternion class on the device.
-
-### Next
-
 - Review double precision usage on the device. Change to float explicitly everywhere.
 - Implement Mahony filter on the device.
+
+### Next
 
 ### Backlog
 
@@ -136,3 +134,4 @@ they are more prone to become outdated/stale.
   - <https://docs.espressif.com/projects/esp-dsp/en/latest/esp32/esp-dsp-benchmarks.html>
   - <https://docs.espressif.com/projects/esp-dsp/en/latest/esp32/esp-dsp-examples.html>
   - <https://docs.espressif.com/projects/esp-dsp/en/latest/esp32/esp-dsp-apis.html>
+- Implement Quaternion class on the device.

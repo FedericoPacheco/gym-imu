@@ -12,7 +12,7 @@
 #include <IMUSignalProcessor.hpp>
 #include <LED.hpp>
 #include <Logger.hpp>
-#include <MPU6050AccelAffineWOnlineBiasCalibrator.hpp>
+#include <MPU6050AccelAffineCalibrator.hpp>
 #include <MPU6050ComplementaryOrientationFinder.hpp>
 #include <MPU6050EulerGravityRemover.hpp>
 #include <MPU6050NoiseReducer.hpp>
@@ -85,7 +85,7 @@ extern "C" void app_main() {
       "processTask", PROCESS_TASK_STACK_SIZE, PROCESS_TASK_PRIORITY,
       pdMS_TO_TICKS(5));
   std::unique_ptr<IMUCalibrator> calibrator =
-      std::make_unique<MPU6050AccelAffineWOnlineBiasCalibrator>();
+      std::make_unique<MPU6050AccelAffineCalibrator>();
   std::unique_ptr<IMUNoiseReducer> noiseReducer =
       std::make_unique<MPU6050NoiseReducer>();
   std::unique_ptr<IMUEulerOrientationFinder> orientationFinder =

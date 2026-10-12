@@ -190,6 +190,7 @@ Mainly referenced on Jupyter Notebooks. The remaining ones are left here.
 - [The Unscented Kalman Filter (UKF): A Full Tutorial. PS. Sampling Methods are Amazing](https://www.youtube.com/watch?v=c_6WDC66aVk)
 - [Unscented Kalman Filter Explained Without Equations](https://www.youtube.com/watch?v=6jwIGEs3AJo)
 - [Video 5: The Unscented Kalman Filter](https://www.youtube.com/watch?v=D8OgcFIlPjw)
+- [Why Particle Filter Are Everywhere](https://www.youtube.com/watch?v=7CQuV-LPm4M)
 
 #### Reference implementations
 

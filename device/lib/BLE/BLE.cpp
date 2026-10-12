@@ -440,7 +440,7 @@ void BLE::transmitLoopFunction(void *arg) {
   uint16_t characteristicHandle, connectionHandle, currentBatchSize;
   bool isSubscribed;
 
-  if (!self->getDoTransmit()) {
+  if (!self->getDoTransmit() && self->pipe->itemsFilled() == 0) {
     return;
   }
 
@@ -467,7 +467,9 @@ void BLE::transmitLoopFunction(void *arg) {
     return;
   }
 
-  while (self->pipe->itemsFilled() >= currentBatchSize) {
+  while ((self->getDoTransmit() &&
+          self->pipe->itemsFilled() >= currentBatchSize) ||
+         (!self->getDoTransmit() && self->pipe->itemsFilled() > 0)) {
     batchCount = 0;
     while (batchCount < currentBatchSize) {
       optionalBatchSample = self->pipe->pop(false);

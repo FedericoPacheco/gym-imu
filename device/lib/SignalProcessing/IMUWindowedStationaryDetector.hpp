@@ -40,4 +40,6 @@ private:
       this->stationaryCount = 0;
     return false;
   }
+
+  void reset() { this->stationaryCount = 0; }
 };

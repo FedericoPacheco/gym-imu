@@ -14,6 +14,8 @@ public:
   MPU6050AccelAffineCalibrator() = default;
   ~MPU6050AccelAffineCalibrator() = default;
 
+  void initialize(IMUSample &sample) override {}
+
   void calibrate(IMUSample &sample) override {
     const float axRaw = sample.a.x;
     const float ayRaw = sample.a.y;
@@ -25,4 +27,6 @@ public:
     sample.a.z = axRaw * A_AFFINE_TRANSF[0][2] + ayRaw * A_AFFINE_TRANSF[1][2] +
                  azRaw * A_AFFINE_TRANSF[2][2] + A_AFFINE_TRANSF[3][2];
   }
+
+  void reset() override {}
 };

@@ -18,17 +18,23 @@ LoggerDouble logger;
 
 class IMUCalibratorDouble : public IMUCalibrator {
 public:
+  MOCK_METHOD(void, initialize, (IMUSample & sample));
   MOCK_METHOD(void, calibrate, (IMUSample & sample));
+  MOCK_METHOD(void, reset, ());
 };
 class IMUNoiseReducerDouble : public IMUNoiseReducer {
 public:
   MOCK_METHOD(void, filter, (IMUSample & sample));
 };
-class IMUOrientationFinderDouble : public IMUOrientationFinder<EulerOrientationSample> {
+class IMUOrientationFinderDouble
+    : public IMUOrientationFinder<EulerOrientationSample> {
 public:
+  MOCK_METHOD(void, initialize, (IMUSample & sample));
   MOCK_METHOD(EulerOrientationSample, find, (IMUSample & sample));
+  MOCK_METHOD(void, reset, ());
 };
-class IMUGravityRemoverDouble : public IMUGravityRemover<EulerOrientationSample> {
+class IMUGravityRemoverDouble
+    : public IMUGravityRemover<EulerOrientationSample> {
 public:
   MOCK_METHOD(void, remove,
               (IMUSample & sample, EulerOrientationSample &orientation));
@@ -42,6 +48,7 @@ struct IMUSignalProcessorDependencies {
   std::unique_ptr<NiceMock<IMUNoiseReducerDouble>> noiseReducer;
   std::unique_ptr<NiceMock<IMUOrientationFinderDouble>> orientationFinder;
   std::unique_ptr<NiceMock<IMUGravityRemoverDouble>> remover;
+  uint32_t initializationSamplesCount;
 };
 IMUSignalProcessorDependencies buildDefaultDependencies() {
   auto inputPipe = std::make_shared<NiceMock<PipeDouble>>();
@@ -52,6 +59,7 @@ IMUSignalProcessorDependencies buildDefaultDependencies() {
   auto orientationFinder =
       std::make_unique<NiceMock<IMUOrientationFinderDouble>>();
   auto remover = std::make_unique<NiceMock<IMUGravityRemoverDouble>>();
+  uint32_t initializationSamplesCount = 0;
 
   return {inputPipe,
           outputPipe,
@@ -59,18 +67,40 @@ IMUSignalProcessorDependencies buildDefaultDependencies() {
           std::move(calibrator),
           std::move(noiseReducer),
           std::move(orientationFinder),
-          std::move(remover)};
+          std::move(remover),
+          initializationSamplesCount};
 }
 IMUSignalProcessor *getInstanceWith(IMUSignalProcessorDependencies &&deps) {
   IMUSignalProcessor::resetInstanceForTests();
   return IMUSignalProcessor::getInstance(
       deps.inputPipe, deps.outputPipe, std::move(deps.runner), &logger,
       std::move(deps.calibrator), std::move(deps.noiseReducer),
-      std::move(deps.orientationFinder), std::move(deps.remover));
+      std::move(deps.orientationFinder), std::move(deps.remover),
+      deps.initializationSamplesCount);
 }
 
 TEST(IMUSignalProcessor_processingLoopFunction,
-     RunsAllOperationsOnASingleSampleSuccessfully) {
+     InitializesPipelineSuccessfullyBeforeProcessing) {
+  auto deps = buildDefaultDependencies();
+  deps.initializationSamplesCount = 1;
+  auto runnerRaw = static_cast<DeterministicLoopRunner *>(deps.runner.get());
+
+  EXPECT_CALL(*deps.inputPipe, pop(_))
+      .WillOnce(Return(std::optional<IMUSample>(IMUSample{})));
+  EXPECT_CALL(*deps.calibrator, initialize(_)).Times(1);
+  EXPECT_CALL(*deps.orientationFinder, initialize(_)).Times(1);
+  EXPECT_CALL(*deps.outputPipe, push(_)).Times(0);
+
+  auto *processor = getInstanceWith(std::move(deps));
+  processor->beginProcessing();
+  runnerRaw->runOneStep();
+  processor->stopProcessing();
+
+  IMUSignalProcessor::resetInstanceForTests();
+}
+
+TEST(IMUSignalProcessor_processingLoopFunction,
+     RunsAllOperationsOnASingleSampleSuccessfullyAfterInitialization) {
   auto deps = buildDefaultDependencies();
   auto runnerRaw = static_cast<DeterministicLoopRunner *>(deps.runner.get());
 
@@ -90,7 +120,8 @@ TEST(IMUSignalProcessor_processingLoopFunction,
   IMUSignalProcessor::resetInstanceForTests();
 }
 
-TEST(IMUSignalProcessor_processingLoopFunction, DoesNotPushOnNullSamples) {
+TEST(IMUSignalProcessor_processingLoopFunction,
+     DoesNotPushOnNullSamplesAfterInitialization) {
   auto deps = buildDefaultDependencies();
   auto runnerRaw = static_cast<DeterministicLoopRunner *>(deps.runner.get());
 
@@ -105,6 +136,39 @@ TEST(IMUSignalProcessor_processingLoopFunction, DoesNotPushOnNullSamples) {
   processor->beginProcessing();
   runnerRaw->runOneStep();
   processor->stopProcessing();
+
+  IMUSignalProcessor::resetInstanceForTests();
+}
+
+TEST(IMUSignalProcessor_processingLoopFunction, ResetsAfterStoppingProcessing) {
+  auto deps = buildDefaultDependencies();
+  auto runnerRaw = static_cast<DeterministicLoopRunner *>(deps.runner.get());
+
+  EXPECT_CALL(*deps.inputPipe, itemsLeft()).Times(1).WillOnce(Return(0));
+  EXPECT_CALL(*deps.calibrator, reset()).Times(1);
+  EXPECT_CALL(*deps.orientationFinder, reset()).Times(1);
+
+  auto *processor = getInstanceWith(std::move(deps));
+  processor->beginProcessing();
+  processor->stopProcessing();
+  runnerRaw->runOneStep();
+
+  IMUSignalProcessor::resetInstanceForTests();
+}
+
+TEST(IMUSignalProcessor_processingLoopFunction,
+     DoesntResetIfThereAreRemainingSamples) {
+  auto deps = buildDefaultDependencies();
+  auto runnerRaw = static_cast<DeterministicLoopRunner *>(deps.runner.get());
+
+  EXPECT_CALL(*deps.inputPipe, itemsLeft()).Times(1).WillOnce(Return(1));
+  EXPECT_CALL(*deps.calibrator, reset()).Times(0);
+  EXPECT_CALL(*deps.orientationFinder, reset()).Times(0);
+
+  auto *processor = getInstanceWith(std::move(deps));
+  processor->beginProcessing();
+  processor->stopProcessing();
+  runnerRaw->runOneStep();
 
   IMUSignalProcessor::resetInstanceForTests();
 }

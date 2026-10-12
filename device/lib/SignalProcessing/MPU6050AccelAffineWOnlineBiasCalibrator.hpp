@@ -22,6 +22,8 @@ public:
   MPU6050AccelAffineWOnlineBiasCalibrator() = default;
   ~MPU6050AccelAffineWOnlineBiasCalibrator() = default;
 
+  void initialize(IMUSample &sample) override {}
+
   void calibrate(IMUSample &sample) override {
     if (MPU6050InstantaneousStationaryDetector::isStationaryPreCalibration(
             sample) &&
@@ -52,5 +54,11 @@ public:
                  azRaw * A_AFFINE_TRANSF[2][1] + A_AFFINE_TRANSF[3][1];
     sample.a.z = axRaw * A_AFFINE_TRANSF[0][2] + ayRaw * A_AFFINE_TRANSF[1][2] +
                  azRaw * A_AFFINE_TRANSF[2][2] + A_AFFINE_TRANSF[3][2];
+  }
+
+  void reset() override {
+    this->wBias[0] = W_STATIONARY_BIAS[0];
+    this->wBias[1] = W_STATIONARY_BIAS[1];
+    this->wBias[2] = W_STATIONARY_BIAS[2];
   }
 };

@@ -17,5 +17,8 @@ protected:
 
 public:
   virtual ~IMUOrientationFinder() = default;
+
+  virtual void initialize(IMUSample &sample) = 0;
   virtual Orientation find(IMUSample &sample) = 0;
+  virtual void reset() = 0;
 };

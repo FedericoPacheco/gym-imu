@@ -82,6 +82,8 @@ private:
   }
 
 public:
+  void initialize(IMUSample &sample) override {}
+
   EulerOrientationSample find(IMUSample &sample) override {
     transformHWToSWFrame(sample);
     EulerOrientationSample predAngleAccel, predAngleGyro, predAngleCompl;
@@ -137,5 +139,10 @@ public:
     }
 
     return predAngleCompl;
+  }
+
+  void reset() override {
+    prevOrientation = EulerOrientationSample{};
+    prevSample = IMUSample{};
   }
 };

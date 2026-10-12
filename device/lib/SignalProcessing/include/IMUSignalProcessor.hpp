@@ -2,12 +2,13 @@
 #include <Constants.hpp>
 #include <IMUCalibrator.hpp>
 #include <IMUGravityRemover.hpp>
-#include <IMUOrientationFinder.hpp>
 #include <IMUNoiseReducer.hpp>
+#include <IMUOrientationFinder.hpp>
 #include <IMUSensorPort.hpp>
 #include <LoggerPort.hpp>
 #include <LoopRunner.hpp>
 #include <Pipe.hpp>
+#include <atomic>
 #include <memory>
 #include <ports/FreeRTOS/FreeRTOSPort.hpp>
 
@@ -22,8 +23,10 @@ public:
       std::unique_ptr<LoopRunner> runner, LoggerPort *logger,
       std::unique_ptr<IMUCalibrator> calibrator,
       std::unique_ptr<IMUNoiseReducer> noiseReducer,
-      std::unique_ptr<IMUOrientationFinder<EulerOrientationSample>> orientationFinder,
-      std::unique_ptr<IMUGravityRemover<EulerOrientationSample>> gravityRemover) {
+      std::unique_ptr<IMUOrientationFinder<EulerOrientationSample>>
+          orientationFinder,
+      std::unique_ptr<IMUGravityRemover<EulerOrientationSample>> gravityRemover,
+      uint32_t initializationSamplesCount) {
 
     // Protect instance creation with a mutex to ensure thread safety
     if (IMUSignalProcessor::instanceState.semaphoreHandle == nullptr) {
@@ -41,15 +44,16 @@ public:
     if (rtosSemaphoreTake(IMUSignalProcessor::instanceState.semaphoreHandle,
                           portMAX_DELAY) == pdTRUE) {
       if (!IMUSignalProcessor::instanceState.instance)
-        IMUSignalProcessor::instanceState.instance =
-            std::unique_ptr<IMUSignalProcessor>(new IMUSignalProcessor(
-                inputPipe, outputPipe, std::move(runner), logger,
-                std::move(calibrator), std::move(noiseReducer),
-                std::move(orientationFinder), std::move(gravityRemover)));
+        IMUSignalProcessor::instanceState.instance = IMUSignalProcessor::create(
+            inputPipe, outputPipe, std::move(runner), logger,
+            std::move(calibrator), std::move(noiseReducer),
+            std::move(orientationFinder), std::move(gravityRemover),
+            initializationSamplesCount);
       rtosSemaphoreGive(IMUSignalProcessor::instanceState.semaphoreHandle);
     }
     return IMUSignalProcessor::instanceState.instance.get();
   }
+
 #if defined(UNIT_TEST) && !defined(ESP_PLATFORM)
   static void resetInstanceForTests() {
     IMUSignalProcessor::instanceState.instance.reset();
@@ -58,15 +62,24 @@ public:
     IMUSignalProcessor::instanceState.mux = {};
   }
 #endif
-  ~IMUSignalProcessor() = default;
+
+  ~IMUSignalProcessor() {
+    this->logger->info("Shutting down Signal processor");
+
+    this->setDoProcess(false);
+
+    if (this->runner) {
+      this->runner->stop();
+    }
+
+    this->logger->info("Signal processor shut down successfully");
+  }
 
   void beginProcessing() {
-    if (!this->runner->start(IMUSignalProcessor::processingLoopFunction,
-                             static_cast<void *>(this))) {
-      logger->error("Failed to start IMU signal processing task");
-    }
+    this->processedSamplesCount = 0;
+    this->setDoProcess(true);
   }
-  void stopProcessing() { this->runner->stop(); }
+  void stopProcessing() { this->setDoProcess(false); }
 
 private:
   std::shared_ptr<Pipe<IMUSample, SAMPLING_PIPE_SIZE>> inputPipe;
@@ -75,8 +88,11 @@ private:
   LoggerPort *logger;
   std::unique_ptr<IMUCalibrator> calibrator;
   std::unique_ptr<IMUNoiseReducer> noiseReducer;
-  std::unique_ptr<IMUOrientationFinder<EulerOrientationSample>> orientationFinder;
+  std::unique_ptr<IMUOrientationFinder<EulerOrientationSample>>
+      orientationFinder;
   std::unique_ptr<IMUGravityRemover<EulerOrientationSample>> gravityRemover;
+  uint32_t initializationSamplesCount;
+  uint32_t processedSamplesCount;
 
   struct InstanceState {
     std::unique_ptr<IMUSignalProcessor> instance;
@@ -86,19 +102,90 @@ private:
   };
   inline static InstanceState instanceState;
 
+  std::atomic<bool> doProcess{false};
+
+  static std::unique_ptr<IMUSignalProcessor> create(
+      std::shared_ptr<Pipe<IMUSample, SAMPLING_PIPE_SIZE>> inputPipe,
+      std::shared_ptr<Pipe<IMUSample, TRANSMISSION_PIPE_SIZE>> outputPipe,
+      std::unique_ptr<LoopRunner> runner, LoggerPort *logger,
+      std::unique_ptr<IMUCalibrator> calibrator,
+      std::unique_ptr<IMUNoiseReducer> noiseReducer,
+      std::unique_ptr<IMUOrientationFinder<EulerOrientationSample>>
+          orientationFinder,
+      std::unique_ptr<IMUGravityRemover<EulerOrientationSample>> gravityRemover,
+      uint32_t initializationSamplesCount) {
+
+    if (!logger)
+      return nullptr;
+    if (!inputPipe) {
+      logger->error("Input pipe is null");
+      return nullptr;
+    }
+    if (!outputPipe) {
+      logger->error("Output pipe is null");
+      return nullptr;
+    }
+    if (!runner) {
+      logger->error("Runner is null");
+      return nullptr;
+    }
+    if (!calibrator) {
+      logger->error("Calibrator is null");
+      return nullptr;
+    }
+    if (!noiseReducer) {
+      logger->error("Noise reducer is null");
+      return nullptr;
+    }
+    if (!orientationFinder) {
+      logger->error("Orientation finder is null");
+      return nullptr;
+    }
+    if (!gravityRemover) {
+      logger->error("Gravity remover is null");
+      return nullptr;
+    }
+
+    std::unique_ptr<IMUSignalProcessor> processor(
+        new (std::nothrow) IMUSignalProcessor(
+            inputPipe, outputPipe, std::move(runner), logger,
+            std::move(calibrator), std::move(noiseReducer),
+            std::move(orientationFinder), std::move(gravityRemover),
+            initializationSamplesCount));
+
+    if (!processor->runner->start(IMUSignalProcessor::processingLoopFunction,
+                                  static_cast<void *>(processor.get()))) {
+      logger->error("Failed to start IMU signal processing task");
+      return nullptr;
+    }
+
+    return processor;
+  }
+
   IMUSignalProcessor(
       std::shared_ptr<Pipe<IMUSample, SAMPLING_PIPE_SIZE>> inputPipe,
       std::shared_ptr<Pipe<IMUSample, TRANSMISSION_PIPE_SIZE>> outputPipe,
       std::unique_ptr<LoopRunner> runner, LoggerPort *logger,
       std::unique_ptr<IMUCalibrator> calibrator,
       std::unique_ptr<IMUNoiseReducer> noiseReducer,
-      std::unique_ptr<IMUOrientationFinder<EulerOrientationSample>> orientationFinder,
-      std::unique_ptr<IMUGravityRemover<EulerOrientationSample>> gravityRemover)
+      std::unique_ptr<IMUOrientationFinder<EulerOrientationSample>>
+          orientationFinder,
+      std::unique_ptr<IMUGravityRemover<EulerOrientationSample>> gravityRemover,
+      uint32_t initializationSamplesCount)
       : inputPipe(inputPipe), outputPipe(outputPipe), runner(std::move(runner)),
         logger(logger), calibrator(std::move(calibrator)),
         noiseReducer(std::move(noiseReducer)),
         orientationFinder(std::move(orientationFinder)),
-        gravityRemover(std::move(gravityRemover)){};
+        gravityRemover(std::move(gravityRemover)),
+        initializationSamplesCount(initializationSamplesCount),
+        processedSamplesCount(0) {}
+
+  inline void setDoProcess(bool value) {
+    this->doProcess.store(value, std::memory_order_relaxed);
+  }
+  inline bool getDoProcess() {
+    return this->doProcess.load(std::memory_order_relaxed);
+  }
 
   static void processingLoopFunction(void *arg) {
     IMUSignalProcessor *self = static_cast<IMUSignalProcessor *>(arg);
@@ -106,27 +193,47 @@ private:
     if (!self)
       return;
 
-    std::optional<IMUSample> optSample = self->inputPipe->pop();
-    if (optSample.has_value()) {
-      IMUSample sample = optSample.value();
-
-      self->calibrator->calibrate(sample);
-      self->noiseReducer->filter(sample);
-      EulerOrientationSample orientation =
-          self->orientationFinder->find(sample);
-      self->gravityRemover->remove(sample, orientation);
-
+    if (!self->getDoProcess() && self->inputPipe->itemsLeft() == 0) {
       self->logger->debug(
-          "Processing loop: gravity-free accel = <%.3f, %.3f, %.3f>",
-          sample.a.x, sample.a.y, sample.a.z);
+          "Processing loop: not processing and input pipe has no items left");
+      self->calibrator->reset();
+      self->orientationFinder->reset();
+      return;
+    }
 
-      // TODO: temporary until all the components are implemented: must push
-      // linear/angular velocities + seqs
-      if (!self->outputPipe->push(sample))
-        self->logger->warn(
-            "Processing loop: failed to push sample to output pipe");
-    } else
+    std::optional<IMUSample> optSample = self->inputPipe->pop();
+    if (!optSample.has_value()) {
       self->logger->warn(
           "Processing loop: failed to read sample from input pipe");
+      return;
+    }
+
+    IMUSample sample = optSample.value();
+    self->processedSamplesCount++;
+
+    if (self->processedSamplesCount <= self->initializationSamplesCount) {
+      self->logger->debug("Processing loop: still initializing, "
+                          "processedSamplesCount = %u",
+                          self->processedSamplesCount);
+
+      self->calibrator->initialize(sample);
+      self->orientationFinder->initialize(sample);
+      return;
+    }
+
+    self->calibrator->calibrate(sample);
+    self->noiseReducer->filter(sample);
+    EulerOrientationSample orientation = self->orientationFinder->find(sample);
+    self->gravityRemover->remove(sample, orientation);
+
+    self->logger->debug(
+        "Processing loop: gravity-free accel = <%.3f, %.3f, %.3f>", sample.a.x,
+        sample.a.y, sample.a.z);
+
+    // TODO: temporary until all the components are implemented: must
+    // push linear/angular velocities + seqs
+    if (!self->outputPipe->push(sample))
+      self->logger->warn(
+          "Processing loop: failed to push sample to output pipe");
   }
 };

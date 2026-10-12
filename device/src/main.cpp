@@ -9,12 +9,12 @@
 #include <Constants.hpp>
 #include <FreeRTOSLoopRunner.hpp>
 #include <FreeRTOSNotificationRunner.hpp>
+#include <IMUEulerGravityRemover.hpp>
 #include <IMUSignalProcessor.hpp>
 #include <LED.hpp>
 #include <Logger.hpp>
 #include <MPU6050AccelAffineCalibrator.hpp>
 #include <MPU6050ComplementaryOrientationFinder.hpp>
-#include <IMUEulerGravityRemover.hpp>
 #include <MPU6050NoiseReducer.hpp>
 #include <MPU6050Sensor.hpp>
 #include <QueuePipe.hpp>
@@ -88,14 +88,16 @@ extern "C" void app_main() {
       std::make_unique<MPU6050AccelAffineCalibrator>();
   std::unique_ptr<IMUNoiseReducer> noiseReducer =
       std::make_unique<MPU6050NoiseReducer>();
-  std::unique_ptr<IMUOrientationFinder<EulerOrientationSample>> orientationFinder =
-      std::make_unique<MPU6050ComplementaryOrientationFinder>();
+  std::unique_ptr<IMUOrientationFinder<EulerOrientationSample>>
+      orientationFinder =
+          std::make_unique<MPU6050ComplementaryOrientationFinder>();
   std::unique_ptr<IMUGravityRemover<EulerOrientationSample>> gravityRemover =
       std::make_unique<IMUEulerGravityRemover>();
   IMUSignalProcessor *processor = IMUSignalProcessor::getInstance(
       samplingPipe, transmissionPipe, std::move(processorRunner),
       &processorLogger, std::move(calibrator), std::move(noiseReducer),
-      std::move(orientationFinder), std::move(gravityRemover));
+      std::move(orientationFinder), std::move(gravityRemover),
+      INITIALIZATION_SAMPLES_COUNT);
   if (processor == nullptr) {
     processorLogger.error("Failed to initialize IMU signal processor");
     return;
@@ -126,9 +128,6 @@ extern "C" void app_main() {
 
   bool doSample = false;
   button->enableAsync();
-#ifdef PROCESS_SIGNAL
-  processor->beginProcessing();
-#endif
   while (true) {
     vTaskDelay(pdMS_TO_TICKS(500));
     // Toggle sampling when user presses button, but only if a client is
@@ -138,11 +137,16 @@ extern "C" void app_main() {
       led->toggle();
       if (doSample) {
         imu->beginAsync();
+#ifdef PROCESS_SIGNAL
+        processor->beginProcessing();
+#endif
         ble->beginTransmission();
       } else {
         imu->stopAsync();
+#ifdef PROCESS_SIGNAL
+        processor->stopProcessing();
+#endif
         ble->stopTransmission();
-
         PipeMetrics samplingMetrics = samplingPipe->getMetrics();
         samplingPipeLogger.info(
             "Sampling pipe metrics: drops=%u, maxDepth=%u, currentDepth=%u",
@@ -162,11 +166,11 @@ extern "C" void app_main() {
       doSample = false;
       led->turnOff();
       imu->stopAsync();
+#ifdef PROCESS_SIGNAL
+      processor->stopProcessing();
+#endif
       ble->stopTransmission();
     }
   }
-#ifdef PROCESS_SIGNAL
-  processor->stopProcessing();
-#endif
   button->disableAsync();
 }

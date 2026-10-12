@@ -1,7 +1,7 @@
 #pragma once
 #include <Constants.hpp>
 #include <IMUOrientationFinder.hpp>
-#include <MPU6050StationaryChecker.hpp>
+#include <MPU6050InstantaneousStationaryDetector.hpp>
 #include <numbers>
 
 /*
@@ -13,7 +13,8 @@ Misc docs:
 * https://en.cppreference.com/cpp/numeric/math/fmod
 
 */
-class MPU6050ComplementaryOrientationFinder : public IMUOrientationFinder<EulerOrientationSample> {
+class MPU6050ComplementaryOrientationFinder
+    : public IMUOrientationFinder<EulerOrientationSample> {
 private:
   static constexpr float ALPHA_STATIONARY = 0.75f;
   static constexpr float ALPHA_MOVING = 0.95f;
@@ -110,7 +111,8 @@ public:
           predAngleGyro.pitch +
           wrapInDegrees(predAngleAccel.pitch - predAngleGyro.pitch);
 
-      if (MPU6050StationaryChecker::isStationaryPreOrientation(sample)) {
+      if (MPU6050InstantaneousStationaryDetector::isStationaryPreOrientation(
+              sample)) {
         predAngleCompl.roll = ALPHA_STATIONARY * predAngleGyro.roll +
                               (1.0f - ALPHA_STATIONARY) * predAngleAccel.roll;
         predAngleCompl.pitch = ALPHA_STATIONARY * predAngleGyro.pitch +

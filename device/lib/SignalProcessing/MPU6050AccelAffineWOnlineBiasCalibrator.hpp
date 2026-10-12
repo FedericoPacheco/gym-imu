@@ -1,6 +1,6 @@
 #pragma once
 #include <IMUCalibrator.hpp>
-#include <MPU6050StationaryChecker.hpp>
+#include <MPU6050InstantaneousStationaryDetector.hpp>
 
 // For details, refer to: signal/1-calibration
 class MPU6050AccelAffineWOnlineBiasCalibrator : public IMUCalibrator {
@@ -23,7 +23,8 @@ public:
   ~MPU6050AccelAffineWOnlineBiasCalibrator() = default;
 
   void calibrate(IMUSample &sample) override {
-    if (MPU6050StationaryChecker::isStationaryPreCalibration(sample) &&
+    if (MPU6050InstantaneousStationaryDetector::isStationaryPreCalibration(
+            sample) &&
         sample.seq > 1) {
       this->wBias[0] =
           MPU6050AccelAffineWOnlineBiasCalibrator::W_ALPHA * this->wBias[0] +

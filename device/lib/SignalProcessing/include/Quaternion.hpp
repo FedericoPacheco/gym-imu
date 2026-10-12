@@ -11,8 +11,8 @@
 
 // Helpers not defined in the standard library
 inline bool isScalarClose(float a, float b, float relTol, float absTol) {
-  return std::fabsf(a - b) <
-         std::fmaxf(absTol, relTol * std::fmaxf(std::fabsf(a), std::fabsf(b)));
+  return std::abs(a - b) <
+         std::max(absTol, relTol * std::max(std::abs(a), std::abs(b)));
 }
 template <std::size_t N> inline int argMax(const std::array<float, N> &arr) {
   if (N == 0)
@@ -29,6 +29,10 @@ template <std::size_t N> inline int argMax(const std::array<float, N> &arr) {
 /* Translated from Quaternion python class at signal/signal-utils.
    operator==(), fromEulerAngles(), toDCM() are not implemented to save code
    space since they are not used.
+   Using the variants: std::fabsf(), std::sqrtf(), std::atan2f(), std::asinf(),
+   etc. is not necessary since the standard functions are overloaded and
+   select the appropriate implementation based on the argument types.
+
    Miscellaneous sources:
    https://en.wikipedia.org/wiki/Operators_in_C_and_C%2B%2B
    https://en.wikipedia.org/wiki/C_mathematical_functions
@@ -64,22 +68,22 @@ public:
     float s = 0.0f;
     std::array<float, 3> v = {0.0f, 0.0f, 0.0f};
     if (maxDenIdx == 0) {
-      s = 0.5f * std::sqrtf(std::fmaxf(den[0], 0.0f));
+      s = 0.5f * std::sqrt(std::max(den[0], 0.0f));
       v[0] = (C[2][1] - C[1][2]) / (4 * s);
       v[1] = (C[0][2] - C[2][0]) / (4 * s);
       v[2] = (C[1][0] - C[0][1]) / (4 * s);
     } else if (maxDenIdx == 1) {
-      v[0] = 0.5f * std::sqrtf(std::fmaxf(den[1], 0.0f));
+      v[0] = 0.5f * std::sqrt(std::max(den[1], 0.0f));
       s = (C[2][1] - C[1][2]) / (4 * v[0]);
       v[1] = (C[0][1] + C[1][0]) / (4 * v[0]);
       v[2] = (C[0][2] + C[2][0]) / (4 * v[0]);
     } else if (maxDenIdx == 2) {
-      v[1] = 0.5f * std::sqrtf(std::fmaxf(den[2], 0.0f));
+      v[1] = 0.5f * std::sqrt(std::max(den[2], 0.0f));
       s = (C[0][2] - C[2][0]) / (4 * v[1]);
       v[0] = (C[0][1] + C[1][0]) / (4 * v[1]);
       v[2] = (C[1][2] + C[2][1]) / (4 * v[1]);
     } else {
-      v[2] = 0.5f * std::sqrtf(std::fmaxf(den[3], 0.0f));
+      v[2] = 0.5f * std::sqrt(std::max(den[3], 0.0f));
       s = (C[1][0] - C[0][1]) / (4 * v[2]);
       v[0] = (C[0][2] + C[2][0]) / (4 * v[2]);
       v[1] = (C[1][2] + C[2][1]) / (4 * v[2]);
@@ -88,12 +92,12 @@ public:
   }
 
   std::array<float, 3> toEulerAngles(bool toDegrees = true) const {
-    float roll = std::atan2f(
+    float roll = std::atan2(
         2.0f * (this->s * this->v[0] + this->v[1] * this->v[2]),
         1.0f - 2.0f * (this->v[0] * this->v[0] + this->v[1] * this->v[1]));
-    float pitch = std::asinf(std::clamp(
+    float pitch = std::asin(std::clamp(
         2.0f * (this->s * this->v[1] - this->v[0] * this->v[2]), -1.0f, 1.0f));
-    float yaw = std::atan2f(
+    float yaw = std::atan2(
         2.0f * (this->s * this->v[2] + this->v[0] * this->v[1]),
         1.0f - 2.0f * (this->v[1] * this->v[1] + this->v[2] * this->v[2]));
 
@@ -156,8 +160,8 @@ public:
   }
 
   float norm() const {
-    return std::sqrtf(this->s * this->s + this->v[0] * this->v[0] +
-                      this->v[1] * this->v[1] + this->v[2] * this->v[2]);
+    return std::sqrt(this->s * this->s + this->v[0] * this->v[0] +
+                     this->v[1] * this->v[1] + this->v[2] * this->v[2]);
   }
 
   // Intentionally different. Ensure at least degraded operation instead of

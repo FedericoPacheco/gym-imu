@@ -14,6 +14,17 @@ inline bool isScalarClose(float a, float b, float relTol, float absTol) {
   return std::abs(a - b) <
          std::max(absTol, relTol * std::max(std::abs(a), std::abs(b)));
 }
+template <std::size_t N>
+inline bool isVectorClose(const std::array<float, N> &u,
+                          const std::array<float, N> &v, float relTol,
+                          float absTol) {
+  for (std::size_t i = 0; i < N; i++) {
+    if (!std::abs(u[i] - v[i]) <
+        std::max(absTol, relTol * std::max(std::abs(u[i]), std::abs(v[i]))))
+      return false;
+  }
+  return true;
+}
 template <std::size_t N> inline int argMax(const std::array<float, N> &arr) {
   if (N == 0)
     return -1;
@@ -27,7 +38,7 @@ template <std::size_t N> inline int argMax(const std::array<float, N> &arr) {
 }
 
 /* Translated from Quaternion python class at signal/signal-utils.
-   operator==(), fromEulerAngles(), toDCM() are not implemented to save code
+  fromEulerAngles() and toDCM() are not implemented to save code
    space since they are not used.
    Using the variants: std::fabsf(), std::sqrtf(), std::atan2f(), std::asinf(),
    etc. is not necessary since the standard functions are overloaded and
@@ -42,18 +53,10 @@ template <std::size_t N> inline int argMax(const std::array<float, N> &arr) {
 
 class Quaternion {
 public:
-  static constexpr float DFLT_ABS_TOL = 1e-8f;
-  static constexpr float DFLT_REL_TOL = 1e-5f;
+  static const Quaternion IDENTITY;
+  static const Quaternion ZERO;
 
-  float s = 0.0f;
-  std::array<float, 3> v = {0.0f, 0.0f, 0.0f};
-
-  Quaternion(float s, std::array<float, 3> v) {
-    this->s = s;
-    this->v[0] = v[0];
-    this->v[1] = v[1];
-    this->v[2] = v[2];
-  }
+  constexpr Quaternion(float s, std::array<float, 3> v) : s(s), v(v) {}
   Quaternion() = default;
   ~Quaternion() = default;
 
@@ -150,6 +153,11 @@ public:
   // inside the class.
   friend Quaternion operator*(float s, Quaternion q) { return q * s; }
 
+  bool operator==(const Quaternion &other) const {
+    return isScalarClose(this->s, other.s, DFLT_REL_TOL, DFLT_ABS_TOL) &&
+           isVectorClose(this->v, other.v, DFLT_REL_TOL, DFLT_ABS_TOL);
+  }
+
   Quaternion conjugate() const {
     Quaternion result(this->s, this->v);
     result.s = this->s;
@@ -186,4 +194,14 @@ public:
     Quaternion rotated = q * p * q.conjugate();
     return rotated.v;
   }
+
+private:
+  static constexpr float DFLT_ABS_TOL = 1e-8f;
+  static constexpr float DFLT_REL_TOL = 1e-5f;
+
+  float s = 0.0f;
+  std::array<float, 3> v = {0.0f, 0.0f, 0.0f};
 };
+
+inline constexpr Quaternion Quaternion::IDENTITY{1.0f, {0.0f, 0.0f, 0.0f}};
+inline constexpr Quaternion Quaternion::ZERO{0.0f, {0.0f, 0.0f, 0.0f}};

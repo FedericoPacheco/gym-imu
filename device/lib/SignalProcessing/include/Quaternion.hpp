@@ -28,6 +28,12 @@ public:
   static const Quaternion IDENTITY;
   static const Quaternion ZERO;
 
+  static constexpr float DFLT_ABS_TOL = 1e-8f;
+  static constexpr float DFLT_REL_TOL = 1e-5f;
+
+  float s = 0.0f;
+  std::array<float, 3> v = {0.0f, 0.0f, 0.0f};
+
   constexpr Quaternion(float s, std::array<float, 3> v) : s(s), v(v) {}
   Quaternion() = default;
   ~Quaternion() = default;
@@ -166,13 +172,6 @@ public:
     Quaternion rotated = q * p * q.conjugate();
     return rotated.v;
   }
-
-private:
-  static constexpr float DFLT_ABS_TOL = 1e-8f;
-  static constexpr float DFLT_REL_TOL = 1e-5f;
-
-  float s = 0.0f;
-  std::array<float, 3> v = {0.0f, 0.0f, 0.0f};
 };
 
 inline constexpr Quaternion Quaternion::IDENTITY{1.0f, {0.0f, 0.0f, 0.0f}};

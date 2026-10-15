@@ -35,27 +35,23 @@ template <std::size_t N> inline int argMax(const std::array<float, N> &arr) {
   }
 }
 
-std::array<float, 3> cross(const std::array<float, 3> &u,
-                           const std::array<float, 3> &v) {
+inline std::array<float, 3> cross(const std::array<float, 3> &u,
+                                  const std::array<float, 3> &v) {
   return std::array<float, 3>{u[1] * v[2] - u[2] * v[1],
                               u[2] * v[0] - u[0] * v[2],
                               u[0] * v[1] - u[1] * v[0]};
 }
 
 template <std::size_t N>
-inline std::array<float, N> dot(const std::array<float, N> &u,
-                                const std::array<float, N> &v) {
-  std::array<float, N> result{};
+inline float dot(const std::array<float, N> &u, const std::array<float, N> &v) {
+  float result = 0.0f;
   for (std::size_t i = 0; i < N; i++)
-    result[i] = u[i] * v[i];
+    result += u[i] * v[i];
   return result;
 }
 
 template <std::size_t N> inline float norm(const std::array<float, N> &u) {
-  float sum = 0.0f;
-  for (std::size_t i = 0; i < N; i++)
-    sum += u[i] * u[i];
-  return std::sqrt(sum);
+  return std::sqrt(dot(u, u));
 }
 
 template <std::size_t N>

@@ -199,6 +199,7 @@ class WindowedIMUStationaryDetector(IMUStationaryDetector):
     ):
         super().__init__(reader=reader, kAccel=kAccel, kGyro=kGyro)
         self.windowSize = math.floor(self.WINDOW_TIME_SECONDS * samplingFrequency)
+        print(f"Window size = {self.windowSize} samples")
 
     def computeTolerances(self, capturePaths: list[str], doPrintResults=True):
         if not capturePaths or len(capturePaths) == 0:

@@ -9,6 +9,8 @@ public:
                         PRE_ORIENTATION_W_STATIONARY_TOL);
   }
 
+  void reset() { this->stationaryCount = 0; }
+
 private:
   static constexpr float PRE_ORIENTATION_A_STATIONARY_MEDIAN = 9.814409f;
   static constexpr float PRE_ORIENTATION_A_STATIONARY_TOL = 0.260682f;
@@ -40,6 +42,4 @@ private:
       this->stationaryCount = 0;
     return false;
   }
-
-  void reset() { this->stationaryCount = 0; }
 };

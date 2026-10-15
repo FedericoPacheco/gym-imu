@@ -2,7 +2,7 @@
 
 #include "IMUSensorPort.hpp"
 #include "IMUSignalProcessor.hpp"
-
+#include <Quaternion.hpp>
 #include <cmath>
 #include <filesystem>
 #include <fstream>
@@ -11,6 +11,9 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
+
+// TODO: rewrite remaining read*() methods tu return a tuple with vectors
+// instead of a vector with tuples (simplifies callers code).
 
 /*
 On failure, make sure to run the tests with greater verbosity to see the failed
@@ -46,6 +49,8 @@ std::vector<std::string> splitCSVRow(const std::string &line);
 IMUSample parseIMUSampleRow(const std::vector<std::string> &columns);
 std::tuple<IMUSample, EulerOrientationSample>
 parseIMUSampleWithAnglesRow(const std::vector<std::string> &columns);
+inline std::tuple<IMUSample, Quaternion>
+parseIMUSampleWithQuaternionsRow(const std::vector<std::string> &columns);
 std::tuple<IMUSample, EulerOrientationSample, VelocitySample>
 parseVelocitySampleRow(const std::vector<std::string> &columns);
 template <typename Sample>
@@ -171,6 +176,51 @@ parseIMUSampleWithAnglesRow(const std::vector<std::string> &columns) {
           EulerOrientationSample{.roll = std::stof(columns[7]),
                                  .pitch = std::stof(columns[8]),
                                  .yaw = std::stof(columns[9])}};
+}
+
+inline std::tuple<std::vector<IMUSample>, std::vector<Quaternion>>
+readIMUSampleWithQuaternionsFromCSV(const std::filesystem::path &filePath) {
+  std::ifstream file = openCSVFile(filePath);
+  assertCSVHeader(readCSVHeader(file, filePath),
+                  "seq,ax,ay,az,wroll,wpitch,wyaw,roll,pitch,yaw,q0,q1,q2,q3",
+                  filePath);
+
+  std::vector<IMUSample> imuSamples;
+  std::vector<Quaternion> quaternions;
+  std::string line;
+  while (std::getline(file, line)) {
+    if (line.empty()) {
+      continue;
+    }
+
+    const std::vector<std::string> columns = splitCSVRow(line);
+    if (columns.size() != 14) {
+      throw std::runtime_error("Unexpected CSV column count in file: " +
+                               filePath.string());
+    }
+
+    auto [imuSample, quaternion] = parseIMUSampleWithQuaternionsRow(columns);
+    imuSamples.push_back(imuSample);
+    quaternions.push_back(quaternion);
+  }
+
+  return {imuSamples, quaternions};
+}
+
+inline std::tuple<IMUSample, Quaternion>
+parseIMUSampleWithQuaternionsRow(const std::vector<std::string> &columns) {
+  return {IMUSample{
+              .a = {.x = std::stof(columns[1]),
+                    .y = std::stof(columns[2]),
+                    .z = std::stof(columns[3])},
+              .w = {.roll = std::stof(columns[4]),
+                    .pitch = std::stof(columns[5]),
+                    .yaw = std::stof(columns[6])},
+              .seq = static_cast<SequenceNumber>(std::stoul(columns[0])),
+          },
+          Quaternion(std::stof(columns[10]),
+                     std::array{std::stof(columns[11]), std::stof(columns[12]),
+                                std::stof(columns[13])})};
 }
 
 inline std::vector<
@@ -336,6 +386,41 @@ inline ::testing::AssertionResult assertNearAnglesSeries(
   return ::testing::AssertionSuccess();
 }
 
+inline ::testing::AssertionResult assertNearQuaternionSeries(
+    const char *expectedExpr, const char *actualExpr, const char *qTolExpr,
+    const std::vector<Quaternion> &expected,
+    const std::vector<Quaternion> &actual, float qTolerance) {
+  auto sizeResult =
+      assertSeriesSameSize(expectedExpr, actualExpr, expected, actual);
+  if (!sizeResult) {
+    return sizeResult;
+  }
+
+  for (size_t i = 0; i < expected.size(); ++i) {
+    const auto &expectedQ = expected[i];
+    const auto &actualQ = actual[i];
+
+    auto result = assertNearField(i, "q0", expectedQ.s, actualQ.s, qTolerance);
+    if (!result) {
+      return result;
+    }
+    result = assertNearField(i, "q1", expectedQ.v[0], actualQ.v[0], qTolerance);
+    if (!result) {
+      return result;
+    }
+    result = assertNearField(i, "q2", expectedQ.v[1], actualQ.v[1], qTolerance);
+    if (!result) {
+      return result;
+    }
+    result = assertNearField(i, "q3", expectedQ.v[2], actualQ.v[2], qTolerance);
+    if (!result) {
+      return result;
+    }
+  }
+
+  return ::testing::AssertionSuccess();
+}
+
 inline ::testing::AssertionResult assertNearVelocitySeries(
     const char *expectedExpr, const char *actualExpr, const char *vTolExpr,
     const std::vector<VelocitySample> &expected,
@@ -379,6 +464,10 @@ inline ::testing::AssertionResult assertNearVelocitySeries(
 #define EXPECT_NEAR_ANGLES_SERIES(expected, actual, angleTolerance)            \
   EXPECT_PRED_FORMAT3(testsupport::assertNearAnglesSeries, expected, actual,   \
                       angleTolerance)
+
+#define EXPECT_NEAR_QUATERNION_SERIES(expected, actual, qTolerance)            \
+  EXPECT_PRED_FORMAT3(testsupport::assertNearQuaternionSeries, expected,       \
+                      actual, qTolerance)
 
 #define EXPECT_NEAR_VELOCITY_SERIES(expected, actual, velocityTolerance)       \
   EXPECT_PRED_FORMAT3(testsupport::assertNearVelocitySeries, expected, actual, \

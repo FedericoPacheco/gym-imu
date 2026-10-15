@@ -5,20 +5,21 @@
 #include <numbers>
 
 /*
-For details, refer to: signal/3-orientation
+For details, refer to: signal/3-orientation. This implementation is relatively
+outdated. Improvements were made on the filter (e.g. euler kinematic equations),
+but they weren't implemented here as the filter itself wasn't good enough.
+Development continued with the Mahony filter.
 
 Misc docs:
 * https://en.cppreference.com/cpp/numeric/math/atan2
 * https://en.cppreference.com/cpp/numeric/math/copysign
 * https://en.cppreference.com/cpp/numeric/math/fmod
-
 */
 class MPU6050ComplementaryOrientationFinder
     : public IMUOrientationFinder<EulerOrientationSample> {
 private:
   static constexpr float ALPHA_STATIONARY = 0.75f;
   static constexpr float ALPHA_MOVING = 0.95f;
-  static constexpr float dt = 1.0f / SAMPLING_FREQUENCY_HZ;
   static constexpr float ATAN2_A_TOL = 0.15f;
 
   IMUSample prevSample;
@@ -82,6 +83,11 @@ private:
   }
 
 public:
+  MPU6050ComplementaryOrientationFinder(float dt)
+      : IMUOrientationFinder<EulerOrientationSample>(dt) {
+    this->reset();
+  }
+
   void initialize(IMUSample &sample) override {}
 
   EulerOrientationSample find(IMUSample &sample) override {

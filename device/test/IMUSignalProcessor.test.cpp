@@ -15,6 +15,7 @@ using testing::NiceMock;
 using testing::Return;
 
 LoggerDouble logger;
+float dt = 1.0f / 30.0f;
 
 class IMUCalibratorDouble : public IMUCalibrator {
 public:
@@ -29,6 +30,8 @@ public:
 class IMUOrientationFinderDouble
     : public IMUOrientationFinder<EulerOrientationSample> {
 public:
+  explicit IMUOrientationFinderDouble(float dt)
+      : IMUOrientationFinder<EulerOrientationSample>(dt) {}
   MOCK_METHOD(void, initialize, (IMUSample & sample));
   MOCK_METHOD(EulerOrientationSample, find, (IMUSample & sample));
   MOCK_METHOD(void, reset, ());
@@ -57,7 +60,7 @@ IMUSignalProcessorDependencies buildDefaultDependencies() {
   auto calibrator = std::make_unique<NiceMock<IMUCalibratorDouble>>();
   auto noiseReducer = std::make_unique<NiceMock<IMUNoiseReducerDouble>>();
   auto orientationFinder =
-      std::make_unique<NiceMock<IMUOrientationFinderDouble>>();
+      std::make_unique<NiceMock<IMUOrientationFinderDouble>>(dt);
   auto remover = std::make_unique<NiceMock<IMUGravityRemoverDouble>>();
   uint32_t initializationSamplesCount = 0;
 

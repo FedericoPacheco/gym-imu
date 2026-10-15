@@ -76,7 +76,7 @@ public:
   }
 
   void beginProcessing() {
-    this->processedSamplesCount = 0;
+    this->sampleCount = 0;
     this->setDoProcess(true);
   }
   void stopProcessing() { this->setDoProcess(false); }
@@ -92,7 +92,7 @@ private:
       orientationFinder;
   std::unique_ptr<IMUGravityRemover<EulerOrientationSample>> gravityRemover;
   uint32_t initializationSamplesCount;
-  uint32_t processedSamplesCount;
+  uint32_t sampleCount;
 
   struct InstanceState {
     std::unique_ptr<IMUSignalProcessor> instance;
@@ -177,8 +177,8 @@ private:
         noiseReducer(std::move(noiseReducer)),
         orientationFinder(std::move(orientationFinder)),
         gravityRemover(std::move(gravityRemover)),
-        initializationSamplesCount(initializationSamplesCount),
-        processedSamplesCount(0) {}
+        initializationSamplesCount(initializationSamplesCount), sampleCount(0) {
+  }
 
   inline void setDoProcess(bool value) {
     this->doProcess.store(value, std::memory_order_relaxed);
@@ -209,12 +209,12 @@ private:
     }
 
     IMUSample sample = optSample.value();
-    self->processedSamplesCount++;
+    self->sampleCount++;
 
-    if (self->processedSamplesCount <= self->initializationSamplesCount) {
+    if (self->sampleCount <= self->initializationSamplesCount) {
       self->logger->debug("Processing loop: still initializing, "
-                          "processedSamplesCount = %u",
-                          self->processedSamplesCount);
+                          "sampleCount = %u",
+                          self->sampleCount);
 
       self->calibrator->initialize(sample);
       self->orientationFinder->initialize(sample);

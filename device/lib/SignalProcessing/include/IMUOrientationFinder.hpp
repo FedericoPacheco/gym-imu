@@ -13,7 +13,8 @@ unnecessary since I'll migrate away from Euler angles.
 
 template <typename Orientation> class IMUOrientationFinder {
 protected:
-  IMUOrientationFinder() = default;
+  float dt;
+  IMUOrientationFinder(float dt) : dt(dt) {}
 
 public:
   virtual ~IMUOrientationFinder() = default;

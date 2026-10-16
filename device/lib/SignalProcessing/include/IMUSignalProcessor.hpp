@@ -4,8 +4,8 @@
 #include <IMUGravityRemover.hpp>
 #include <IMUNoiseReducer.hpp>
 #include <IMUOrientationFinder.hpp>
-#include <IMUVelocityEstimator.hpp>
 #include <IMUSensorPort.hpp>
+#include <IMUVelocityEstimator.hpp>
 #include <LoggerPort.hpp>
 #include <LoopRunner.hpp>
 #include <Pipe.hpp>
@@ -24,6 +24,7 @@ public:
       std::unique_ptr<IMUNoiseReducer> noiseReducer,
       std::unique_ptr<IMUOrientationFinder<Quaternion>> orientationFinder,
       std::unique_ptr<IMUGravityRemover<Quaternion>> gravityRemover,
+      std::unique_ptr<IMUVelocityEstimator> velocityEstimator,
       uint32_t initializationSamplesCount) {
 
     // Protect instance creation with a mutex to ensure thread safety
@@ -46,7 +47,7 @@ public:
             inputPipe, outputPipe, std::move(runner), logger,
             std::move(calibrator), std::move(noiseReducer),
             std::move(orientationFinder), std::move(gravityRemover),
-            initializationSamplesCount);
+            std::move(velocityEstimator), initializationSamplesCount);
       rtosSemaphoreGive(IMUSignalProcessor::instanceState.semaphoreHandle);
     }
     return IMUSignalProcessor::instanceState.instance.get();
@@ -88,6 +89,7 @@ private:
   std::unique_ptr<IMUNoiseReducer> noiseReducer;
   std::unique_ptr<IMUOrientationFinder<Quaternion>> orientationFinder;
   std::unique_ptr<IMUGravityRemover<Quaternion>> gravityRemover;
+  std::unique_ptr<IMUVelocityEstimator> velocityEstimator;
   uint32_t initializationSamplesCount;
   uint32_t sampleCount;
 
@@ -109,6 +111,7 @@ private:
          std::unique_ptr<IMUNoiseReducer> noiseReducer,
          std::unique_ptr<IMUOrientationFinder<Quaternion>> orientationFinder,
          std::unique_ptr<IMUGravityRemover<Quaternion>> gravityRemover,
+         std::unique_ptr<IMUVelocityEstimator> velocityEstimator,
          uint32_t initializationSamplesCount) {
 
     if (!logger)
@@ -141,13 +144,17 @@ private:
       logger->error("Gravity remover is null");
       return nullptr;
     }
+    if (!velocityEstimator) {
+      logger->error("Velocity estimator is null");
+      return nullptr;
+    }
 
     std::unique_ptr<IMUSignalProcessor> processor(
         new (std::nothrow) IMUSignalProcessor(
             inputPipe, outputPipe, std::move(runner), logger,
             std::move(calibrator), std::move(noiseReducer),
             std::move(orientationFinder), std::move(gravityRemover),
-            initializationSamplesCount));
+            std::move(velocityEstimator), initializationSamplesCount));
 
     if (!processor->runner->start(IMUSignalProcessor::processingLoopFunction,
                                   static_cast<void *>(processor.get()))) {
@@ -166,12 +173,14 @@ private:
       std::unique_ptr<IMUNoiseReducer> noiseReducer,
       std::unique_ptr<IMUOrientationFinder<Quaternion>> orientationFinder,
       std::unique_ptr<IMUGravityRemover<Quaternion>> gravityRemover,
+      std::unique_ptr<IMUVelocityEstimator> velocityEstimator,
       uint32_t initializationSamplesCount)
       : inputPipe(inputPipe), outputPipe(outputPipe), runner(std::move(runner)),
         logger(logger), calibrator(std::move(calibrator)),
         noiseReducer(std::move(noiseReducer)),
         orientationFinder(std::move(orientationFinder)),
         gravityRemover(std::move(gravityRemover)),
+        velocityEstimator(std::move(velocityEstimator)),
         initializationSamplesCount(initializationSamplesCount), sampleCount(0) {
   }
 
@@ -193,6 +202,7 @@ private:
           "Processing loop: not processing and input pipe has no items left");
       self->calibrator->reset();
       self->orientationFinder->reset();
+      self->velocityEstimator->reset();
       return;
     }
 
@@ -220,13 +230,13 @@ private:
     self->noiseReducer->filter(sample);
     auto orientation = self->orientationFinder->find(sample);
     self->gravityRemover->remove(sample, orientation);
+    auto velocitySample =
+        self->velocityEstimator->estimate(sample, orientation);
 
-    self->logger->debug(
-        "Processing loop: gravity-free accel = <%.3f, %.3f, %.3f>", sample.a.x,
-        sample.a.y, sample.a.z);
+    self->logger->debug("Processing loop: velocity = <%.3f, %.3f, %.3f>",
+                        velocitySample.x, velocitySample.y, velocitySample.z);
 
-    // TODO: temporary until all the components are implemented: must
-    // push linear/angular velocities + seqs
+    // TODO: push linear/angular velocities + seqs (must also update BLE class)
     if (!self->outputPipe->push(sample))
       self->logger->warn(
           "Processing loop: failed to push sample to output pipe");

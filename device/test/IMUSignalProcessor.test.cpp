@@ -1,9 +1,10 @@
-#include "IMUOrientationFinder.hpp"
 #include "doubles/LoggerDouble.hpp"
 #include "doubles/PipeDouble.hpp"
 #include <DeterministicLoopRunner.hpp>
 #include <IMUGravityRemover.hpp>
+#include <IMUOrientationFinder.hpp>
 #include <IMUSignalProcessor.hpp>
+#include <IMUVelocityEstimator.hpp>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <memory>
@@ -40,6 +41,14 @@ public:
   MOCK_METHOD(void, remove, (IMUSample & sample, Quaternion &orientation));
 };
 
+class IMUVelocityEstimatorDouble : public IMUVelocityEstimator {
+public:
+  explicit IMUVelocityEstimatorDouble(float dt) : IMUVelocityEstimator(dt) {}
+  MOCK_METHOD(VelocitySample, estimate,
+              (IMUSample & sample, Quaternion &orientation));
+  MOCK_METHOD(void, reset, ());
+};
+
 struct IMUSignalProcessorDependencies {
   std::shared_ptr<NiceMock<PipeDouble>> inputPipe;
   std::shared_ptr<NiceMock<PipeDouble>> outputPipe;
@@ -48,6 +57,7 @@ struct IMUSignalProcessorDependencies {
   std::unique_ptr<NiceMock<IMUNoiseReducerDouble>> noiseReducer;
   std::unique_ptr<NiceMock<IMUOrientationFinderDouble>> orientationFinder;
   std::unique_ptr<NiceMock<IMUGravityRemoverDouble>> remover;
+  std::unique_ptr<NiceMock<IMUVelocityEstimatorDouble>> velocityEstimator;
   uint32_t initializationSamplesCount;
 };
 IMUSignalProcessorDependencies buildDefaultDependencies() {
@@ -59,6 +69,8 @@ IMUSignalProcessorDependencies buildDefaultDependencies() {
   auto orientationFinder =
       std::make_unique<NiceMock<IMUOrientationFinderDouble>>(dt);
   auto remover = std::make_unique<NiceMock<IMUGravityRemoverDouble>>();
+  auto velocityEstimator =
+      std::make_unique<NiceMock<IMUVelocityEstimatorDouble>>(dt);
   uint32_t initializationSamplesCount = 0;
 
   return {inputPipe,
@@ -68,6 +80,7 @@ IMUSignalProcessorDependencies buildDefaultDependencies() {
           std::move(noiseReducer),
           std::move(orientationFinder),
           std::move(remover),
+          std::move(velocityEstimator),
           initializationSamplesCount};
 }
 IMUSignalProcessor *getInstanceWith(IMUSignalProcessorDependencies &&deps) {
@@ -76,7 +89,7 @@ IMUSignalProcessor *getInstanceWith(IMUSignalProcessorDependencies &&deps) {
       deps.inputPipe, deps.outputPipe, std::move(deps.runner), &logger,
       std::move(deps.calibrator), std::move(deps.noiseReducer),
       std::move(deps.orientationFinder), std::move(deps.remover),
-      deps.initializationSamplesCount);
+      std::move(deps.velocityEstimator), deps.initializationSamplesCount);
 }
 
 TEST(IMUSignalProcessor_processingLoopFunction,
@@ -110,6 +123,7 @@ TEST(IMUSignalProcessor_processingLoopFunction,
   EXPECT_CALL(*deps.noiseReducer, filter(_)).Times(1);
   EXPECT_CALL(*deps.orientationFinder, find(_)).Times(1);
   EXPECT_CALL(*deps.remover, remove(_, _)).Times(1);
+  EXPECT_CALL(*deps.velocityEstimator, estimate(_, _)).Times(1);
   EXPECT_CALL(*deps.outputPipe, push(_)).Times(1).WillOnce(Return(true));
 
   auto *processor = getInstanceWith(std::move(deps));
@@ -130,6 +144,7 @@ TEST(IMUSignalProcessor_processingLoopFunction,
   EXPECT_CALL(*deps.noiseReducer, filter(_)).Times(0);
   EXPECT_CALL(*deps.orientationFinder, find(_)).Times(0);
   EXPECT_CALL(*deps.remover, remove(_, _)).Times(0);
+  EXPECT_CALL(*deps.velocityEstimator, estimate(_, _)).Times(0);
   EXPECT_CALL(*deps.outputPipe, push(_)).Times(0);
 
   auto *processor = getInstanceWith(std::move(deps));
@@ -147,6 +162,7 @@ TEST(IMUSignalProcessor_processingLoopFunction, ResetsAfterStoppingProcessing) {
   EXPECT_CALL(*deps.inputPipe, itemsLeft()).Times(1).WillOnce(Return(0));
   EXPECT_CALL(*deps.calibrator, reset()).Times(1);
   EXPECT_CALL(*deps.orientationFinder, reset()).Times(1);
+  EXPECT_CALL(*deps.velocityEstimator, reset()).Times(1);
 
   auto *processor = getInstanceWith(std::move(deps));
   processor->beginProcessing();
@@ -164,6 +180,7 @@ TEST(IMUSignalProcessor_processingLoopFunction,
   EXPECT_CALL(*deps.inputPipe, itemsLeft()).Times(1).WillOnce(Return(1));
   EXPECT_CALL(*deps.calibrator, reset()).Times(0);
   EXPECT_CALL(*deps.orientationFinder, reset()).Times(0);
+  EXPECT_CALL(*deps.velocityEstimator, reset()).Times(0);
 
   auto *processor = getInstanceWith(std::move(deps));
   processor->beginProcessing();

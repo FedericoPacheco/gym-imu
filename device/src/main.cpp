@@ -9,12 +9,13 @@
 #include <Constants.hpp>
 #include <FreeRTOSLoopRunner.hpp>
 #include <FreeRTOSNotificationRunner.hpp>
+#include <IMUIntegrationVelocityEstimator.hpp>
+#include <IMUMahonyOrientationFinder.hpp>
 #include <IMUQuaternionGravityRemover.hpp>
 #include <IMUSignalProcessor.hpp>
 #include <LED.hpp>
 #include <Logger.hpp>
 #include <MPU6050AccelAffineCalibrator.hpp>
-#include <IMUMahonyOrientationFinder.hpp>
 #include <MPU6050NoiseReducer.hpp>
 #include <MPU6050Sensor.hpp>
 #include <QueuePipe.hpp>
@@ -92,11 +93,14 @@ extern "C" void app_main() {
       std::make_unique<IMUMahonyOrientationFinder>(dt);
   std::unique_ptr<IMUGravityRemover<Quaternion>> gravityRemover =
       std::make_unique<IMUQuaternionGravityRemover>();
+  std::unique_ptr<IMUVelocityEstimator> velocityEstimator =
+      std::make_unique<IMUIntegrationVelocityEstimator>(dt);
+
   IMUSignalProcessor *processor = IMUSignalProcessor::getInstance(
       samplingPipe, transmissionPipe, std::move(processorRunner),
       &processorLogger, std::move(calibrator), std::move(noiseReducer),
       std::move(orientationFinder), std::move(gravityRemover),
-      INITIALIZATION_SAMPLES_COUNT);
+      std::move(velocityEstimator), INITIALIZATION_SAMPLES_COUNT);
   if (processor == nullptr) {
     processorLogger.error("Failed to initialize IMU signal processor");
     return;

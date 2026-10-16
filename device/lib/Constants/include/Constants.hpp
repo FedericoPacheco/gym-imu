@@ -5,6 +5,7 @@
 #include <cstdint>
 
 inline constexpr float g = 9.80665f; // m/s²
+inline constexpr std::array<float, 3> G_W = {0.0f, 0.0f, -g};
 inline constexpr std::array<float, 3> G_W_UNIT = {0.0f, 0.0f, -1.0f};
 
 inline constexpr int SAMPLING_FREQUENCY_HZ = 100;

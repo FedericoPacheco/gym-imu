@@ -8,6 +8,7 @@
 #include <LoggerPort.hpp>
 #include <LoopRunner.hpp>
 #include <Pipe.hpp>
+#include <Quaternion.hpp>
 #include <atomic>
 #include <memory>
 #include <ports/FreeRTOS/FreeRTOSPort.hpp>
@@ -23,9 +24,8 @@ public:
       std::unique_ptr<LoopRunner> runner, LoggerPort *logger,
       std::unique_ptr<IMUCalibrator> calibrator,
       std::unique_ptr<IMUNoiseReducer> noiseReducer,
-      std::unique_ptr<IMUOrientationFinder<EulerOrientationSample>>
-          orientationFinder,
-      std::unique_ptr<IMUGravityRemover<EulerOrientationSample>> gravityRemover,
+      std::unique_ptr<IMUOrientationFinder<Quaternion>> orientationFinder,
+      std::unique_ptr<IMUGravityRemover<Quaternion>> gravityRemover,
       uint32_t initializationSamplesCount) {
 
     // Protect instance creation with a mutex to ensure thread safety
@@ -88,9 +88,8 @@ private:
   LoggerPort *logger;
   std::unique_ptr<IMUCalibrator> calibrator;
   std::unique_ptr<IMUNoiseReducer> noiseReducer;
-  std::unique_ptr<IMUOrientationFinder<EulerOrientationSample>>
-      orientationFinder;
-  std::unique_ptr<IMUGravityRemover<EulerOrientationSample>> gravityRemover;
+  std::unique_ptr<IMUOrientationFinder<Quaternion>> orientationFinder;
+  std::unique_ptr<IMUGravityRemover<Quaternion>> gravityRemover;
   uint32_t initializationSamplesCount;
   uint32_t sampleCount;
 
@@ -104,16 +103,15 @@ private:
 
   std::atomic<bool> doProcess{false};
 
-  static std::unique_ptr<IMUSignalProcessor> create(
-      std::shared_ptr<Pipe<IMUSample, SAMPLING_PIPE_SIZE>> inputPipe,
-      std::shared_ptr<Pipe<IMUSample, TRANSMISSION_PIPE_SIZE>> outputPipe,
-      std::unique_ptr<LoopRunner> runner, LoggerPort *logger,
-      std::unique_ptr<IMUCalibrator> calibrator,
-      std::unique_ptr<IMUNoiseReducer> noiseReducer,
-      std::unique_ptr<IMUOrientationFinder<EulerOrientationSample>>
-          orientationFinder,
-      std::unique_ptr<IMUGravityRemover<EulerOrientationSample>> gravityRemover,
-      uint32_t initializationSamplesCount) {
+  static std::unique_ptr<IMUSignalProcessor>
+  create(std::shared_ptr<Pipe<IMUSample, SAMPLING_PIPE_SIZE>> inputPipe,
+         std::shared_ptr<Pipe<IMUSample, TRANSMISSION_PIPE_SIZE>> outputPipe,
+         std::unique_ptr<LoopRunner> runner, LoggerPort *logger,
+         std::unique_ptr<IMUCalibrator> calibrator,
+         std::unique_ptr<IMUNoiseReducer> noiseReducer,
+         std::unique_ptr<IMUOrientationFinder<Quaternion>> orientationFinder,
+         std::unique_ptr<IMUGravityRemover<Quaternion>> gravityRemover,
+         uint32_t initializationSamplesCount) {
 
     if (!logger)
       return nullptr;
@@ -168,9 +166,8 @@ private:
       std::unique_ptr<LoopRunner> runner, LoggerPort *logger,
       std::unique_ptr<IMUCalibrator> calibrator,
       std::unique_ptr<IMUNoiseReducer> noiseReducer,
-      std::unique_ptr<IMUOrientationFinder<EulerOrientationSample>>
-          orientationFinder,
-      std::unique_ptr<IMUGravityRemover<EulerOrientationSample>> gravityRemover,
+      std::unique_ptr<IMUOrientationFinder<Quaternion>> orientationFinder,
+      std::unique_ptr<IMUGravityRemover<Quaternion>> gravityRemover,
       uint32_t initializationSamplesCount)
       : inputPipe(inputPipe), outputPipe(outputPipe), runner(std::move(runner)),
         logger(logger), calibrator(std::move(calibrator)),
@@ -223,7 +220,7 @@ private:
 
     self->calibrator->calibrate(sample);
     self->noiseReducer->filter(sample);
-    EulerOrientationSample orientation = self->orientationFinder->find(sample);
+    auto orientation = self->orientationFinder->find(sample);
     self->gravityRemover->remove(sample, orientation);
 
     self->logger->debug(

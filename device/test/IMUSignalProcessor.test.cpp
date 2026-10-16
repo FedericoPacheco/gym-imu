@@ -27,20 +27,17 @@ class IMUNoiseReducerDouble : public IMUNoiseReducer {
 public:
   MOCK_METHOD(void, filter, (IMUSample & sample));
 };
-class IMUOrientationFinderDouble
-    : public IMUOrientationFinder<EulerOrientationSample> {
+class IMUOrientationFinderDouble : public IMUOrientationFinder<Quaternion> {
 public:
   explicit IMUOrientationFinderDouble(float dt)
-      : IMUOrientationFinder<EulerOrientationSample>(dt) {}
+      : IMUOrientationFinder<Quaternion>(dt) {}
   MOCK_METHOD(void, initialize, (IMUSample & sample));
-  MOCK_METHOD(EulerOrientationSample, find, (IMUSample & sample));
+  MOCK_METHOD(Quaternion, find, (IMUSample & sample));
   MOCK_METHOD(void, reset, ());
 };
-class IMUGravityRemoverDouble
-    : public IMUGravityRemover<EulerOrientationSample> {
+class IMUGravityRemoverDouble : public IMUGravityRemover<Quaternion> {
 public:
-  MOCK_METHOD(void, remove,
-              (IMUSample & sample, EulerOrientationSample &orientation));
+  MOCK_METHOD(void, remove, (IMUSample & sample, Quaternion &orientation));
 };
 
 struct IMUSignalProcessorDependencies {

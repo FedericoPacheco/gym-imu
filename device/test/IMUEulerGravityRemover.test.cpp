@@ -34,7 +34,7 @@ const std::array<testsupport::SeriesCase, 3> testCases = {{
                      "compl-g-free-rot-mat.csv"},
 }};
 
-TEST(DISABLED_IMUEulerGravityRemover_find, RemovesGravityCorrectly) {
+TEST(DISABLED_IMUEulerGravityRemover_remove, RemovesGravityCorrectly) {
   for (const testsupport::SeriesCase &series : testCases) {
     SCOPED_TRACE(series.name);
 

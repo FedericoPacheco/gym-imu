@@ -23,11 +23,9 @@ Other rules:
 
 ### In Progress
 
-- Implement gravity removal with quaternions on the device.
+- Implement velocity estimation (trapezoidal integration, ZUPTs when stationary, velocity hold when zero acceleration) on the device.
 
 ### Next
-
-- Implement velocity estimation (trapezoidal integration, ZUPTs when stationary, velocity hold when zero acceleration) on the device.
 
 ### Backlog
 
@@ -137,3 +135,4 @@ they are more prone to become outdated/stale.
 - Implement Quaternion class on the device.
 - Review double precision usage on the device. Change to float explicitly everywhere.
 - Implement Mahony filter on the device.
+- Implement gravity removal with quaternions on the device.

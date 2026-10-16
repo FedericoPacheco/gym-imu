@@ -9,12 +9,12 @@
 #include <Constants.hpp>
 #include <FreeRTOSLoopRunner.hpp>
 #include <FreeRTOSNotificationRunner.hpp>
-#include <IMUEulerGravityRemover.hpp>
+#include <IMUQuaternionGravityRemover.hpp>
 #include <IMUSignalProcessor.hpp>
 #include <LED.hpp>
 #include <Logger.hpp>
 #include <MPU6050AccelAffineCalibrator.hpp>
-#include <MPU6050ComplementaryOrientationFinder.hpp>
+#include <IMUMahonyOrientationFinder.hpp>
 #include <MPU6050NoiseReducer.hpp>
 #include <MPU6050Sensor.hpp>
 #include <QueuePipe.hpp>
@@ -88,11 +88,10 @@ extern "C" void app_main() {
       std::make_unique<MPU6050AccelAffineCalibrator>();
   std::unique_ptr<IMUNoiseReducer> noiseReducer =
       std::make_unique<MPU6050NoiseReducer>();
-  std::unique_ptr<IMUOrientationFinder<EulerOrientationSample>>
-      orientationFinder =
-          std::make_unique<MPU6050ComplementaryOrientationFinder>();
-  std::unique_ptr<IMUGravityRemover<EulerOrientationSample>> gravityRemover =
-      std::make_unique<IMUEulerGravityRemover>();
+  std::unique_ptr<IMUOrientationFinder<Quaternion>> orientationFinder =
+      std::make_unique<IMUMahonyOrientationFinder>(dt);
+  std::unique_ptr<IMUGravityRemover<Quaternion>> gravityRemover =
+      std::make_unique<IMUQuaternionGravityRemover>();
   IMUSignalProcessor *processor = IMUSignalProcessor::getInstance(
       samplingPipe, transmissionPipe, std::move(processorRunner),
       &processorLogger, std::move(calibrator), std::move(noiseReducer),

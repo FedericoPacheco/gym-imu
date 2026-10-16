@@ -33,3 +33,4 @@ inline constexpr float A_TEST_TOLERANCE = 0.0001f;
 inline constexpr float W_TEST_TOLERANCE = 0.0001f;
 inline constexpr float ANGLE_TEST_TOLERANCE = 0.0001f;
 inline constexpr float Q_TEST_TOLERANCE = 0.0001f;
+inline constexpr float V_TEST_TOLERANCE = 0.0001f;

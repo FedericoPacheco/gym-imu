@@ -4,6 +4,7 @@
 #include <IMUGravityRemover.hpp>
 #include <IMUNoiseReducer.hpp>
 #include <IMUOrientationFinder.hpp>
+#include <IMUVelocityEstimator.hpp>
 #include <IMUSensorPort.hpp>
 #include <LoggerPort.hpp>
 #include <LoopRunner.hpp>
@@ -12,9 +13,6 @@
 #include <atomic>
 #include <memory>
 #include <ports/FreeRTOS/FreeRTOSPort.hpp>
-
-// TODO: move to velocity computation strategy interface
-typedef LinearAxes VelocitySample; // m/s
 
 class IMUSignalProcessor {
 public:

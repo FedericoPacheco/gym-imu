@@ -12,8 +12,8 @@
 #include <string>
 #include <vector>
 
-// TODO: rewrite remaining read*() methods tu return a tuple with vectors
-// instead of a vector with tuples (simplifies callers code).
+// TODO: finish rewriting remaining read*() methods tu return a tuple with vectors
+// instead of a vector with tuples (simplifies callers' code).
 
 /*
 On failure, make sure to run the tests with greater verbosity to see the failed
@@ -51,7 +51,7 @@ std::tuple<IMUSample, EulerOrientationSample>
 parseIMUSampleWithAnglesRow(const std::vector<std::string> &columns);
 inline std::tuple<IMUSample, Quaternion>
 parseIMUSampleWithQuaternionsRow(const std::vector<std::string> &columns);
-std::tuple<IMUSample, EulerOrientationSample, VelocitySample>
+std::tuple<IMUSample, Quaternion, VelocitySample>
 parseVelocitySampleRow(const std::vector<std::string> &columns);
 template <typename Sample>
 ::testing::AssertionResult
@@ -223,16 +223,17 @@ parseIMUSampleWithQuaternionsRow(const std::vector<std::string> &columns) {
                                 std::stof(columns[13])})};
 }
 
-inline std::vector<
-    std::tuple<IMUSample, EulerOrientationSample, VelocitySample>>
-readVelocitySamplesFromCSV(const std::filesystem::path &filePath) {
+inline 
+    std::tuple<std::vector<IMUSample>, std::vector<Quaternion>, std::vector<VelocitySample>>
+readIMUSamplesWithVelocitiesFromCSV(const std::filesystem::path &filePath) {
   std::ifstream file = openCSVFile(filePath);
   assertCSVHeader(readCSVHeader(file, filePath),
-                  "seq,ax,ay,az,wroll,wpitch,wyaw,roll,pitch,yaw,vx,vy,vz",
+                  "seq,ax,ay,az,wroll,wpitch,wyaw,roll,pitch,yaw,q0,q1,q2,q3,vx,vy,vz",
                   filePath);
 
-  std::vector<std::tuple<IMUSample, EulerOrientationSample, VelocitySample>>
-      samples;
+  std::vector<IMUSample> imuSamples;
+  std::vector<Quaternion> orientationSamples;
+  std::vector<VelocitySample> velocitySamples;
   std::string line;
   while (std::getline(file, line)) {
     if (line.empty()) {
@@ -240,18 +241,21 @@ readVelocitySamplesFromCSV(const std::filesystem::path &filePath) {
     }
 
     const std::vector<std::string> columns = splitCSVRow(line);
-    if (columns.size() != 13) {
+    if (columns.size() != 17) {
       throw std::runtime_error("Unexpected CSV column count in file: " +
                                filePath.string());
     }
 
-    samples.push_back(parseVelocitySampleRow(columns));
+    auto [imuSample, orientationSample, velocitySample] = parseVelocitySampleRow(columns);
+    imuSamples.push_back(imuSample);
+    orientationSamples.push_back(orientationSample);
+    velocitySamples.push_back(velocitySample);
   }
 
-  return samples;
+  return {imuSamples, orientationSamples, velocitySamples};
 }
 
-inline std::tuple<IMUSample, EulerOrientationSample, VelocitySample>
+inline std::tuple<IMUSample, Quaternion, VelocitySample>
 parseVelocitySampleRow(const std::vector<std::string> &columns) {
   return {IMUSample{
               .a = {.x = std::stof(columns[1]),
@@ -262,12 +266,12 @@ parseVelocitySampleRow(const std::vector<std::string> &columns) {
                     .yaw = std::stof(columns[6])},
               .seq = static_cast<SequenceNumber>(std::stoul(columns[0])),
           },
-          EulerOrientationSample{.roll = std::stof(columns[7]),
-                                 .pitch = std::stof(columns[8]),
-                                 .yaw = std::stof(columns[9])},
-          VelocitySample{.x = std::stof(columns[10]),
-                         .y = std::stof(columns[11]),
-                         .z = std::stof(columns[12])}};
+          Quaternion(std::stof(columns[10]),
+                     std::array{std::stof(columns[11]), std::stof(columns[12]),
+                                std::stof(columns[13])}),
+          VelocitySample{.x = std::stof(columns[14]),
+                         .y = std::stof(columns[15]),
+                         .z = std::stof(columns[16])}};
 }
 
 inline ::testing::AssertionResult assertNearIMUSeries(

@@ -13,7 +13,7 @@ DEFINE_FFF_GLOBALS;
 #include "doubles/I2CDouble.hpp"
 #include "doubles/LoggerDouble.hpp"
 #include "doubles/MPUDouble.hpp"
-#include "doubles/PipeDouble.hpp"
+#include "doubles/PipesDoubles.hpp"
 #include <DeterministicNotificationRunner.hpp>
 #include <MPU6050Sensor.hpp>
 

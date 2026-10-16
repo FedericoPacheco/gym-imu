@@ -1,5 +1,5 @@
 #include "doubles/LoggerDouble.hpp"
-#include "doubles/PipeDouble.hpp"
+#include "doubles/PipesDoubles.hpp"
 #include <DeterministicLoopRunner.hpp>
 #include <IMUGravityRemover.hpp>
 #include <IMUOrientationFinder.hpp>
@@ -51,7 +51,7 @@ public:
 
 struct IMUSignalProcessorDependencies {
   std::shared_ptr<NiceMock<PipeDouble>> inputPipe;
-  std::shared_ptr<NiceMock<PipeDouble>> outputPipe;
+  std::shared_ptr<NiceMock<ProcessedPipeDouble>> outputPipe;
   std::unique_ptr<DeterministicLoopRunner> runner;
   std::unique_ptr<NiceMock<IMUCalibratorDouble>> calibrator;
   std::unique_ptr<NiceMock<IMUNoiseReducerDouble>> noiseReducer;
@@ -62,7 +62,7 @@ struct IMUSignalProcessorDependencies {
 };
 IMUSignalProcessorDependencies buildDefaultDependencies() {
   auto inputPipe = std::make_shared<NiceMock<PipeDouble>>();
-  auto outputPipe = std::make_shared<NiceMock<PipeDouble>>();
+  auto outputPipe = std::make_shared<NiceMock<ProcessedPipeDouble>>();
   auto runner = std::make_unique<DeterministicLoopRunner>();
   auto calibrator = std::make_unique<NiceMock<IMUCalibratorDouble>>();
   auto noiseReducer = std::make_unique<NiceMock<IMUNoiseReducerDouble>>();

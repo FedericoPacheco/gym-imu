@@ -4,12 +4,12 @@
 #include <IMUGravityRemover.hpp>
 #include <IMUNoiseReducer.hpp>
 #include <IMUOrientationFinder.hpp>
-#include <IMUSensorPort.hpp>
 #include <IMUVelocityEstimator.hpp>
 #include <LoggerPort.hpp>
 #include <LoopRunner.hpp>
 #include <Pipe.hpp>
 #include <Quaternion.hpp>
+#include <Types.hpp>
 #include <atomic>
 #include <memory>
 #include <ports/FreeRTOS/FreeRTOSPort.hpp>
@@ -18,7 +18,7 @@ class IMUSignalProcessor {
 public:
   static IMUSignalProcessor *getInstance(
       std::shared_ptr<Pipe<IMUSample, SAMPLING_PIPE_SIZE>> inputPipe,
-      std::shared_ptr<Pipe<IMUSample, TRANSMISSION_PIPE_SIZE>> outputPipe,
+      std::shared_ptr<Pipe<ProcessedSample, TRANSMISSION_PIPE_SIZE>> outputPipe,
       std::unique_ptr<LoopRunner> runner, LoggerPort *logger,
       std::unique_ptr<IMUCalibrator> calibrator,
       std::unique_ptr<IMUNoiseReducer> noiseReducer,
@@ -82,7 +82,7 @@ public:
 
 private:
   std::shared_ptr<Pipe<IMUSample, SAMPLING_PIPE_SIZE>> inputPipe;
-  std::shared_ptr<Pipe<IMUSample, TRANSMISSION_PIPE_SIZE>> outputPipe;
+  std::shared_ptr<Pipe<ProcessedSample, TRANSMISSION_PIPE_SIZE>> outputPipe;
   std::unique_ptr<LoopRunner> runner;
   LoggerPort *logger;
   std::unique_ptr<IMUCalibrator> calibrator;
@@ -103,16 +103,16 @@ private:
 
   std::atomic<bool> doProcess{false};
 
-  static std::unique_ptr<IMUSignalProcessor>
-  create(std::shared_ptr<Pipe<IMUSample, SAMPLING_PIPE_SIZE>> inputPipe,
-         std::shared_ptr<Pipe<IMUSample, TRANSMISSION_PIPE_SIZE>> outputPipe,
-         std::unique_ptr<LoopRunner> runner, LoggerPort *logger,
-         std::unique_ptr<IMUCalibrator> calibrator,
-         std::unique_ptr<IMUNoiseReducer> noiseReducer,
-         std::unique_ptr<IMUOrientationFinder<Quaternion>> orientationFinder,
-         std::unique_ptr<IMUGravityRemover<Quaternion>> gravityRemover,
-         std::unique_ptr<IMUVelocityEstimator> velocityEstimator,
-         uint32_t initializationSamplesCount) {
+  static std::unique_ptr<IMUSignalProcessor> create(
+      std::shared_ptr<Pipe<IMUSample, SAMPLING_PIPE_SIZE>> inputPipe,
+      std::shared_ptr<Pipe<ProcessedSample, TRANSMISSION_PIPE_SIZE>> outputPipe,
+      std::unique_ptr<LoopRunner> runner, LoggerPort *logger,
+      std::unique_ptr<IMUCalibrator> calibrator,
+      std::unique_ptr<IMUNoiseReducer> noiseReducer,
+      std::unique_ptr<IMUOrientationFinder<Quaternion>> orientationFinder,
+      std::unique_ptr<IMUGravityRemover<Quaternion>> gravityRemover,
+      std::unique_ptr<IMUVelocityEstimator> velocityEstimator,
+      uint32_t initializationSamplesCount) {
 
     if (!logger)
       return nullptr;
@@ -167,7 +167,7 @@ private:
 
   IMUSignalProcessor(
       std::shared_ptr<Pipe<IMUSample, SAMPLING_PIPE_SIZE>> inputPipe,
-      std::shared_ptr<Pipe<IMUSample, TRANSMISSION_PIPE_SIZE>> outputPipe,
+      std::shared_ptr<Pipe<ProcessedSample, TRANSMISSION_PIPE_SIZE>> outputPipe,
       std::unique_ptr<LoopRunner> runner, LoggerPort *logger,
       std::unique_ptr<IMUCalibrator> calibrator,
       std::unique_ptr<IMUNoiseReducer> noiseReducer,
@@ -236,8 +236,12 @@ private:
     self->logger->debug("Processing loop: velocity = <%.3f, %.3f, %.3f>",
                         velocitySample.x, velocitySample.y, velocitySample.z);
 
-    // TODO: push linear/angular velocities + seqs (must also update BLE class)
-    if (!self->outputPipe->push(sample))
+    ProcessedSample processedSample = {
+        .v = velocitySample,
+        .w = sample.w,
+        .seq = self->sampleCount,
+    };
+    if (!self->outputPipe->push(processedSample))
       self->logger->warn(
           "Processing loop: failed to push sample to output pipe");
   }

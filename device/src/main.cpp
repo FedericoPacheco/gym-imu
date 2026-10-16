@@ -19,9 +19,16 @@
 #include <MPU6050NoiseReducer.hpp>
 #include <MPU6050Sensor.hpp>
 #include <QueuePipe.hpp>
+#include <Types.hpp>
 #include <memory>
 
 // Configure project: pio run -t menuconfig
+
+#ifdef PROCESS_SIGNAL
+using TransmittedSample = ProcessedSample;
+#else
+using TransmittedSample = IMUSample;
+#endif
 
 extern "C" void app_main() {
   /* Note:
@@ -73,9 +80,10 @@ extern "C" void app_main() {
 
 #ifdef PROCESS_SIGNAL
   UARTLogger transmissionPipeLogger("TransmissionPipe", LogLevel::INFO);
-  std::shared_ptr<Pipe<IMUSample, TRANSMISSION_PIPE_SIZE>> transmissionPipe =
-      QueuePipe<IMUSample, TRANSMISSION_PIPE_SIZE>::create(
-          &transmissionPipeLogger);
+  std::shared_ptr<Pipe<ProcessedSample, TRANSMISSION_PIPE_SIZE>>
+      transmissionPipe =
+          QueuePipe<ProcessedSample, TRANSMISSION_PIPE_SIZE>::create(
+              &transmissionPipeLogger);
   if (!transmissionPipe) {
     transmissionPipeLogger.error("Failed to create transmission pipe");
     return;
@@ -110,8 +118,8 @@ extern "C" void app_main() {
   auto bleLoopRunner = std::make_unique<FreeRTOSLoopRunner>(
       "transmitTask", TRANSMIT_TASK_STACK_SIZE, TRANSMIT_TASK_PRIORITY,
       pdMS_TO_TICKS(50));
-  BLE *ble =
-      BLE::getInstance(&bleLogger, transmissionPipe, std::move(bleLoopRunner));
+  BLE<ProcessedSample> *ble = BLE<ProcessedSample>::getInstance(
+      &bleLogger, transmissionPipe, std::move(bleLoopRunner));
   if (ble == nullptr) {
     bleLogger.error("Failed to initialize BLE");
     return;
@@ -121,8 +129,8 @@ extern "C" void app_main() {
   auto bleLoopRunner = std::make_unique<FreeRTOSLoopRunner>(
       "transmitTask", TRANSMIT_TASK_STACK_SIZE, TRANSMIT_TASK_PRIORITY,
       pdMS_TO_TICKS(50));
-  BLE *ble =
-      BLE::getInstance(&bleLogger, samplingPipe, std::move(bleLoopRunner));
+  BLE<TransmittedSample> *ble = BLE<TransmittedSample>::getInstance(
+      &bleLogger, samplingPipe, std::move(bleLoopRunner));
   if (ble == nullptr) {
     bleLogger.error("Failed to initialize BLE");
     return;

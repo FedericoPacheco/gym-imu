@@ -8,7 +8,7 @@
 #include "doubles/LoggerDouble.hpp"
 #include "doubles/NimBLEDouble.cpp"
 #include "doubles/NimBLEDouble.hpp"
-#include "doubles/PipeDouble.hpp"
+#include "doubles/PipesDoubles.hpp"
 #include <BLE.hpp>
 #include <DeterministicLoopRunner.hpp>
 
@@ -16,6 +16,7 @@ namespace {
 
 using ::testing::NiceMock;
 using ::testing::Return;
+using TestBLE = BLE<IMUSample>;
 
 constexpr uint16_t VALID_IMU_CHARACTERISTIC_HANDLE = 0x0042;
 constexpr uint16_t TEST_CONNECTION_HANDLE = 0x0123;
@@ -50,7 +51,7 @@ struct BLEDependencies {
 };
 
 BLEDependencies buildDefaultDependencies() {
-  BLE::resetInstanceForTests();
+  TestBLE::resetInstanceForTests();
 
   resetFreeRTOSPortFakes();
   rtosCreateMutexStatic_fake.return_val =
@@ -88,9 +89,9 @@ BLEDependencies buildDefaultDependencies() {
   return deps;
 }
 
-BLE *getInstanceWith(BLEDependencies &&deps) {
-  return BLE::getInstance(deps.logger, deps.pipe,
-                          std::move(deps.transmitRunner));
+TestBLE *getInstanceWith(BLEDependencies &&deps) {
+  return TestBLE::getInstance(deps.logger, deps.pipe,
+                              std::move(deps.transmitRunner));
 }
 
 // Drive BLE internal behavior through events
@@ -226,7 +227,7 @@ TEST(BLE_getInstance, InitializesSuccessfully) {
   auto *runnerRaw =
       static_cast<DeterministicLoopRunner *>(deps.transmitRunner.get());
 
-  BLE *instance = getInstanceWith(std::move(deps));
+  TestBLE *instance = getInstanceWith(std::move(deps));
 
   EXPECT_NE(instance, nullptr);
   EXPECT_GT(runnerRaw->getStartCallCount(), 0);
@@ -243,7 +244,7 @@ TEST(BLE_transmitLoopFunction,
   nimbleGattServerAddServices_fake.custom_fake = nullptr;
   nimbleGattServerAddServices_fake.return_val = 0;
 
-  BLE *instance = getInstanceWith(std::move(deps));
+  TestBLE *instance = getInstanceWith(std::move(deps));
   instance->beginTransmission();
   runnerRaw->runOneStep();
   instance->stopTransmission();
@@ -256,7 +257,7 @@ TEST(BLE_transmitLoopFunction, SendsNoNotificationWhenClientIsNotConnected) {
   auto *runnerRaw =
       static_cast<DeterministicLoopRunner *>(deps.transmitRunner.get());
 
-  BLE *instance = getInstanceWith(std::move(deps));
+  TestBLE *instance = getInstanceWith(std::move(deps));
   runStackSyncCallback();
   subscribeClientToImuCharacteristic();
   instance->beginTransmission();
@@ -271,7 +272,7 @@ TEST(BLE_transmitLoopFunction, SendsNoNotificationWhenClientIsNotSubscribed) {
   auto *runnerRaw =
       static_cast<DeterministicLoopRunner *>(deps.transmitRunner.get());
 
-  BLE *instance = getInstanceWith(std::move(deps));
+  TestBLE *instance = getInstanceWith(std::move(deps));
   runStackSyncCallback();
   connectClient();
   instance->beginTransmission();
@@ -291,7 +292,7 @@ TEST(BLE_transmitLoopFunction,
   EXPECT_CALL(*pipeRaw, itemsFilled())
       .WillOnce(Return(static_cast<uint32_t>(TEST_BATCH_SIZE - 1)));
 
-  BLE *instance = getInstanceWith(std::move(deps));
+  TestBLE *instance = getInstanceWith(std::move(deps));
   runStackSyncCallback();
   connectClient();
   subscribeClientToImuCharacteristic();
@@ -315,7 +316,7 @@ TEST(BLE_transmitLoopFunction, SendsOneNotificationWhenItemsEqualBatchSize) {
   EXPECT_CALL(*pipeRaw, pop(false))
       .WillRepeatedly(Return(std::optional<IMUSample>(IMUSample{})));
 
-  BLE *instance = getInstanceWith(std::move(deps));
+  TestBLE *instance = getInstanceWith(std::move(deps));
   runStackSyncCallback();
   connectClient();
   subscribeClientToImuCharacteristic();
@@ -340,7 +341,7 @@ TEST(BLE_transmitLoopFunction,
   EXPECT_CALL(*pipeRaw, pop(false))
       .WillRepeatedly(Return(std::optional<IMUSample>(IMUSample{})));
 
-  BLE *instance = getInstanceWith(std::move(deps));
+  TestBLE *instance = getInstanceWith(std::move(deps));
   runStackSyncCallback();
   connectClient();
   subscribeClientToImuCharacteristic();
@@ -381,7 +382,7 @@ TEST(BLE_transmitLoopFunction, DoesntLoseSamplesDuringTwoTransmissionRounds) {
         });
       });
 
-  BLE *instance = getInstanceWith(std::move(deps));
+  TestBLE *instance = getInstanceWith(std::move(deps));
   runStackSyncCallback();
   connectClient();
   subscribeClientToImuCharacteristic();
@@ -414,7 +415,7 @@ TEST(BLE_transmitLoopFunction, SendsNoNotificationWhenBufferCreationFails) {
   EXPECT_CALL(*pipeRaw, pop(false))
       .WillRepeatedly(Return(std::optional<IMUSample>(IMUSample{})));
 
-  BLE *instance = getInstanceWith(std::move(deps));
+  TestBLE *instance = getInstanceWith(std::move(deps));
   runStackSyncCallback();
   connectClient();
   subscribeClientToImuCharacteristic();
@@ -438,7 +439,7 @@ TEST(BLE_transmitLoopFunction, SendsOneNotificationWhenNotificationFails) {
   EXPECT_CALL(*pipeRaw, pop(false))
       .WillRepeatedly(Return(std::optional<IMUSample>(IMUSample{})));
 
-  BLE *instance = getInstanceWith(std::move(deps));
+  TestBLE *instance = getInstanceWith(std::move(deps));
   runStackSyncCallback();
   connectClient();
   subscribeClientToImuCharacteristic();

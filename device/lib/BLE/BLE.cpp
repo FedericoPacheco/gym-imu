@@ -4,11 +4,15 @@
 // created and the static `instance` unique_ptr has not yet been assigned. Some
 // NimBLE callbacks (e.g. sync) may be invoked during initialization. Use this
 // to route those early callbacks to the creating object to avoid null crashes.
-BLE::InstanceState BLE::instanceState = {};
+template <typename TransmittedSample>
+typename BLE<TransmittedSample>::InstanceState
+    BLE<TransmittedSample>::instanceState = {};
 
-BLE::BLE(LoggerPort *logger,
-         std::shared_ptr<Pipe<IMUSample, TRANSMISSION_PIPE_SIZE>> pipe,
-         std::unique_ptr<LoopRunner> transmitRunner)
+template <typename TransmittedSample>
+BLE<TransmittedSample>::BLE(
+    LoggerPort *logger,
+    std::shared_ptr<Pipe<TransmittedSample, TRANSMISSION_PIPE_SIZE>> pipe,
+    std::unique_ptr<LoopRunner> transmitRunner)
     : communicationState{}, logger(logger), imuCharacteristics{}, services{},
       bleTaskHandle(nullptr), transmitRunner(std::move(transmitRunner)),
       pipe(pipe), primaryAdvertisingPacket{}, scanResponsePacket{},
@@ -18,16 +22,20 @@ BLE::BLE(LoggerPort *logger,
 
   this->communicationState.mux = portMUX_INITIALIZER_UNLOCKED;
   this->communicationState.connectionHandle = BLE_HS_CONN_HANDLE_NONE;
-  this->communicationState.mtu = BLE::PREFERRED_MTU;
-  this->communicationState.currentBatchSize = BLE::PREFERRED_BATCH_SEND_SIZE;
-  this->communicationState.isSubscribedToImuSampleCharacteristic = false;
-  this->communicationState.imuSampleCharacteristicHandle = 0;
+  this->communicationState.mtu = BLE<TransmittedSample>::PREFERRED_MTU;
+  this->communicationState.currentBatchSize =
+      BLE<TransmittedSample>::PREFERRED_BATCH_SEND_SIZE;
+  this->communicationState.isSubscribedToTransmittedSampleCharacteristic =
+      false;
+  this->communicationState.transmittedSampleCharacteristicHandle = 0;
 }
 
-std::unique_ptr<BLE>
-BLE::create(LoggerPort *logger,
-            std::shared_ptr<Pipe<IMUSample, TRANSMISSION_PIPE_SIZE>> pipe,
-            std::unique_ptr<LoopRunner> transmitRunner) {
+template <typename TransmittedSample>
+std::unique_ptr<BLE<TransmittedSample>>
+BLE<TransmittedSample>::create(
+    LoggerPort *logger,
+    std::shared_ptr<Pipe<TransmittedSample, TRANSMISSION_PIPE_SIZE>> pipe,
+    std::unique_ptr<LoopRunner> transmitRunner) {
 
   if (!logger) {
     return nullptr;
@@ -43,8 +51,9 @@ BLE::create(LoggerPort *logger,
     return nullptr;
   }
 
-  std::unique_ptr<BLE> ble(new (std::nothrow)
-                               BLE(logger, pipe, std::move(transmitRunner)));
+  std::unique_ptr<BLE<TransmittedSample>> ble(
+      new (std::nothrow)
+          BLE<TransmittedSample>(logger, pipe, std::move(transmitRunner)));
 
   if (!ble) {
     logger->error("BLE", "Failed to allocate memory for BLE instance");
@@ -53,64 +62,68 @@ BLE::create(LoggerPort *logger,
 
   // Make early callbacks target this object while we initialize the host
   // stack. Clear on all exit paths to avoid leaving a dangling pointer.
-  BLE::instanceState.initializingInstance = ble.get();
+  BLE<TransmittedSample>::instanceState.initializingInstance = ble.get();
 
   if (!ble->initializeFlash()) {
-    BLE::instanceState.initializingInstance = nullptr;
+    BLE<TransmittedSample>::instanceState.initializingInstance = nullptr;
     return nullptr;
   }
   if (!ble->initializeControllerAndHost()) {
-    BLE::instanceState.initializingInstance = nullptr;
+    BLE<TransmittedSample>::instanceState.initializingInstance = nullptr;
     return nullptr;
   }
   if (!ble->initializeGAP()) {
-    BLE::instanceState.initializingInstance = nullptr;
+    BLE<TransmittedSample>::instanceState.initializingInstance = nullptr;
     return nullptr;
   }
   if (!ble->initializeGATT()) {
-    BLE::instanceState.initializingInstance = nullptr;
+    BLE<TransmittedSample>::instanceState.initializingInstance = nullptr;
     return nullptr;
   }
   if (!ble->initializeTasks()) {
-    BLE::instanceState.initializingInstance = nullptr;
+    BLE<TransmittedSample>::instanceState.initializingInstance = nullptr;
     return nullptr;
   }
 
   // clear the temporary pointer when finished
-  BLE::instanceState.initializingInstance = nullptr;
+  BLE<TransmittedSample>::instanceState.initializingInstance = nullptr;
 
   return ble;
 }
 
-BLE *BLE::getInstance(
+template <typename TransmittedSample>
+BLE<TransmittedSample> *BLE<TransmittedSample>::getInstance(
     LoggerPort *logger,
-    std::shared_ptr<Pipe<IMUSample, TRANSMISSION_PIPE_SIZE>> pipe,
+    std::shared_ptr<Pipe<TransmittedSample, TRANSMISSION_PIPE_SIZE>> pipe,
     std::unique_ptr<LoopRunner> transmitRunner) {
 
   // Protect instance creation with a mutex to ensure thread safety
-  if (BLE::instanceState.semaphoreHandle == nullptr) {
-    rtosTaskEnterCritical(&BLE::instanceState.mux);
-    BLE::instanceState.semaphoreHandle =
-        rtosCreateMutexStatic(&BLE::instanceState.semaphoreControlBlock);
-    if (BLE::instanceState.semaphoreHandle == nullptr) {
+  if (BLE<TransmittedSample>::instanceState.semaphoreHandle == nullptr) {
+    rtosTaskEnterCritical(&BLE<TransmittedSample>::instanceState.mux);
+    BLE<TransmittedSample>::instanceState.semaphoreHandle =
+        rtosCreateMutexStatic(
+            &BLE<TransmittedSample>::instanceState.semaphoreControlBlock);
+    if (BLE<TransmittedSample>::instanceState.semaphoreHandle == nullptr) {
       logger->error("Failed to create mutex for BLE instance");
-      rtosTaskExitCritical(&BLE::instanceState.mux);
+      rtosTaskExitCritical(&BLE<TransmittedSample>::instanceState.mux);
       return nullptr;
     }
-    rtosTaskExitCritical(&BLE::instanceState.mux);
+    rtosTaskExitCritical(&BLE<TransmittedSample>::instanceState.mux);
   }
 
-  if (rtosSemaphoreTake(BLE::instanceState.semaphoreHandle, portMAX_DELAY) ==
-      pdTRUE) {
-    if (!BLE::instanceState.instance)
-      BLE::instanceState.instance =
-          BLE::create(logger, pipe, std::move(transmitRunner));
-    rtosSemaphoreGive(BLE::instanceState.semaphoreHandle);
+  if (rtosSemaphoreTake(BLE<TransmittedSample>::instanceState.semaphoreHandle,
+                        portMAX_DELAY) == pdTRUE) {
+    if (!BLE<TransmittedSample>::instanceState.instance)
+      BLE<TransmittedSample>::instanceState.instance =
+          BLE<TransmittedSample>::create(logger, pipe,
+                                         std::move(transmitRunner));
+    rtosSemaphoreGive(BLE<TransmittedSample>::instanceState.semaphoreHandle);
   }
-  return BLE::instanceState.instance.get();
+  return BLE<TransmittedSample>::instanceState.instance.get();
 }
 
-BLE::~BLE() {
+template <typename TransmittedSample>
+BLE<TransmittedSample>::~BLE() {
   this->setDoTransmit(false);
 
   if (this->transmitRunner)
@@ -122,7 +135,8 @@ BLE::~BLE() {
     rtosTaskDelete(this->bleTaskHandle);
 }
 
-bool BLE::initializeFlash() {
+template <typename TransmittedSample>
+bool BLE<TransmittedSample>::initializeFlash() {
   this->logger->debug("Initializing NVS flash");
 
   // NVS: non-volatile storage
@@ -142,7 +156,8 @@ bool BLE::initializeFlash() {
   return false;
 }
 
-bool BLE::initializeControllerAndHost() {
+template <typename TransmittedSample>
+bool BLE<TransmittedSample>::initializeControllerAndHost() {
   this->logger->debug("Initializing controller and NimBLE host stack");
 
   // Initialize both at once
@@ -150,9 +165,9 @@ bool BLE::initializeControllerAndHost() {
                                "Failed to initialize NimBLE port");
 
   // Set callbacks for application logic
-  ble_hs_cfg.reset_cb = BLE::onStackReset;
-  ble_hs_cfg.sync_cb = BLE::onStackSync;
-  ble_hs_cfg.gatts_register_cb = BLE::onGATTRegister;
+  ble_hs_cfg.reset_cb = BLE<TransmittedSample>::onStackReset;
+  ble_hs_cfg.sync_cb = BLE<TransmittedSample>::onStackSync;
+  ble_hs_cfg.gatts_register_cb = BLE<TransmittedSample>::onGATTRegister;
   ble_hs_cfg.gatts_register_arg = this;
 
   // Persist bond information and keys in NVS flash with these callbacks
@@ -163,39 +178,42 @@ bool BLE::initializeControllerAndHost() {
   ble_hs_cfg.store_delete_cb = ble_store_config_delete;
 
   // Set larger MTU for batch sending IMU samples
-  nimbleSetPreferredMtu(BLE::PREFERRED_MTU);
+  nimbleSetPreferredMtu(BLE<TransmittedSample>::PREFERRED_MTU);
 
   return true;
 }
 
 #if defined(UNIT_TEST) && !defined(ESP_PLATFORM)
-void BLE::resetInstanceForTests() {
-  BLE::instanceState.instance.reset();
-  BLE::instanceState.initializingInstance = nullptr;
-  BLE::instanceState.semaphoreHandle = nullptr;
-  BLE::instanceState.semaphoreControlBlock = {};
-  BLE::instanceState.mux = {};
+template <typename TransmittedSample>
+void BLE<TransmittedSample>::resetInstanceForTests() {
+  BLE<TransmittedSample>::instanceState.instance.reset();
+  BLE<TransmittedSample>::instanceState.initializingInstance = nullptr;
+  BLE<TransmittedSample>::instanceState.semaphoreHandle = nullptr;
+  BLE<TransmittedSample>::instanceState.semaphoreControlBlock = {};
+  BLE<TransmittedSample>::instanceState.mux = {};
 }
 #endif
 
-void BLE::onStackReset(int reason) {
-  BLE *self = nullptr;
-  if (BLE::instanceState.instance)
-    self = BLE::instanceState.instance.get();
-  else if (BLE::instanceState.initializingInstance)
-    self = BLE::instanceState.initializingInstance;
+template <typename TransmittedSample>
+void BLE<TransmittedSample>::onStackReset(int reason) {
+  BLE<TransmittedSample> *self = nullptr;
+  if (BLE<TransmittedSample>::instanceState.instance)
+    self = BLE<TransmittedSample>::instanceState.instance.get();
+  else if (BLE<TransmittedSample>::instanceState.initializingInstance)
+    self = BLE<TransmittedSample>::instanceState.initializingInstance;
 
   if (self == nullptr)
     return;
 
   self->logger->info("NimBLE stack reset, reason: %d", reason);
 }
-void BLE::onStackSync() {
-  BLE *self = nullptr;
-  if (BLE::instanceState.instance)
-    self = BLE::instanceState.instance.get();
-  else if (BLE::instanceState.initializingInstance)
-    self = BLE::instanceState.initializingInstance;
+template <typename TransmittedSample>
+void BLE<TransmittedSample>::onStackSync() {
+  BLE<TransmittedSample> *self = nullptr;
+  if (BLE<TransmittedSample>::instanceState.instance)
+    self = BLE<TransmittedSample>::instanceState.instance.get();
+  else if (BLE<TransmittedSample>::instanceState.initializingInstance)
+    self = BLE<TransmittedSample>::instanceState.initializingInstance;
 
   if (self == nullptr)
     return;
@@ -203,8 +221,10 @@ void BLE::onStackSync() {
   if (self->initializeAdvertising())
     self->startAdvertising();
 }
-void BLE::onGATTRegister(struct ble_gatt_register_ctxt *context, void *arg) {
-  BLE *self = static_cast<BLE *>(arg);
+template <typename TransmittedSample>
+void BLE<TransmittedSample>::onGATTRegister(
+    struct ble_gatt_register_ctxt *context, void *arg) {
+  BLE<TransmittedSample> *self = static_cast<BLE<TransmittedSample> *>(arg);
   char buffer[128];
 
   switch (context->op) {
@@ -233,17 +253,20 @@ void BLE::onGATTRegister(struct ble_gatt_register_ctxt *context, void *arg) {
   }
 }
 
-bool BLE::initializeGAP() {
+template <typename TransmittedSample>
+bool BLE<TransmittedSample>::initializeGAP() {
   this->logger->debug("Initializing GAP service");
 
   nimbleGapServiceInit();
 
-  RETURN_FALSE_ON_NIMBLE_ERROR(nimbleGapDeviceNameSet(BLE::DEVICE_NAME),
+  RETURN_FALSE_ON_NIMBLE_ERROR(
+      nimbleGapDeviceNameSet(BLE<TransmittedSample>::DEVICE_NAME),
                                this->logger, "Failed to set device name");
 
   // Set how the device advertises itself to other devices
-  RETURN_FALSE_ON_NIMBLE_ERROR(nimbleGapDeviceAppearanceSet(BLE::APPEARANCE),
-                               this->logger, "Failed to set device appearance");
+  RETURN_FALSE_ON_NIMBLE_ERROR(
+      nimbleGapDeviceAppearanceSet(BLE<TransmittedSample>::APPEARANCE),
+      this->logger, "Failed to set device appearance");
 
   return true;
 }
@@ -252,8 +275,10 @@ bool BLE::initializeGAP() {
 // Used here to protect access to communicationState that are written here and
 // read on transmitLoopFunction(). Reference:
 // https://freertos.org/Documentation/02-Kernel/04-API-references/04-RTOS-kernel-control/01-taskENTER_CRITICAL_taskEXIT_CRITICAL
-int BLE::handleGAPEvent(ble_gap_event *event, void *arg) {
-  BLE *self = static_cast<BLE *>(arg);
+template <typename TransmittedSample>
+int BLE<TransmittedSample>::handleGAPEvent(ble_gap_event *event, void *arg) {
+  BLE<TransmittedSample> *self =
+      static_cast<BLE<TransmittedSample> *>(arg);
 
   self->logger->debug("Received GAP event: %d", event->type);
 
@@ -275,11 +300,14 @@ int BLE::handleGAPEvent(ble_gap_event *event, void *arg) {
 
       struct ble_gap_upd_params connectionParameters = {
           .itvl_min =
-              static_cast<uint16_t>(BLE::CONNECTION_INTERVAL_MIN_MS / 1.25),
+              static_cast<uint16_t>(
+                  BLE<TransmittedSample>::CONNECTION_INTERVAL_MIN_MS / 1.25),
           .itvl_max =
-              static_cast<uint16_t>(BLE::CONNECTION_INTERVAL_MAX_MS / 1.25),
-          .latency = BLE::CONNECTION_PERIPHERAL_LATENCY,
-          .supervision_timeout = BLE::CONNECTION_SUPERVISION_TIMEOUT_MS / 10,
+              static_cast<uint16_t>(
+                  BLE<TransmittedSample>::CONNECTION_INTERVAL_MAX_MS / 1.25),
+          .latency = BLE<TransmittedSample>::CONNECTION_PERIPHERAL_LATENCY,
+          .supervision_timeout =
+              BLE<TransmittedSample>::CONNECTION_SUPERVISION_TIMEOUT_MS / 10,
           //  Duration of connection events
           .min_ce_len = BLE_GAP_INITIAL_CONN_MIN_CE_LEN,
           .max_ce_len = BLE_GAP_INITIAL_CONN_MAX_CE_LEN};
@@ -309,15 +337,17 @@ int BLE::handleGAPEvent(ble_gap_event *event, void *arg) {
   }
   case BLE_GAP_EVENT_SUBSCRIBE: {
     if (event->subscribe.attr_handle ==
-        self->communicationState.imuSampleCharacteristicHandle) {
+        self->communicationState.transmittedSampleCharacteristicHandle) {
       if (event->subscribe.cur_notify) {
         rtosPortEnterCritical(&self->communicationState.mux);
-        self->communicationState.isSubscribedToImuSampleCharacteristic = true;
+        self->communicationState.isSubscribedToTransmittedSampleCharacteristic =
+            true;
         rtosPortExitCritical(&self->communicationState.mux);
         self->logger->info("Client subscribed to IMU Sample Characteristic");
       } else {
         rtosPortEnterCritical(&self->communicationState.mux);
-        self->communicationState.isSubscribedToImuSampleCharacteristic = false;
+        self->communicationState.isSubscribedToTransmittedSampleCharacteristic =
+            false;
         rtosPortExitCritical(&self->communicationState.mux);
         self->logger->info(
             "Client unsubscribed from IMU Sample Characteristic");
@@ -330,7 +360,8 @@ int BLE::handleGAPEvent(ble_gap_event *event, void *arg) {
                        event->disconnect.reason);
     rtosPortEnterCritical(&self->communicationState.mux);
     self->communicationState.connectionHandle = BLE_HS_CONN_HANDLE_NONE;
-    self->communicationState.isSubscribedToImuSampleCharacteristic = false;
+    self->communicationState.isSubscribedToTransmittedSampleCharacteristic =
+        false;
     rtosPortExitCritical(&self->communicationState.mux);
     self->startAdvertising();
     break;
@@ -347,9 +378,9 @@ int BLE::handleGAPEvent(ble_gap_event *event, void *arg) {
     rtosPortEnterCritical(&self->communicationState.mux);
     self->communicationState.mtu = event->mtu.value;
     self->communicationState.currentBatchSize = std::min(
-        BLE::PREFERRED_BATCH_SEND_SIZE,
+        BLE<TransmittedSample>::PREFERRED_BATCH_SEND_SIZE,
         std::max(1, static_cast<int>((self->communicationState.mtu - 3) /
-                                     sizeof(IMUSample))));
+                                     sizeof(TransmittedSample))));
     rtosPortExitCritical(&self->communicationState.mux);
     self->logger->info(
         "Negotiated MTU: %d bytes. Current batch size: %d packets",
@@ -363,21 +394,24 @@ int BLE::handleGAPEvent(ble_gap_event *event, void *arg) {
 }
 
 // GATT: Generic Attribute Profile
-bool BLE::initializeGATT() {
+template <typename TransmittedSample>
+bool BLE<TransmittedSample>::initializeGATT() {
   this->logger->debug("Initializing GATT service");
 
   nimbleGattServiceInit();
 
-  imuCharacteristics[0].uuid = &BLE::IMU_SAMPLE_CHARACTERISTIC_UUID.u;
-  imuCharacteristics[0].access_cb = BLE::accessImuSampleCharacteristic;
+  imuCharacteristics[0].uuid =
+      &BLE<TransmittedSample>::IMU_SAMPLE_CHARACTERISTIC_UUID.u;
+  imuCharacteristics[0].access_cb =
+      BLE<TransmittedSample>::accessTransmittedSampleCharacteristic;
   imuCharacteristics[0].arg = this;
   imuCharacteristics[0].flags = BLE_GATT_CHR_F_NOTIFY;
   imuCharacteristics[0].val_handle =
-      &this->communicationState.imuSampleCharacteristicHandle;
+      &this->communicationState.transmittedSampleCharacteristicHandle;
   imuCharacteristics[0].min_key_size = 0; // No encryption required
 
   services[0].type = BLE_GATT_SVC_TYPE_PRIMARY;
-  services[0].uuid = &BLE::IMU_SERVICE_UUID.u;
+  services[0].uuid = &BLE<TransmittedSample>::IMU_SERVICE_UUID.u;
   services[0].characteristics = this->imuCharacteristics;
 
   RETURN_FALSE_ON_NIMBLE_ERROR(nimbleGattServerCountConfig(this->services),
@@ -390,25 +424,28 @@ bool BLE::initializeGATT() {
   return true;
 }
 // Clients will only listen for notifications, not pull data from the server
-int BLE::accessImuSampleCharacteristic(uint16_t connectionHandle,
-                                       uint16_t attributeHandle,
-                                       struct ble_gatt_access_ctxt *context,
-                                       void *arg) {
+template <typename TransmittedSample>
+int BLE<TransmittedSample>::accessTransmittedSampleCharacteristic(
+    uint16_t connectionHandle, uint16_t attributeHandle,
+    struct ble_gatt_access_ctxt *context, void *arg) {
   return BLE_ATT_ERR_REQ_NOT_SUPPORTED;
 }
 
-bool BLE::initializeTasks() {
+template <typename TransmittedSample>
+bool BLE<TransmittedSample>::initializeTasks() {
 
   this->logger->debug("Initializing BLE tasks");
 
-  if (!this->transmitRunner->start(BLE::transmitLoopFunction,
+  if (!this->transmitRunner->start(
+          BLE<TransmittedSample>::transmitLoopFunction,
                                    static_cast<void *>(this))) {
     this->logger->error("Failed to create transmit task");
     return false;
   }
 
   BaseType_t bleTaskResult =
-      rtosTaskCreate(BLE::bleTask, "bleTask", BLE_TASK_STACK_SIZE, this,
+      rtosTaskCreate(BLE<TransmittedSample>::bleTask, "bleTask",
+                     BLE_TASK_STACK_SIZE, this,
                      BLE_TASK_PRIORITY, &this->bleTaskHandle);
   if (bleTaskResult != pdPASS) {
     this->logger->error("Failed to create BLE task");
@@ -419,22 +456,27 @@ bool BLE::initializeTasks() {
   return true;
 }
 
-void BLE::bleTask(void *arg) {
-  BLE *self = static_cast<BLE *>(arg);
+template <typename TransmittedSample>
+void BLE<TransmittedSample>::bleTask(void *arg) {
+  BLE<TransmittedSample> *self =
+      static_cast<BLE<TransmittedSample> *>(arg);
 
   self->logger->debug("BLE task started");
 
   nimblePortRun();
 }
 
-void BLE::transmitLoopFunction(void *arg) {
-  BLE *self = static_cast<BLE *>(arg);
+template <typename TransmittedSample>
+void BLE<TransmittedSample>::transmitLoopFunction(void *arg) {
+  BLE<TransmittedSample> *self =
+      static_cast<BLE<TransmittedSample> *>(arg);
 
   if (!self)
     return;
 
-  IMUSample batchSamples[BLE::PREFERRED_BATCH_SEND_SIZE];
-  std::optional<IMUSample> optionalBatchSample;
+  TransmittedSample
+      batchSamples[BLE<TransmittedSample>::PREFERRED_BATCH_SEND_SIZE];
+  std::optional<TransmittedSample> optionalBatchSample;
   uint8_t batchCount;
 
   uint16_t characteristicHandle, connectionHandle, currentBatchSize;
@@ -446,9 +488,11 @@ void BLE::transmitLoopFunction(void *arg) {
 
   // Sincronize access to shared variables
   rtosPortEnterCritical(&self->communicationState.mux);
-  characteristicHandle = self->communicationState.imuSampleCharacteristicHandle;
+  characteristicHandle =
+      self->communicationState.transmittedSampleCharacteristicHandle;
   connectionHandle = self->communicationState.connectionHandle;
-  isSubscribed = self->communicationState.isSubscribedToImuSampleCharacteristic;
+  isSubscribed =
+      self->communicationState.isSubscribedToTransmittedSampleCharacteristic;
   currentBatchSize = self->communicationState.currentBatchSize;
   rtosPortExitCritical(&self->communicationState.mux);
 
@@ -480,8 +524,8 @@ void BLE::transmitLoopFunction(void *arg) {
       batchCount++;
     }
 
-    struct os_mbuf *nimbleBuffer =
-        nimbleMbufFromFlat(batchSamples, batchCount * sizeof(IMUSample));
+    struct os_mbuf *nimbleBuffer = nimbleMbufFromFlat(
+        batchSamples, batchCount * sizeof(TransmittedSample));
 
     if (nimbleBuffer == NULL) {
       self->logger->error("Can't send data: no memory available for nimble "
@@ -503,7 +547,8 @@ void BLE::transmitLoopFunction(void *arg) {
   }
 }
 
-bool BLE::initializeAdvertising() {
+template <typename TransmittedSample>
+bool BLE<TransmittedSample>::initializeAdvertising() {
   this->logger->debug("Initializing advertising");
 
   // Infer address type: public/private, static/random
@@ -534,12 +579,15 @@ bool BLE::initializeAdvertising() {
   this->primaryAdvertisingPacket.flags =
       BLE_HS_ADV_F_DISC_GEN | BLE_HS_ADV_F_BREDR_UNSUP;
 
-  this->primaryAdvertisingPacket.name = (uint8_t *)BLE::DEVICE_NAME;
-  this->primaryAdvertisingPacket.name_len = strlen(BLE::DEVICE_NAME);
+  this->primaryAdvertisingPacket.name =
+      (uint8_t *)BLE<TransmittedSample>::DEVICE_NAME;
+  this->primaryAdvertisingPacket.name_len =
+      strlen(BLE<TransmittedSample>::DEVICE_NAME);
   this->primaryAdvertisingPacket.name_is_complete = 1;
 
   // Advertise the IMU service UUID so apps can filter/discover by service
-  this->primaryAdvertisingPacket.uuids128 = &BLE::IMU_SERVICE_UUID;
+  this->primaryAdvertisingPacket.uuids128 =
+      &BLE<TransmittedSample>::IMU_SERVICE_UUID;
   this->primaryAdvertisingPacket.num_uuids128 = 1;
   this->primaryAdvertisingPacket.uuids128_is_complete = 1;
 
@@ -551,7 +599,8 @@ bool BLE::initializeAdvertising() {
   this->scanResponsePacket.tx_pwr_lvl_is_present = 1;
 
   // Appearance
-  this->scanResponsePacket.appearance = BLE::APPEARANCE;
+  this->scanResponsePacket.appearance =
+      BLE<TransmittedSample>::APPEARANCE;
   this->scanResponsePacket.appearance_is_present = 1;
 
   // Address
@@ -562,12 +611,12 @@ bool BLE::initializeAdvertising() {
 
   // Advertising interval
   this->scanResponsePacket.adv_itvl =
-      BLE_GAP_ADV_ITVL_MS(BLE::ADVERTISING_INTERVAL_MS);
+      BLE_GAP_ADV_ITVL_MS(BLE<TransmittedSample>::ADVERTISING_INTERVAL_MS);
   this->scanResponsePacket.adv_itvl_is_present = 1;
   this->advertisingConfig.itvl_min =
-      BLE_GAP_ADV_ITVL_MS(BLE::ADVERTISING_INTERVAL_MS);
+      BLE_GAP_ADV_ITVL_MS(BLE<TransmittedSample>::ADVERTISING_INTERVAL_MS);
   this->advertisingConfig.itvl_max =
-      BLE_GAP_ADV_ITVL_MS(BLE::ADVERTISING_INTERVAL_MS);
+      BLE_GAP_ADV_ITVL_MS(BLE<TransmittedSample>::ADVERTISING_INTERVAL_MS);
 
   // Behavior:
   // Connection mode: undirected connectable (accept connections from any
@@ -586,17 +635,19 @@ bool BLE::initializeAdvertising() {
 
   return true;
 }
-bool BLE::startAdvertising() {
+template <typename TransmittedSample>
+bool BLE<TransmittedSample>::startAdvertising() {
   RETURN_FALSE_ON_NIMBLE_ERROR(
       nimbleGapAdvertisingStart(this->communicationState.address.type,
-                                &this->advertisingConfig, BLE::handleGAPEvent,
-                                this),
+                                &this->advertisingConfig,
+                                BLE<TransmittedSample>::handleGAPEvent, this),
       this->logger, "Failed to start advertising");
 
   return true;
 }
 
-bool BLE::isConnected() {
+template <typename TransmittedSample>
+bool BLE<TransmittedSample>::isConnected() {
   uint16_t connectionHandle;
   rtosPortEnterCritical(&this->communicationState.mux);
   connectionHandle = this->communicationState.connectionHandle;
@@ -604,18 +655,25 @@ bool BLE::isConnected() {
   return connectionHandle != BLE_HS_CONN_HANDLE_NONE;
 }
 
-void BLE::beginTransmission() {
+template <typename TransmittedSample>
+void BLE<TransmittedSample>::beginTransmission() {
   this->logger->info("Starting BLE transmission");
   this->setDoTransmit(true);
 }
-void BLE::stopTransmission() {
+template <typename TransmittedSample>
+void BLE<TransmittedSample>::stopTransmission() {
   this->logger->info("Stopping BLE transmission");
   this->setDoTransmit(false);
 }
 
-void BLE::setDoTransmit(bool value) {
+template <typename TransmittedSample>
+void BLE<TransmittedSample>::setDoTransmit(bool value) {
   this->doTransmit.store(value, std::memory_order_relaxed);
 }
-bool BLE::getDoTransmit() {
+template <typename TransmittedSample>
+bool BLE<TransmittedSample>::getDoTransmit() {
   return this->doTransmit.load(std::memory_order_relaxed);
 }
+
+template class BLE<IMUSample>;
+template class BLE<ProcessedSample>;

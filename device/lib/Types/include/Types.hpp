@@ -24,3 +24,9 @@ struct IMUSample {
   AngularVelocitySample w;
   SequenceNumber seq;
 };
+
+struct ProcessedSample {
+  VelocitySample v;
+  AngularVelocitySample w;
+  SequenceNumber seq;
+};

@@ -23,13 +23,14 @@ Other rules:
 
 ### In Progress
 
-- Implement Mahony filter on the device.
+- Implement gravity removal with quaternions on the device.
 
 ### Next
 
+- Implement velocity estimation (trapezoidal integration, ZUPTs when stationary, velocity hold when zero acceleration) on the device.
+
 ### Backlog
 
-- Implement velocity estimation (trapezoidal integration, ZUPTs when stationary, velocity hold when zero acceleration) on the device.
 - Fine tune BLE transmission parameters, pipe sizes, and task priorities/ISR behaviors, and other relevant system parameters to optimize for throughput after completing basic signal processing pipeline on device.
 
 - Implement a Kalman filter variant (classic, extended, unscented, etc.) on a jupyter notebook to compute orientation. Compare it against the Mahony Filter and complementary filter.
@@ -135,3 +136,4 @@ they are more prone to become outdated/stale.
   - <https://docs.espressif.com/projects/esp-dsp/en/latest/esp32/esp-dsp-apis.html>
 - Implement Quaternion class on the device.
 - Review double precision usage on the device. Change to float explicitly everywhere.
+- Implement Mahony filter on the device.

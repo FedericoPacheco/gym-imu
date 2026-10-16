@@ -1,10 +1,8 @@
 #pragma once
-#include <IMUSensorPort.hpp>
 #include <IMUVelocityEstimator.hpp>
 #include <IMUWindowedStationaryDetector.hpp>
 #include <Quaternion.hpp>
-
-typedef LinearAxes VelocitySample; // m/s
+#include <Types.hpp>
 
 class IMUIntegrationVelocityEstimator : public IMUVelocityEstimator {
 public:

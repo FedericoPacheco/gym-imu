@@ -1,7 +1,7 @@
 #pragma once
 
-#include "IMUSensorPort.hpp"
 #include "IMUSignalProcessor.hpp"
+#include "Types.hpp"
 #include <Quaternion.hpp>
 #include <cmath>
 #include <filesystem>
@@ -12,8 +12,8 @@
 #include <string>
 #include <vector>
 
-// TODO: finish rewriting remaining read*() methods tu return a tuple with vectors
-// instead of a vector with tuples (simplifies callers' code).
+// TODO: finish rewriting remaining read*() methods tu return a tuple with
+// vectors instead of a vector with tuples (simplifies callers' code).
 
 /*
 On failure, make sure to run the tests with greater verbosity to see the failed
@@ -223,13 +223,14 @@ parseIMUSampleWithQuaternionsRow(const std::vector<std::string> &columns) {
                                 std::stof(columns[13])})};
 }
 
-inline 
-    std::tuple<std::vector<IMUSample>, std::vector<Quaternion>, std::vector<VelocitySample>>
+inline std::tuple<std::vector<IMUSample>, std::vector<Quaternion>,
+                  std::vector<VelocitySample>>
 readIMUSamplesWithVelocitiesFromCSV(const std::filesystem::path &filePath) {
   std::ifstream file = openCSVFile(filePath);
-  assertCSVHeader(readCSVHeader(file, filePath),
-                  "seq,ax,ay,az,wroll,wpitch,wyaw,roll,pitch,yaw,q0,q1,q2,q3,vx,vy,vz",
-                  filePath);
+  assertCSVHeader(
+      readCSVHeader(file, filePath),
+      "seq,ax,ay,az,wroll,wpitch,wyaw,roll,pitch,yaw,q0,q1,q2,q3,vx,vy,vz",
+      filePath);
 
   std::vector<IMUSample> imuSamples;
   std::vector<Quaternion> orientationSamples;
@@ -246,7 +247,8 @@ readIMUSamplesWithVelocitiesFromCSV(const std::filesystem::path &filePath) {
                                filePath.string());
     }
 
-    auto [imuSample, orientationSample, velocitySample] = parseVelocitySampleRow(columns);
+    auto [imuSample, orientationSample, velocitySample] =
+        parseVelocitySampleRow(columns);
     imuSamples.push_back(imuSample);
     orientationSamples.push_back(orientationSample);
     velocitySamples.push_back(velocitySample);

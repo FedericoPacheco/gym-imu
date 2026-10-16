@@ -1,5 +1,5 @@
 #include "IMUSampleCsv.hpp"
-#include "IMUSensorPort.hpp"
+#include "Types.hpp"
 #include <IMUQuaternionGravityRemover.hpp>
 #include <array>
 #include <gmock/gmock.h>

@@ -1,25 +1,6 @@
 #pragma once
+#include <Types.hpp>
 #include <optional>
-#include <stdint.h>
-
-struct LinearAxes {
-  float x;
-  float y;
-  float z;
-};
-struct AngleAxes {
-  float roll;
-  float pitch;
-  float yaw;
-};
-typedef LinearAxes AccelerationSample;   // m/s2
-typedef AngleAxes AngularVelocitySample; // deg/s
-typedef uint32_t SequenceNumber;
-struct IMUSample {
-  AccelerationSample a;
-  AngularVelocitySample w;
-  SequenceNumber seq;
-};
 
 class IMUSensorPort {
 protected:

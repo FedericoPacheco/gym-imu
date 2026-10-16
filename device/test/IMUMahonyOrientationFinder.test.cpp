@@ -1,5 +1,5 @@
 #include "IMUSampleCsv.hpp"
-#include "IMUSensorPort.hpp"
+#include "Types.hpp"
 #include <Constants.hpp>
 #include <IMUMahonyOrientationFinder.hpp>
 #include <array>

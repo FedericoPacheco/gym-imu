@@ -1,7 +1,5 @@
 #pragma once
-#include <IMUSensorPort.hpp>
-
-typedef AngleAxes EulerOrientationSample; // deg
+#include <Types.hpp>
 
 /*
 Both Euler angles and Quaternions could be made to implement a common interface

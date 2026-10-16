@@ -1,8 +1,8 @@
 #pragma once
 
 #include <Constants.hpp>
-#include <IMUSensorPort.hpp>
 #include <Pipe.hpp>
+#include <Types.hpp>
 #include <gmock/gmock.h>
 
 class PipeDouble : public Pipe<IMUSample, SAMPLING_PIPE_SIZE> {

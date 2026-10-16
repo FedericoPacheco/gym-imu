@@ -70,9 +70,14 @@ extern "C" void app_main() {
   auto imuI2CPort = std::make_unique<I2CReal>();
   auto imuRunner = std::make_unique<FreeRTOSNotificationRunner>(
       "readTask", IMU_READ_TASK_STACK_SIZE, IMU_READ_TASK_PRIORITY);
+#ifdef PROCESS_SIGNAL
+  const bool useHWLowPassFilter = true;
+#else
+  const bool useHWLowPassFilter = false;
+#endif
   IMUSensorPort *imu = MPU6050Sensor::getInstance(
-      &imuLogger, samplingPipe, std::move(imuMPUPort), std::move(imuI2CPort),
-      std::move(imuRunner));
+      &imuLogger, samplingPipe, SAMPLING_FREQUENCY_HZ, useHWLowPassFilter,
+      std::move(imuMPUPort), std::move(imuI2CPort), std::move(imuRunner));
   if (imu == nullptr) {
     imuLogger.error("Failed to initialize MPU6050 sensor");
     return;

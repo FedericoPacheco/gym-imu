@@ -42,6 +42,8 @@ struct MPU6050SensorDependencies {
   std::unique_ptr<testing::NiceMock<MPUDouble>> sensor;
   std::unique_ptr<testing::NiceMock<I2CDouble>> i2c;
   std::unique_ptr<NotificationRunner> runner;
+  bool useHWLowPassFilter;
+  int samplingFrequencyHz;
 };
 MPU6050SensorDependencies buildDefaultDependencies() {
   MPU6050Sensor::resetInstanceForTests();
@@ -62,6 +64,8 @@ MPU6050SensorDependencies buildDefaultDependencies() {
   deps.sensor = std::make_unique<testing::NiceMock<MPUDouble>>();
   deps.i2c = std::make_unique<testing::NiceMock<I2CDouble>>();
   deps.runner = std::make_unique<DeterministicNotificationRunner>();
+  deps.useHWLowPassFilter = true;
+  deps.samplingFrequencyHz = 30;
 
   ON_CALL(*deps.i2c, begin(_, _, _, _, _)).WillByDefault(Return(ESP_OK));
 
@@ -92,9 +96,9 @@ MPU6050SensorDependencies buildDefaultDependencies() {
   return deps;
 }
 MPU6050Sensor *getInstanceWith(MPU6050SensorDependencies &&deps) {
-  return MPU6050Sensor::getInstance(&logger, deps.pipe, std::move(deps.sensor),
-                                    std::move(deps.i2c),
-                                    std::move(deps.runner));
+  return MPU6050Sensor::getInstance(
+      &logger, deps.pipe, deps.samplingFrequencyHz, deps.useHWLowPassFilter,
+      std::move(deps.sensor), std::move(deps.i2c), std::move(deps.runner));
 }
 
 esp_err_t fillDeterministicFIFOPacket(size_t length, uint8_t *data) {
@@ -175,7 +179,6 @@ TEST(MPU6050Sensor_getInstance, ReturnsNullWhenSettingGyroscopeScaleFails) {
   EXPECT_EQ(getInstanceWith(std::move(deps)), nullptr);
 }
 
-#ifdef PROCESS_SIGNAL
 TEST(MPU6050Sensor_getInstance, ReturnsNullWhenSettingLowPassFilterFails) {
   auto deps = buildDefaultDependencies();
   EXPECT_CALL(*deps.sensor, setDigitalLowPassFilter(mpud::DLPF_42HZ))
@@ -190,7 +193,6 @@ TEST(MPU6050Sensor_getInstance, ReturnsNullWhenConfiguringFIFOFails) {
 
   EXPECT_EQ(getInstanceWith(std::move(deps)), nullptr);
 }
-#endif
 
 TEST(MPU6050Sensor_getInstance, ReturnsNullWhenEnablingFIFOFails) {
   auto deps = buildDefaultDependencies();

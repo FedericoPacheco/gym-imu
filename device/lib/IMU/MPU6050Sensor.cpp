@@ -5,20 +5,23 @@ MPU6050Sensor::InstanceState MPU6050Sensor::instanceState = {};
 MPU6050Sensor::MPU6050Sensor(
     LoggerPort *logger,
     std::shared_ptr<Pipe<IMUSample, SAMPLING_PIPE_SIZE>> pipe,
+    int samplingFrequencyHz, bool useHWLowPassFilter,
     std::unique_ptr<MPUPort> sensor, std::unique_ptr<I2CPort> i2c,
     std::unique_ptr<NotificationRunner> runner, gpio_num_t INTPin,
-    gpio_num_t SDAPin, gpio_num_t SCLPin, int samplingFrequencyHz)
+    gpio_num_t SDAPin, gpio_num_t SCLPin)
     : logger(logger), pipe(pipe), sensor(std::move(sensor)),
       bus(std::move(i2c)), runner(std::move(runner)), INTPin(INTPin),
-      SDAPin(SDAPin), SCLPin(SCLPin), samplingFrequencyHz(samplingFrequencyHz) {
-}
+      SDAPin(SDAPin), SCLPin(SCLPin), samplingFrequencyHz(samplingFrequencyHz),
+      useHWLowPassFilter(useHWLowPassFilter) {}
 
-std::unique_ptr<MPU6050Sensor> MPU6050Sensor::create(
-    LoggerPort *logger,
-    std::shared_ptr<Pipe<IMUSample, SAMPLING_PIPE_SIZE>> pipe,
-    std::unique_ptr<MPUPort> sensor, std::unique_ptr<I2CPort> i2c,
-    std::unique_ptr<NotificationRunner> runner, gpio_num_t INTPin,
-    gpio_num_t SDAPin, gpio_num_t SCLPin, int samplingFrequencyHz) {
+std::unique_ptr<MPU6050Sensor>
+MPU6050Sensor::create(LoggerPort *logger,
+                      std::shared_ptr<Pipe<IMUSample, SAMPLING_PIPE_SIZE>> pipe,
+                      int samplingFrequencyHz, bool useHWLowPassFilter,
+                      std::unique_ptr<MPUPort> sensor,
+                      std::unique_ptr<I2CPort> i2c,
+                      std::unique_ptr<NotificationRunner> runner,
+                      gpio_num_t INTPin, gpio_num_t SDAPin, gpio_num_t SCLPin) {
 
   if (!logger)
     return nullptr;
@@ -42,8 +45,8 @@ std::unique_ptr<MPU6050Sensor> MPU6050Sensor::create(
 
   // nothrow: in case of failure, return nullptr instead of throwing
   std::unique_ptr<MPU6050Sensor> imu(new (std::nothrow) MPU6050Sensor(
-      logger, pipe, std::move(sensor), std::move(i2c), std::move(runner),
-      INTPin, SDAPin, SCLPin, samplingFrequencyHz));
+      logger, pipe, samplingFrequencyHz, useHWLowPassFilter, std::move(sensor),
+      std::move(i2c), std::move(runner), INTPin, SDAPin, SCLPin));
 
   if (!imu) {
     logger->error("Failed to allocate MPU6050Sensor");
@@ -78,9 +81,10 @@ std::unique_ptr<MPU6050Sensor> MPU6050Sensor::create(
 MPU6050Sensor *MPU6050Sensor::getInstance(
     LoggerPort *logger,
     std::shared_ptr<Pipe<IMUSample, SAMPLING_PIPE_SIZE>> pipe,
+    int samplingFrequencyHz, bool useHWLowPassFilter,
     std::unique_ptr<MPUPort> sensor, std::unique_ptr<I2CPort> i2c,
     std::unique_ptr<NotificationRunner> runner, gpio_num_t INTPin,
-    gpio_num_t SDAPin, gpio_num_t SCLPin, int samplingFrequencyHz) {
+    gpio_num_t SDAPin, gpio_num_t SCLPin) {
 
   // Protect instance creation with a mutex to ensure thread safety
   if (MPU6050Sensor::instanceState.semaphoreHandle == nullptr) {
@@ -99,8 +103,9 @@ MPU6050Sensor *MPU6050Sensor::getInstance(
                         portMAX_DELAY) == pdTRUE) {
     if (!MPU6050Sensor::instanceState.instance)
       MPU6050Sensor::instanceState.instance = MPU6050Sensor::create(
-          logger, pipe, std::move(sensor), std::move(i2c), std::move(runner),
-          INTPin, SDAPin, SCLPin, samplingFrequencyHz);
+          logger, pipe, samplingFrequencyHz, useHWLowPassFilter,
+          std::move(sensor), std::move(i2c), std::move(runner), INTPin, SDAPin,
+          SCLPin);
     rtosSemaphoreGive(MPU6050Sensor::instanceState.semaphoreHandle);
   }
   return MPU6050Sensor::instanceState.instance.get();
@@ -205,11 +210,11 @@ bool MPU6050Sensor::configureSettings() {
       this->sensor->setGyroFullScale(MPU6050Sensor::GYROSCOPE_SCALE),
       this->logger, "Failed to set gyroscope scale");
 
-#ifdef PROCESS_SIGNAL
-  RETURN_FALSE_ON_ESP_ERROR(
-      this->sensor->setDigitalLowPassFilter(MPU6050Sensor::DLPF_CONFIG),
-      this->logger, "Failed to set digital low pass filter");
-#endif
+  if (this->useHWLowPassFilter) {
+    RETURN_FALSE_ON_ESP_ERROR(
+        this->sensor->setDigitalLowPassFilter(MPU6050Sensor::DLPF_CONFIG),
+        this->logger, "Failed to set digital low pass filter");
+  }
 
   return true;
 }

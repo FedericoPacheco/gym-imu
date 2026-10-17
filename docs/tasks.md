@@ -23,11 +23,10 @@ Other rules:
 
 ### In Progress
 
-- Organize test files in subdirectories.
+- Extract logic from SignalProcessor header to separate .cpp file.
 
 ### Next
 
-- Extract logic from SignalProcessor header to separate .cpp file.
 - Add visual indicative of the device status (initializing, recording, etc.) using the LED mounted on the device.
 - Update readme stating the current state of signal processing on the firmware and merge branch.
 
@@ -143,3 +142,4 @@ they are more prone to become outdated/stale.
 - Implement velocity estimation (trapezoidal integration, ZUPTs when stationary, velocity hold when zero acceleration) on the device.
 - Allow interchangable BLE transmission of raw and processed samples.
 - Organize device's signal processing classes in subdirectories.
+- Organize test files in subdirectories.

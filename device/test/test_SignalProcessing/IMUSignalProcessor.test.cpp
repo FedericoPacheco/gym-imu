@@ -1,4 +1,5 @@
 #include "doubles/LoggerDouble.hpp"
+#include "doubles/FreeRTOSDouble.hpp"
 #include "doubles/PipesDoubles.hpp"
 #include <DeterministicLoopRunner.hpp>
 #include <IMUGravityRemover.hpp>
@@ -85,6 +86,11 @@ IMUSignalProcessorDependencies buildDefaultDependencies() {
 }
 IMUSignalProcessor *getInstanceWith(IMUSignalProcessorDependencies &&deps) {
   IMUSignalProcessor::resetInstanceForTests();
+  resetFreeRTOSPortFakes();
+  rtosCreateMutexStatic_fake.return_val =
+      reinterpret_cast<SemaphoreHandle_t>(0x1);
+  rtosSemaphoreTake_fake.return_val = pdTRUE;
+  rtosSemaphoreGive_fake.return_val = pdTRUE;
   return IMUSignalProcessor::getInstance(
       deps.inputPipe, deps.outputPipe, std::move(deps.runner), &logger,
       std::move(deps.calibrator), std::move(deps.noiseReducer),

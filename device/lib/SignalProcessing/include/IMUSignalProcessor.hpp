@@ -1,4 +1,5 @@
 #pragma once
+#include <Auxiliary/Quaternion.hpp>
 #include <Constants.hpp>
 #include <IMUCalibrator.hpp>
 #include <IMUGravityRemover.hpp>
@@ -8,7 +9,6 @@
 #include <LoggerPort.hpp>
 #include <LoopRunner.hpp>
 #include <Pipe.hpp>
-#include <Quaternion.hpp>
 #include <Types.hpp>
 #include <atomic>
 #include <memory>

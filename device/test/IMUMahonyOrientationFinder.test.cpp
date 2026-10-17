@@ -1,7 +1,7 @@
 #include "IMUSampleCsv.hpp"
 #include "Types.hpp"
+#include <3-Orientation/IMUMahonyOrientationFinder.hpp>
 #include <Constants.hpp>
-#include <IMUMahonyOrientationFinder.hpp>
 #include <array>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>

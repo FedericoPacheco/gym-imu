@@ -1,7 +1,7 @@
 #pragma once
+#include <Auxiliary/Quaternion.hpp>
 #include <Constants.hpp>
 #include <IMUGravityRemover.hpp>
-#include <Quaternion.hpp>
 
 class IMUQuaternionGravityRemover : public IMUGravityRemover<Quaternion> {
 public:

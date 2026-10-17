@@ -1,9 +1,9 @@
 #include "Constants.hpp"
+#include <Auxiliary/MathUtils.hpp>
+#include <Auxiliary/Quaternion.hpp>
 #include <IMUOrientationFinder.hpp>
-#include <IMUWindowedStationaryDetector.hpp>
-#include <Quaternion.hpp>
+#include <StationaryDetection/IMUWindowedStationaryDetector.hpp>
 #include <array>
-#include <mathUtils.hpp>
 #include <numbers>
 
 class IMUMahonyOrientationFinder : public IMUOrientationFinder<Quaternion> {

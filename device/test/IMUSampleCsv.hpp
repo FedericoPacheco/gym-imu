@@ -2,7 +2,7 @@
 
 #include "IMUSignalProcessor.hpp"
 #include "Types.hpp"
-#include <Quaternion.hpp>
+#include <Auxiliary/Quaternion.hpp>
 #include <cmath>
 #include <filesystem>
 #include <fstream>

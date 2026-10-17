@@ -1,6 +1,8 @@
+// #include
+// "../lib/SignalProcessing/4-GravityRemoval/IMUEulerGravityRemover.hpp"
+#include "4-GravityRemoval/IMUEulerGravityRemover.hpp"
 #include "IMUSampleCsv.hpp"
 #include "Types.hpp"
-#include <IMUEulerGravityRemover.hpp>
 #include <array>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>

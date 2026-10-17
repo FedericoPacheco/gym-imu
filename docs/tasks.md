@@ -23,10 +23,12 @@ Other rules:
 
 ### In Progress
 
-- Define transmission packet format explictly and write some form of encoder on the device and a decoder on the ble python client.
+- Organize test files in subdirectories.
 
 ### Next
 
+- Extract logic from SignalProcessor header to separate .cpp file.
+- Add visual indicative of the device status (initializing, recording, etc.) using the LED mounted on the device.
 - Update readme stating the current state of signal processing on the firmware and merge branch.
 
 ### Backlog
@@ -35,6 +37,7 @@ Other rules:
 - Implement a repetition detection algorithm on a jupyter notebook and evaluate it on real captures, comparing it against video references.
 - Fine tune BLE transmission parameters, pipe sizes, and task priorities/ISR behaviors, and other relevant system parameters to optimize for throughput after completing basic signal processing pipeline on device. Consider low passing + decimation in case the radio can't keep up.
 
+- Define BLE packet format explicitly to support multiple types. Write some form of encoder on the device and a decoder on the ble python client.
 - Perform spectral analysis to diagnose aliasing. Provide a recommendation of minimum sampling frequency.
 - Extract control logic from `src/main.cpp` to separate class.
 - Read EPS-IDF docs (<https://docs.espressif.com/projects/esp-idf/en/stable/esp32/api-guides/ble/index.html#security>) and add basic security to BLE class.
@@ -139,3 +142,4 @@ they are more prone to become outdated/stale.
 - Implement gravity removal with quaternions on the device.
 - Implement velocity estimation (trapezoidal integration, ZUPTs when stationary, velocity hold when zero acceleration) on the device.
 - Allow interchangable BLE transmission of raw and processed samples.
+- Organize device's signal processing classes in subdirectories.

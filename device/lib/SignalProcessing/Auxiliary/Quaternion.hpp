@@ -2,7 +2,7 @@
 // #include "esp_dsp.h"
 // TODO: configure ESP-DSP to use optimized routines for
 // the ESP32 S3 when I finally switch from the C3
-#include "mathUtils.hpp"
+#include "Auxiliary/MathUtils.hpp"
 #include <algorithm>
 #include <array>
 #include <cmath>

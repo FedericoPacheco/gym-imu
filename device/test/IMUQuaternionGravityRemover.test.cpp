@@ -1,6 +1,6 @@
 #include "IMUSampleCsv.hpp"
 #include "Types.hpp"
-#include <IMUQuaternionGravityRemover.hpp>
+#include <4-GravityRemoval/IMUQuaternionGravityRemover.hpp>
 #include <array>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>

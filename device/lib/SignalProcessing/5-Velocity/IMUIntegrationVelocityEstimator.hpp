@@ -1,7 +1,7 @@
 #pragma once
+#include <Auxiliary/Quaternion.hpp>
 #include <IMUVelocityEstimator.hpp>
-#include <IMUWindowedStationaryDetector.hpp>
-#include <Quaternion.hpp>
+#include <StationaryDetection/IMUWindowedStationaryDetector.hpp>
 #include <Types.hpp>
 
 class IMUIntegrationVelocityEstimator : public IMUVelocityEstimator {

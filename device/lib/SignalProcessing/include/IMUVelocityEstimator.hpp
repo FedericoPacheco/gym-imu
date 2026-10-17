@@ -1,6 +1,6 @@
 #pragma once
+#include <Auxiliary/Quaternion.hpp>
 #include <IMUSensorPort.hpp>
-#include <Quaternion.hpp>
 
 typedef LinearAxes VelocitySample; // m/s
 
@@ -12,6 +12,7 @@ protected:
 public:
   virtual ~IMUVelocityEstimator() = default;
 
-  virtual VelocitySample estimate(IMUSample &sample, Quaternion &orientation) = 0;
+  virtual VelocitySample estimate(IMUSample &sample,
+                                  Quaternion &orientation) = 0;
   virtual void reset() = 0;
 };

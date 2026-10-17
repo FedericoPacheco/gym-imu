@@ -1,7 +1,7 @@
 #pragma once
 #include <Constants.hpp>
 #include <IMUOrientationFinder.hpp>
-#include <MPU6050InstantaneousStationaryDetector.hpp>
+#include <StationaryDetection/MPU6050InstantaneousStationaryDetector.hpp>
 #include <numbers>
 
 /*

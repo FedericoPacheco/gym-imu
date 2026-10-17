@@ -23,11 +23,10 @@ Other rules:
 
 ### In Progress
 
-- Extract logic from SignalProcessor header to separate .cpp file.
+- Add visual indicative of the device status (initializing, recording, etc.) using the LED mounted on the device.
 
 ### Next
 
-- Add visual indicative of the device status (initializing, recording, etc.) using the LED mounted on the device.
 - Update readme stating the current state of signal processing on the firmware and merge branch.
 
 ### Backlog
@@ -143,3 +142,4 @@ they are more prone to become outdated/stale.
 - Allow interchangable BLE transmission of raw and processed samples.
 - Organize device's signal processing classes in subdirectories.
 - Organize test files in subdirectories.
+- Extract logic from SignalProcessor header to separate .cpp file.

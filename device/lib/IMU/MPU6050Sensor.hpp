@@ -128,4 +128,5 @@ private:
   IMUSample toIMUSample(mpud::raw_axes_t aRaw, mpud::raw_axes_t wRaw);
   void setNextSeq();
   uint32_t getNextSeq();
+  void resetNextSeq();
 };

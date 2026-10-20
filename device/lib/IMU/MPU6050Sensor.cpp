@@ -448,6 +448,9 @@ inline void MPU6050Sensor::setNextSeq() {
 inline uint32_t MPU6050Sensor::getNextSeq() {
   return this->nextSeq.load(std::memory_order_relaxed);
 }
+inline void MPU6050Sensor::resetNextSeq() {
+  this->nextSeq.store(0, std::memory_order_relaxed);
+}
 
 std::optional<IMUSample> MPU6050Sensor::readSync() {
   mpud::raw_axes_t aRaw, wRaw;
@@ -472,4 +475,5 @@ void MPU6050Sensor::beginAsync() {
 void MPU6050Sensor::stopAsync() {
   this->logger->info("Stopping async reading");
   this->setDoRead(false);
+  this->resetNextSeq();
 }

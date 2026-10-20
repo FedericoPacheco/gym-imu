@@ -16,8 +16,16 @@
 #include <memory>
 #include <ports/FreeRTOS/FreeRTOSPort.hpp>
 
+// TODO: make sampleCount atomic
+
 class IMUSignalProcessor {
 public:
+  enum class State {
+    IDLE,
+    INITIALIZING,
+    PROCESSING,
+  };
+
   static IMUSignalProcessor *getInstance(
       std::shared_ptr<Pipe<IMUSample, SAMPLING_PIPE_SIZE>> inputPipe,
       std::shared_ptr<Pipe<ProcessedSample, TRANSMISSION_PIPE_SIZE>> outputPipe,
@@ -37,6 +45,7 @@ public:
 
   void beginProcessing();
   void stopProcessing();
+  State getState();
 
 private:
   std::shared_ptr<Pipe<IMUSample, SAMPLING_PIPE_SIZE>> inputPipe;
@@ -60,6 +69,7 @@ private:
   static InstanceState instanceState;
 
   std::atomic<bool> doProcess{false};
+  std::atomic<State> state{State::IDLE};
 
   static std::unique_ptr<IMUSignalProcessor> create(
       std::shared_ptr<Pipe<IMUSample, SAMPLING_PIPE_SIZE>> inputPipe,
@@ -85,5 +95,6 @@ private:
 
   void setDoProcess(bool value);
   bool getDoProcess();
+  void setState(State state);
   static void processingLoopFunction(void *arg);
 };

@@ -1,3 +1,4 @@
+#include "include/IMUSignalProcessor.hpp"
 #include <IMUSignalProcessor.hpp>
 
 IMUSignalProcessor::InstanceState IMUSignalProcessor::instanceState{};
@@ -50,6 +51,7 @@ IMUSignalProcessor::~IMUSignalProcessor() {
   this->logger->info("Shutting down Signal processor");
 
   this->setDoProcess(false);
+  this->setState(IMUSignalProcessor::State::IDLE);
 
   if (this->runner) {
     this->runner->stop();
@@ -61,9 +63,13 @@ IMUSignalProcessor::~IMUSignalProcessor() {
 void IMUSignalProcessor::beginProcessing() {
   this->sampleCount = 0;
   this->setDoProcess(true);
+  this->setState(IMUSignalProcessor::State::INITIALIZING);
 }
 
-void IMUSignalProcessor::stopProcessing() { this->setDoProcess(false); }
+void IMUSignalProcessor::stopProcessing() {
+  this->setDoProcess(false);
+  this->setState(IMUSignalProcessor::State::IDLE);
+}
 
 std::unique_ptr<IMUSignalProcessor> IMUSignalProcessor::create(
     std::shared_ptr<Pipe<IMUSample, SAMPLING_PIPE_SIZE>> inputPipe,
@@ -147,9 +153,14 @@ IMUSignalProcessor::IMUSignalProcessor(
 void IMUSignalProcessor::setDoProcess(bool value) {
   this->doProcess.store(value, std::memory_order_relaxed);
 }
-
 bool IMUSignalProcessor::getDoProcess() {
   return this->doProcess.load(std::memory_order_relaxed);
+}
+void IMUSignalProcessor::setState(State state) {
+  this->state.store(state, std::memory_order_relaxed);
+}
+IMUSignalProcessor::State IMUSignalProcessor::getState() {
+  return this->state.load(std::memory_order_relaxed);
 }
 
 void IMUSignalProcessor::processingLoopFunction(void *arg) {
@@ -164,6 +175,7 @@ void IMUSignalProcessor::processingLoopFunction(void *arg) {
     self->calibrator->reset();
     self->orientationFinder->reset();
     self->velocityEstimator->reset();
+    self->setState(IMUSignalProcessor::State::IDLE);
     return;
   }
 
@@ -185,6 +197,10 @@ void IMUSignalProcessor::processingLoopFunction(void *arg) {
     self->calibrator->initialize(sample);
     self->orientationFinder->initialize(sample);
     return;
+  }
+
+  if (self->getState() == IMUSignalProcessor::State::INITIALIZING) {
+    self->setState(IMUSignalProcessor::State::PROCESSING);
   }
 
   self->calibrator->calibrate(sample);

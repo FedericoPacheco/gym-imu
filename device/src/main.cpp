@@ -148,19 +148,19 @@ extern "C" void app_main() {
   button->enableAsync();
   while (true) {
     vTaskDelay(pdMS_TO_TICKS(250));
+
     // Toggle sampling when user presses button, but only if a client is
     // connected
+    // TODO: improve isConnected()
     if (button->wasPressedAsync() && ble->isConnected()) {
       doSample = !doSample;
       if (doSample) {
-        led->turnOn();
         imu->beginAsync();
 #ifdef PROCESS_SIGNAL
         processor->beginProcessing();
 #endif
         ble->beginTransmission();
       } else {
-        led->turnOff();
         imu->stopAsync();
 #ifdef PROCESS_SIGNAL
         processor->stopProcessing();
@@ -180,16 +180,38 @@ extern "C" void app_main() {
 #endif
       }
     }
+
     // Stop sampling if BLE gets disconnected
     if (doSample && !ble->isConnected()) {
       doSample = false;
-      led->turnOff();
       imu->stopAsync();
 #ifdef PROCESS_SIGNAL
       processor->stopProcessing();
 #endif
       ble->stopTransmission();
     }
+
+// Provide visual feedback to the user
+#ifdef PROCESS_SIGNAL
+    // Callbacks or events weren't used for simplicity
+    switch (processor->getState()) {
+    case IMUSignalProcessor::State::IDLE:
+      led->turnOff();
+      break;
+    case IMUSignalProcessor::State::INITIALIZING:
+      led->blink();
+      break;
+    case IMUSignalProcessor::State::PROCESSING:
+      led->turnOn();
+      break;
+    }
+#else
+    if (doSample) {
+      led->turnOn();
+    } else {
+      led->turnOff();
+    }
+#endif
   }
   button->disableAsync();
 }

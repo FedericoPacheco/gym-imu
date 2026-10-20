@@ -8,8 +8,6 @@
 #include <ports/ESP-IDF/ESPIDFPort.hpp>
 #include <ports/FreeRTOS/FreeRTOSPort.hpp>
 
-// TODO: code review, wire up to main, and test on device
-
 class LED {
 public:
   enum class State { OFF, ON, BLINKING };

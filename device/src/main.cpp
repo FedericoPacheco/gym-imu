@@ -43,8 +43,10 @@ extern "C" void app_main() {
   */
   gpio_install_isr_service(0);
 
-  UARTLogger ledLogger("LED", LogLevel::WARN);
-  std::unique_ptr<LED> led = LED::create(&ledLogger);
+  auto ledRunner = std::make_unique<FreeRTOSLoopRunner>(
+      "ledTask", LED_TASK_STACK_SIZE, LED_TASK_PRIORITY, pdMS_TO_TICKS(100));
+  UARTLogger ledLogger("LED", LogLevel::DEBUG);
+  std::unique_ptr<LED> led = LED::create(std::move(ledRunner), &ledLogger);
   if (led == nullptr) {
     ledLogger.error("Failed to initialize LED");
     return;
@@ -145,19 +147,20 @@ extern "C" void app_main() {
   bool doSample = false;
   button->enableAsync();
   while (true) {
-    vTaskDelay(pdMS_TO_TICKS(500));
+    vTaskDelay(pdMS_TO_TICKS(250));
     // Toggle sampling when user presses button, but only if a client is
     // connected
     if (button->wasPressedAsync() && ble->isConnected()) {
       doSample = !doSample;
-      led->toggle();
       if (doSample) {
+        led->turnOn();
         imu->beginAsync();
 #ifdef PROCESS_SIGNAL
         processor->beginProcessing();
 #endif
         ble->beginTransmission();
       } else {
+        led->turnOff();
         imu->stopAsync();
 #ifdef PROCESS_SIGNAL
         processor->stopProcessing();

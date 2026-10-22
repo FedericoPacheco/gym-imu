@@ -23,7 +23,7 @@ Other rules:
 
 ### In Progress
 
-- Make the device transmit remaining samples after stopping correctly instead of discarding them. Allow for multiple recording rounds safely.
+- Extract control logic from `src/main.cpp` to separate class.
 
 ### Next
 
@@ -37,7 +37,6 @@ Other rules:
 
 - Define BLE packet format explicitly to support multiple types. Write some form of encoder on the device and a decoder on the ble python client.
 - Perform spectral analysis to diagnose aliasing. Provide a recommendation of minimum sampling frequency.
-- Extract control logic from `src/main.cpp` to separate class.
 - Read EPS-IDF docs (<https://docs.espressif.com/projects/esp-idf/en/stable/esp32/api-guides/ble/index.html#security>) and add basic security to BLE class.
 - Create hardware-in-the-loop tests sending commands to the device through serial and verifying readings transmitted through BLE.
 - Avoid dynamic memory allocation to better address memory usage on the device.
@@ -144,3 +143,4 @@ they are more prone to become outdated/stale.
 - Organize test files in subdirectories.
 - Extract logic from SignalProcessor header to separate .cpp file.
 - Add visual indicative of the device status (initializing, recording, etc.) using the LED mounted on the device.
+- Make the device transmit remaining samples after stopping correctly instead of discarding them. Allow for multiple recording rounds safely.

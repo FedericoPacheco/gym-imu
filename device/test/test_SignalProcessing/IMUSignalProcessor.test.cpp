@@ -203,4 +203,35 @@ TEST(IMUSignalProcessor_processingLoopFunction,
   IMUSignalProcessor::resetInstanceForTests();
 }
 
+TEST(IMUSignalProcessor_processingLoopFunction,
+     ShouldntStopWithoutBeginningFirst) {
+  auto deps = buildDefaultDependencies();
+  auto runnerRaw = static_cast<DeterministicLoopRunner *>(deps.runner.get());
+  auto *processor = getInstanceWith(std::move(deps));
+
+  processor->requestStopProcessing();
+  runnerRaw->runOneStep();
+
+  ASSERT_EQ(rtosTaskNotify_fake.call_count, 0u);
+
+  IMUSignalProcessor::resetInstanceForTests();
+}
+
+TEST(IMUSignalProcessor_processingLoopFunction,
+     AcknowledgesStopAfterFinishingProcessing) {
+  auto deps = buildDefaultDependencies();
+  auto runnerRaw = static_cast<DeterministicLoopRunner *>(deps.runner.get());
+  auto *processor = getInstanceWith(std::move(deps));
+
+  EXPECT_CALL(*deps.inputPipe, pop(false)).WillOnce(Return(std::nullopt));
+
+  processor->beginProcessing();
+  processor->requestStopProcessing();
+  runnerRaw->runOneStep();
+
+  ASSERT_EQ(rtosTaskNotify_fake.call_count, 1u);
+
+  IMUSignalProcessor::resetInstanceForTests();
+}
+
 } // namespace

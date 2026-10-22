@@ -23,9 +23,6 @@
 #include <esp_system.h>
 #include <memory>
 
-// TODO: test changes on the pipeline on the device and write unit tests to
-// attempt to discover issues
-
 /*
 Configure firmware settings: pio run -t menuconfig
 

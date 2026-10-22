@@ -120,6 +120,13 @@ void connectClient() {
   dispatchGAPEvent(event);
 }
 
+void disconnectClient() {
+  ble_gap_event event = {};
+  event.type = BLE_GAP_EVENT_DISCONNECT;
+  event.connect.conn_handle = BLE_HS_CONN_HANDLE_NONE;
+  dispatchGAPEvent(event);
+}
+
 void subscribeClientToImuCharacteristic() {
   ble_gap_event event = {};
   event.type = BLE_GAP_EVENT_SUBSCRIBE;
@@ -451,6 +458,77 @@ TEST(BLE_transmitLoopFunction, SendsOneNotificationWhenNotificationFails) {
   instance->requestStopTransmission();
 
   EXPECT_EQ(nimbleGattServerNotifyCustom_fake.call_count, 1u);
+}
+
+TEST(BLE_transmitLoopFunction, SendsAcknowlgementWhenFinishingTransmission) {
+  auto deps = buildDefaultDependencies();
+  auto *runnerRaw =
+      static_cast<DeterministicLoopRunner *>(deps.transmitRunner.get());
+  auto *pipeRaw = deps.pipe.get();
+
+  EXPECT_CALL(*pipeRaw, itemsFilled())
+      .WillOnce(Return(static_cast<uint32_t>(TEST_BATCH_SIZE)))
+      .WillRepeatedly(Return(0));
+  EXPECT_CALL(*pipeRaw, pop(false))
+      .WillRepeatedly(Return(std::optional<IMUSample>(IMUSample{})));
+
+  TestBLE *instance = getInstanceWith(std::move(deps));
+  runStackSyncCallback();
+  connectClient();
+  subscribeClientToImuCharacteristic();
+  setBatchSizeToTestValue();
+  instance->beginTransmission();
+  runnerRaw->runOneStep();
+  instance->requestStopTransmission();
+  runnerRaw->runOneStep();
+
+  ASSERT_EQ(rtosTaskNotify_fake.call_count, 1u);
+}
+
+TEST(
+    BLE_transmitLoopFunction,
+    SendsAcknowledgementWhenFinishingEvenIfClientDisconnectsDiscardingRemainingSamples) {
+  auto deps = buildDefaultDependencies();
+  auto *runnerRaw =
+      static_cast<DeterministicLoopRunner *>(deps.transmitRunner.get());
+  auto *pipeRaw = deps.pipe.get();
+
+  EXPECT_CALL(*pipeRaw, itemsFilled())
+      .WillOnce(Return(static_cast<uint32_t>(TEST_BATCH_SIZE)))
+      .WillRepeatedly(Return(1));
+  EXPECT_CALL(*pipeRaw, pop(false))
+      .WillRepeatedly(Return(std::optional<IMUSample>(IMUSample{})));
+  EXPECT_CALL(*pipeRaw, empty()).Times(1);
+
+  TestBLE *instance = getInstanceWith(std::move(deps));
+  runStackSyncCallback();
+  connectClient();
+  subscribeClientToImuCharacteristic();
+  setBatchSizeToTestValue();
+  instance->beginTransmission();
+  runnerRaw->runOneStep();
+  disconnectClient();
+  instance->requestStopTransmission();
+  runnerRaw->runOneStep();
+
+  ASSERT_EQ(rtosTaskNotify_fake.call_count, 1u);
+}
+
+TEST(BLE_transmitLoopFunction, ShouldntStopWithoutBeginningFirst) {
+  auto deps = buildDefaultDependencies();
+  auto *runnerRaw =
+      static_cast<DeterministicLoopRunner *>(deps.transmitRunner.get());
+  auto *pipeRaw = deps.pipe.get();
+
+  TestBLE *instance = getInstanceWith(std::move(deps));
+  runStackSyncCallback();
+  connectClient();
+  subscribeClientToImuCharacteristic();
+
+  instance->requestStopTransmission();
+  runnerRaw->runOneStep();
+
+  ASSERT_EQ(rtosTaskNotify_fake.call_count, 0u);
 }
 
 } // namespace

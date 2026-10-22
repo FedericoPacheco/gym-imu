@@ -659,16 +659,18 @@ bool BLE<TransmittedSample>::isConnected() {
 template <typename TransmittedSample>
 void BLE<TransmittedSample>::beginTransmission() {
   this->logger->info("Starting BLE transmission");
-  this->setState(State::TRANSMITTING);
+  if (this->getState() == BLE<TransmittedSample>::State::IDLE)
+    this->setState(BLE<TransmittedSample>::State::TRANSMITTING);
 }
 template <typename TransmittedSample>
 void BLE<TransmittedSample>::requestStopTransmission() {
   this->logger->info("Stopping BLE transmission");
-  this->setState(State::DRAINING);
+  if (this->getState() == BLE<TransmittedSample>::State::TRANSMITTING)
+    this->setState(BLE<TransmittedSample>::State::DRAINING);
 }
 
 template <typename TransmittedSample>
-void BLE<TransmittedSample>::setState(State value) {
+void BLE<TransmittedSample>::setState(BLE<TransmittedSample>::State value) {
   this->state.store(value, std::memory_order_relaxed);
 }
 template <typename TransmittedSample>

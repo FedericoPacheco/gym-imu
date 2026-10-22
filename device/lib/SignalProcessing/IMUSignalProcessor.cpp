@@ -60,11 +60,15 @@ IMUSignalProcessor::~IMUSignalProcessor() {
 }
 
 void IMUSignalProcessor::beginProcessing() {
-  this->setState(IMUSignalProcessor::State::INITIALIZING);
+  if (this->getState() == IMUSignalProcessor::State::IDLE)
+    this->setState(IMUSignalProcessor::State::INITIALIZING);
 }
 
 void IMUSignalProcessor::requestStopProcessing() {
-  this->setState(IMUSignalProcessor::State::DRAINING);
+  auto currentState = this->getState();
+  if (currentState == IMUSignalProcessor::State::PROCESSING ||
+      currentState == IMUSignalProcessor::State::INITIALIZING)
+    this->setState(IMUSignalProcessor::State::DRAINING);
 }
 
 std::unique_ptr<IMUSignalProcessor> IMUSignalProcessor::create(

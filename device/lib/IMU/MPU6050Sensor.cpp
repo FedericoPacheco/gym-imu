@@ -480,13 +480,17 @@ std::optional<IMUSample> MPU6050Sensor::readSync() {
 
 void MPU6050Sensor::beginAsync() {
   this->logger->info("Starting async reading");
-  sensor->resetFIFO();
-  gpioIntrEnable(this->INTPin);
-  this->setState(IMUSensorPort::State::READING);
+  if (this->getState() == IMUSensorPort::State::IDLE) {
+    sensor->resetFIFO();
+    gpioIntrEnable(this->INTPin);
+    this->setState(IMUSensorPort::State::READING);
+  }
 }
 void MPU6050Sensor::requestStopAsync() {
   this->logger->info("Stopping async reading");
-  this->setState(IMUSensorPort::State::STOPPING);
-  gpioIntrDisable(this->INTPin);
-  this->runner->notify();
+  if (this->getState() == IMUSensorPort::State::READING) {
+    this->setState(IMUSensorPort::State::STOPPING);
+    gpioIntrDisable(this->INTPin);
+    this->runner->notify();
+  }
 }

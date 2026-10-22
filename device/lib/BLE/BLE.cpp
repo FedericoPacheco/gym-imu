@@ -12,13 +12,11 @@ template <typename TransmittedSample>
 BLE<TransmittedSample>::BLE(
     LoggerPort *logger,
     std::shared_ptr<Pipe<TransmittedSample, TRANSMISSION_PIPE_SIZE>> pipe,
-    std::unique_ptr<LoopRunner> transmitRunner)
+    std::unique_ptr<LoopRunner> transmitRunner, TaskHandle_t coordinator)
     : communicationState{}, logger(logger), imuCharacteristics{}, services{},
       bleTaskHandle(nullptr), transmitRunner(std::move(transmitRunner)),
-      pipe(pipe), primaryAdvertisingPacket{}, scanResponsePacket{},
-      advertisingConfig{} {
-
-  this->setDoTransmit(false);
+      coordinator(coordinator), pipe(pipe), primaryAdvertisingPacket{},
+      scanResponsePacket{}, advertisingConfig{} {
 
   this->communicationState.mux = portMUX_INITIALIZER_UNLOCKED;
   this->communicationState.connectionHandle = BLE_HS_CONN_HANDLE_NONE;
@@ -31,11 +29,10 @@ BLE<TransmittedSample>::BLE(
 }
 
 template <typename TransmittedSample>
-std::unique_ptr<BLE<TransmittedSample>>
-BLE<TransmittedSample>::create(
+std::unique_ptr<BLE<TransmittedSample>> BLE<TransmittedSample>::create(
     LoggerPort *logger,
     std::shared_ptr<Pipe<TransmittedSample, TRANSMISSION_PIPE_SIZE>> pipe,
-    std::unique_ptr<LoopRunner> transmitRunner) {
+    std::unique_ptr<LoopRunner> transmitRunner, TaskHandle_t coordinator) {
 
   if (!logger) {
     return nullptr;
@@ -52,8 +49,8 @@ BLE<TransmittedSample>::create(
   }
 
   std::unique_ptr<BLE<TransmittedSample>> ble(
-      new (std::nothrow)
-          BLE<TransmittedSample>(logger, pipe, std::move(transmitRunner)));
+      new (std::nothrow) BLE<TransmittedSample>(
+          logger, pipe, std::move(transmitRunner), coordinator));
 
   if (!ble) {
     logger->error("BLE", "Failed to allocate memory for BLE instance");
@@ -95,7 +92,7 @@ template <typename TransmittedSample>
 BLE<TransmittedSample> *BLE<TransmittedSample>::getInstance(
     LoggerPort *logger,
     std::shared_ptr<Pipe<TransmittedSample, TRANSMISSION_PIPE_SIZE>> pipe,
-    std::unique_ptr<LoopRunner> transmitRunner) {
+    std::unique_ptr<LoopRunner> transmitRunner, TaskHandle_t coordinator) {
 
   // Protect instance creation with a mutex to ensure thread safety
   if (BLE<TransmittedSample>::instanceState.semaphoreHandle == nullptr) {
@@ -115,16 +112,15 @@ BLE<TransmittedSample> *BLE<TransmittedSample>::getInstance(
                         portMAX_DELAY) == pdTRUE) {
     if (!BLE<TransmittedSample>::instanceState.instance)
       BLE<TransmittedSample>::instanceState.instance =
-          BLE<TransmittedSample>::create(logger, pipe,
-                                         std::move(transmitRunner));
+          BLE<TransmittedSample>::create(
+              logger, pipe, std::move(transmitRunner), coordinator);
     rtosSemaphoreGive(BLE<TransmittedSample>::instanceState.semaphoreHandle);
   }
   return BLE<TransmittedSample>::instanceState.instance.get();
 }
 
-template <typename TransmittedSample>
-BLE<TransmittedSample>::~BLE() {
-  this->setDoTransmit(false);
+template <typename TransmittedSample> BLE<TransmittedSample>::~BLE() {
+  this->setState(BLE<TransmittedSample>::State::IDLE);
 
   if (this->transmitRunner)
     this->transmitRunner->stop();
@@ -260,8 +256,8 @@ bool BLE<TransmittedSample>::initializeGAP() {
   nimbleGapServiceInit();
 
   RETURN_FALSE_ON_NIMBLE_ERROR(
-      nimbleGapDeviceNameSet(BLE<TransmittedSample>::DEVICE_NAME),
-                               this->logger, "Failed to set device name");
+      nimbleGapDeviceNameSet(BLE<TransmittedSample>::DEVICE_NAME), this->logger,
+      "Failed to set device name");
 
   // Set how the device advertises itself to other devices
   RETURN_FALSE_ON_NIMBLE_ERROR(
@@ -277,8 +273,7 @@ bool BLE<TransmittedSample>::initializeGAP() {
 // https://freertos.org/Documentation/02-Kernel/04-API-references/04-RTOS-kernel-control/01-taskENTER_CRITICAL_taskEXIT_CRITICAL
 template <typename TransmittedSample>
 int BLE<TransmittedSample>::handleGAPEvent(ble_gap_event *event, void *arg) {
-  BLE<TransmittedSample> *self =
-      static_cast<BLE<TransmittedSample> *>(arg);
+  BLE<TransmittedSample> *self = static_cast<BLE<TransmittedSample> *>(arg);
 
   self->logger->debug("Received GAP event: %d", event->type);
 
@@ -299,12 +294,10 @@ int BLE<TransmittedSample>::handleGAPEvent(ble_gap_event *event, void *arg) {
           "Failed to negotiate MTU with client, using default (23 bytes)");
 
       struct ble_gap_upd_params connectionParameters = {
-          .itvl_min =
-              static_cast<uint16_t>(
-                  BLE<TransmittedSample>::CONNECTION_INTERVAL_MIN_MS / 1.25),
-          .itvl_max =
-              static_cast<uint16_t>(
-                  BLE<TransmittedSample>::CONNECTION_INTERVAL_MAX_MS / 1.25),
+          .itvl_min = static_cast<uint16_t>(
+              BLE<TransmittedSample>::CONNECTION_INTERVAL_MIN_MS / 1.25),
+          .itvl_max = static_cast<uint16_t>(
+              BLE<TransmittedSample>::CONNECTION_INTERVAL_MAX_MS / 1.25),
           .latency = BLE<TransmittedSample>::CONNECTION_PERIPHERAL_LATENCY,
           .supervision_timeout =
               BLE<TransmittedSample>::CONNECTION_SUPERVISION_TIMEOUT_MS / 10,
@@ -436,17 +429,15 @@ bool BLE<TransmittedSample>::initializeTasks() {
 
   this->logger->debug("Initializing BLE tasks");
 
-  if (!this->transmitRunner->start(
-          BLE<TransmittedSample>::transmitLoopFunction,
+  if (!this->transmitRunner->start(BLE<TransmittedSample>::transmitLoopFunction,
                                    static_cast<void *>(this))) {
     this->logger->error("Failed to create transmit task");
     return false;
   }
 
-  BaseType_t bleTaskResult =
-      rtosTaskCreate(BLE<TransmittedSample>::bleTask, "bleTask",
-                     BLE_TASK_STACK_SIZE, this,
-                     BLE_TASK_PRIORITY, &this->bleTaskHandle);
+  BaseType_t bleTaskResult = rtosTaskCreate(
+      BLE<TransmittedSample>::bleTask, "bleTask", BLE_TASK_STACK_SIZE, this,
+      BLE_TASK_PRIORITY, &this->bleTaskHandle);
   if (bleTaskResult != pdPASS) {
     this->logger->error("Failed to create BLE task");
     this->transmitRunner->stop();
@@ -458,8 +449,7 @@ bool BLE<TransmittedSample>::initializeTasks() {
 
 template <typename TransmittedSample>
 void BLE<TransmittedSample>::bleTask(void *arg) {
-  BLE<TransmittedSample> *self =
-      static_cast<BLE<TransmittedSample> *>(arg);
+  BLE<TransmittedSample> *self = static_cast<BLE<TransmittedSample> *>(arg);
 
   self->logger->debug("BLE task started");
 
@@ -468,10 +458,11 @@ void BLE<TransmittedSample>::bleTask(void *arg) {
 
 template <typename TransmittedSample>
 void BLE<TransmittedSample>::transmitLoopFunction(void *arg) {
-  BLE<TransmittedSample> *self =
-      static_cast<BLE<TransmittedSample> *>(arg);
-
+  BLE<TransmittedSample> *self = static_cast<BLE<TransmittedSample> *>(arg);
   if (!self)
+    return;
+
+  if (self->getState() == BLE<TransmittedSample>::State::IDLE)
     return;
 
   TransmittedSample
@@ -481,10 +472,6 @@ void BLE<TransmittedSample>::transmitLoopFunction(void *arg) {
 
   uint16_t characteristicHandle, connectionHandle, currentBatchSize;
   bool isSubscribed;
-
-  if (!self->getDoTransmit() && self->pipe->itemsFilled() == 0) {
-    return;
-  }
 
   // Sincronize access to shared variables
   rtosPortEnterCritical(&self->communicationState.mux);
@@ -496,54 +483,69 @@ void BLE<TransmittedSample>::transmitLoopFunction(void *arg) {
   currentBatchSize = self->communicationState.currentBatchSize;
   rtosPortExitCritical(&self->communicationState.mux);
 
-  if (characteristicHandle == 0) {
+  bool isValidCharacteristic = characteristicHandle != 0;
+  if (!isValidCharacteristic)
     self->logger->warn(
         "Can't send data: IMU Sample Characteristic handle is invalid");
-    return;
-  }
-  if (connectionHandle == BLE_HS_CONN_HANDLE_NONE) {
+  bool isValidConnection = connectionHandle != BLE_HS_CONN_HANDLE_NONE;
+  if (!isValidConnection)
     self->logger->warn("Can't send data: no connected client");
-    return;
-  }
-  if (!isSubscribed) {
+  if (!isSubscribed)
     self->logger->warn("Can't send data: client not subscribed to IMU sample "
                        "Characteristic");
-    return;
+
+  bool canTransmit = isValidCharacteristic && isValidConnection && isSubscribed;
+  if (canTransmit) {
+    while ((self->getState() == BLE<TransmittedSample>::State::TRANSMITTING &&
+            self->pipe->itemsFilled() >= currentBatchSize) ||
+           (self->getState() == BLE<TransmittedSample>::State::DRAINING &&
+            self->pipe->itemsFilled() > 0)) {
+      batchCount = 0;
+      while (batchCount < currentBatchSize) {
+        optionalBatchSample = self->pipe->pop(false);
+        if (!optionalBatchSample.has_value())
+          break;
+        batchSamples[batchCount] = optionalBatchSample.value();
+        batchCount++;
+      }
+
+      struct os_mbuf *nimbleBuffer = nimbleMbufFromFlat(
+          batchSamples, batchCount * sizeof(TransmittedSample));
+
+      if (nimbleBuffer == NULL) {
+        self->logger->error("Can't send data: no memory available for nimble "
+                            "buffer");
+        return;
+      }
+      // Broadcast notification with data to all connected clients. The
+      // buffer's memory is freed by nimble (no os_mbuf_free_chain() needed).
+      // Note: ble_gatts_notify() only notifies the client to later pull the
+      // data from the server, which I think is less efficient and more
+      // complicated than pushing directly
+      if (nimbleGattServerNotifyCustom(connectionHandle, characteristicHandle,
+                                       nimbleBuffer) != 0) {
+        self->logger->error("Failed to send IMU samples notification");
+        return;
+      }
+
+      self->logger->debug("Sent notification with %d IMU samples", batchCount);
+    }
   }
 
-  while ((self->getDoTransmit() &&
-          self->pipe->itemsFilled() >= currentBatchSize) ||
-         (!self->getDoTransmit() && self->pipe->itemsFilled() > 0)) {
-    batchCount = 0;
-    while (batchCount < currentBatchSize) {
-      optionalBatchSample = self->pipe->pop(false);
-      if (!optionalBatchSample.has_value()) {
-        break;
-      }
-      batchSamples[batchCount] = optionalBatchSample.value();
-      batchCount++;
+  // Notify that transmission of remaining samples has finished (previous loop
+  // should make self->pipe->itemsFilled() == 0 with a valid connection),
+  // provided that processing/sampling tasks were stopped by the coordinator. If
+  // the connection is lost and there are still items in the pipe, simply
+  // discard them.
+  if (self->getState() == BLE<TransmittedSample>::State::DRAINING) {
+    self->logger->debug("Notifying coordinator that transmission has finished");
+    if (!canTransmit && self->pipe->itemsFilled() > 0) {
+      self->logger->warn("Connection was lost, discarding %d remaining samples",
+                         self->pipe->itemsFilled());
+      self->pipe->empty();
     }
-
-    struct os_mbuf *nimbleBuffer = nimbleMbufFromFlat(
-        batchSamples, batchCount * sizeof(TransmittedSample));
-
-    if (nimbleBuffer == NULL) {
-      self->logger->error("Can't send data: no memory available for nimble "
-                          "buffer");
-      return;
-    }
-    // Broadcast notification with data to all connected clients. The
-    // buffer's memory is freed by nimble (no os_mbuf_free_chain() needed).
-    // Note: ble_gatts_notify() only notifies the client to later pull the
-    // data from the server, which I think is less efficient and more
-    // complicated than pushing directly
-    if (nimbleGattServerNotifyCustom(connectionHandle, characteristicHandle,
-                                     nimbleBuffer) != 0) {
-      self->logger->error("Failed to send IMU samples notification");
-      return;
-    }
-
-    self->logger->debug("Sent notification with %d IMU samples", batchCount);
+    self->setState(BLE<TransmittedSample>::State::IDLE);
+    rtosTaskNotify(self->coordinator, BLE::STOPPED_MASK, eSetBits);
   }
 }
 
@@ -599,8 +601,7 @@ bool BLE<TransmittedSample>::initializeAdvertising() {
   this->scanResponsePacket.tx_pwr_lvl_is_present = 1;
 
   // Appearance
-  this->scanResponsePacket.appearance =
-      BLE<TransmittedSample>::APPEARANCE;
+  this->scanResponsePacket.appearance = BLE<TransmittedSample>::APPEARANCE;
   this->scanResponsePacket.appearance_is_present = 1;
 
   // Address
@@ -658,21 +659,21 @@ bool BLE<TransmittedSample>::isConnected() {
 template <typename TransmittedSample>
 void BLE<TransmittedSample>::beginTransmission() {
   this->logger->info("Starting BLE transmission");
-  this->setDoTransmit(true);
+  this->setState(State::TRANSMITTING);
 }
 template <typename TransmittedSample>
-void BLE<TransmittedSample>::stopTransmission() {
+void BLE<TransmittedSample>::requestStopTransmission() {
   this->logger->info("Stopping BLE transmission");
-  this->setDoTransmit(false);
+  this->setState(State::DRAINING);
 }
 
 template <typename TransmittedSample>
-void BLE<TransmittedSample>::setDoTransmit(bool value) {
-  this->doTransmit.store(value, std::memory_order_relaxed);
+void BLE<TransmittedSample>::setState(State value) {
+  this->state.store(value, std::memory_order_relaxed);
 }
 template <typename TransmittedSample>
-bool BLE<TransmittedSample>::getDoTransmit() {
-  return this->doTransmit.load(std::memory_order_relaxed);
+BLE<TransmittedSample>::State BLE<TransmittedSample>::getState() {
+  return this->state.load(std::memory_order_relaxed);
 }
 
 template class BLE<IMUSample>;

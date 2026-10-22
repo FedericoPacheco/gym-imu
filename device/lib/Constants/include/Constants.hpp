@@ -1,14 +1,16 @@
 #pragma once
 
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <cstdint>
+#include <ports/FreeRTOS/FreeRTOSPort.hpp>
 
 inline constexpr float g = 9.80665f; // m/s²
 inline constexpr std::array<float, 3> G_W = {0.0f, 0.0f, -g};
 inline constexpr std::array<float, 3> G_W_UNIT = {0.0f, 0.0f, -1.0f};
 
-inline constexpr int SAMPLING_FREQUENCY_HZ = 100;
+inline constexpr int SAMPLING_FREQUENCY_HZ = 30; // 100;
 inline constexpr uint32_t INIT_TIME_SECONDS = 1;
 inline constexpr uint32_t INITIALIZATION_SAMPLES_COUNT =
     std::ceil(INIT_TIME_SECONDS * SAMPLING_FREQUENCY_HZ);
@@ -16,9 +18,11 @@ static constexpr float dt = 1.0f / SAMPLING_FREQUENCY_HZ;
 
 inline constexpr uint32_t SAMPLING_PIPE_SIZE = 128;
 inline constexpr uint32_t TRANSMISSION_PIPE_SIZE = SAMPLING_PIPE_SIZE;
+static constexpr uint32_t MAX_BLOCKING_TIME_AFTER_STOP_TICKS = pdMS_TO_TICKS(
+    std::max(SAMPLING_PIPE_SIZE, TRANSMISSION_PIPE_SIZE) * 10 /* ms/sample */);
 
 inline constexpr int LED_TASK_STACK_SIZE = 1024;
-inline constexpr int LED_TASK_PRIORITY = 10;
+inline constexpr int LED_TASK_PRIORITY = 3;
 
 inline constexpr int IMU_READ_TASK_STACK_SIZE = 4096;
 inline constexpr int IMU_READ_TASK_MAX_BATCH = 12;

@@ -23,7 +23,7 @@ Other rules:
 
 ### In Progress
 
-- Add visual indicative of the device status (initializing, recording, etc.) using the LED mounted on the device.
+- Make the device transmit remaining samples after stopping correctly instead of discarding them. Allow for multiple recording rounds safely.
 
 ### Next
 
@@ -143,3 +143,4 @@ they are more prone to become outdated/stale.
 - Organize device's signal processing classes in subdirectories.
 - Organize test files in subdirectories.
 - Extract logic from SignalProcessor header to separate .cpp file.
+- Add visual indicative of the device status (initializing, recording, etc.) using the LED mounted on the device.

@@ -24,6 +24,7 @@ constexpr uint16_t TEST_BATCH_SIZE = 2;
 
 LoggerDouble logger;
 os_mbuf nimbleBuffer = {0};
+int coordinatorTaskToken;
 
 // ----------------------------------------------------------------------------------------------------
 // Helpers
@@ -91,7 +92,8 @@ BLEDependencies buildDefaultDependencies() {
 
 TestBLE *getInstanceWith(BLEDependencies &&deps) {
   return TestBLE::getInstance(deps.logger, deps.pipe,
-                              std::move(deps.transmitRunner));
+                              std::move(deps.transmitRunner),
+                              &coordinatorTaskToken);
 }
 
 // Drive BLE internal behavior through events
@@ -247,7 +249,7 @@ TEST(BLE_transmitLoopFunction,
   TestBLE *instance = getInstanceWith(std::move(deps));
   instance->beginTransmission();
   runnerRaw->runOneStep();
-  instance->stopTransmission();
+  instance->requestStopTransmission();
 
   EXPECT_EQ(nimbleGattServerNotifyCustom_fake.call_count, 0u);
 }
@@ -262,7 +264,7 @@ TEST(BLE_transmitLoopFunction, SendsNoNotificationWhenClientIsNotConnected) {
   subscribeClientToImuCharacteristic();
   instance->beginTransmission();
   runnerRaw->runOneStep();
-  instance->stopTransmission();
+  instance->requestStopTransmission();
 
   EXPECT_EQ(nimbleGattServerNotifyCustom_fake.call_count, 0u);
 }
@@ -277,7 +279,7 @@ TEST(BLE_transmitLoopFunction, SendsNoNotificationWhenClientIsNotSubscribed) {
   connectClient();
   instance->beginTransmission();
   runnerRaw->runOneStep();
-  instance->stopTransmission();
+  instance->requestStopTransmission();
 
   EXPECT_EQ(nimbleGattServerNotifyCustom_fake.call_count, 0u);
 }
@@ -299,7 +301,7 @@ TEST(BLE_transmitLoopFunction,
   setBatchSizeToTestValue();
   instance->beginTransmission();
   runnerRaw->runOneStep();
-  instance->stopTransmission();
+  instance->requestStopTransmission();
 
   EXPECT_EQ(nimbleGattServerNotifyCustom_fake.call_count, 0u);
 }
@@ -323,7 +325,7 @@ TEST(BLE_transmitLoopFunction, SendsOneNotificationWhenItemsEqualBatchSize) {
   setBatchSizeToTestValue();
   instance->beginTransmission();
   runnerRaw->runOneStep();
-  instance->stopTransmission();
+  instance->requestStopTransmission();
 
   EXPECT_EQ(nimbleGattServerNotifyCustom_fake.call_count, 1u);
 }
@@ -348,7 +350,7 @@ TEST(BLE_transmitLoopFunction,
   setBatchSizeToTestValue();
   instance->beginTransmission();
   runnerRaw->runOneStep();
-  instance->stopTransmission();
+  instance->requestStopTransmission();
 
   EXPECT_EQ(nimbleGattServerNotifyCustom_fake.call_count, 1u);
 }
@@ -390,7 +392,7 @@ TEST(BLE_transmitLoopFunction, DoesntLoseSamplesDuringTwoTransmissionRounds) {
   instance->beginTransmission();
   runnerRaw->runOneStep();
   runnerRaw->runOneStep();
-  instance->stopTransmission();
+  instance->requestStopTransmission();
 
   ASSERT_EQ(capturedTransmissionBatches.size(), 2u);
   for (uint32_t batch = 0; batch < 2; batch++) {
@@ -422,7 +424,7 @@ TEST(BLE_transmitLoopFunction, SendsNoNotificationWhenBufferCreationFails) {
   setBatchSizeToTestValue();
   instance->beginTransmission();
   runnerRaw->runOneStep();
-  instance->stopTransmission();
+  instance->requestStopTransmission();
 
   EXPECT_EQ(nimbleGattServerNotifyCustom_fake.call_count, 0u);
 }
@@ -446,7 +448,7 @@ TEST(BLE_transmitLoopFunction, SendsOneNotificationWhenNotificationFails) {
   setBatchSizeToTestValue();
   instance->beginTransmission();
   runnerRaw->runOneStep();
-  instance->stopTransmission();
+  instance->requestStopTransmission();
 
   EXPECT_EQ(nimbleGattServerNotifyCustom_fake.call_count, 1u);
 }

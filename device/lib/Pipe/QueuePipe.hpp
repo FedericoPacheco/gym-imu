@@ -35,7 +35,7 @@ public:
   bool push(const T &item) override {
     // Try a non-blocking enqueue
     if (xQueueSend(this->handle, &item, 0) == pdPASS) {
-      updateMax(this->maxDepth, this->incrementCurrentDepth());
+      updateMax(this->maxDepth, this->itemsFilled());
       return true;
     }
 
@@ -48,7 +48,6 @@ public:
             "Enqueue failed and oldest item could not be dropped");
       return false;
     }
-    this->decrementCurrentDepth();
     this->incrementDrops();
     if (this->logger)
       this->logger->debug("Dropped oldest sample to make space");
@@ -59,7 +58,6 @@ public:
         this->logger->warn("Enqueue retry failed after dropping oldest sample");
       return false;
     }
-    this->incrementCurrentDepth();
 
     return true;
   }
@@ -68,26 +66,28 @@ public:
     T item;
     TickType_t timeout = blockWhenEmpty ? portMAX_DELAY : 0;
     if (xQueueReceive(this->handle, &item, timeout) == pdPASS) {
-      this->decrementCurrentDepth();
       return item;
     } else
       return std::nullopt;
   }
 
+  void empty() override {
+    while (this->pop(false).has_value())
+      ;
+  }
+
   uint32_t itemsFilled() const override {
-    // return uxQueueMessagesWaiting(this->handle);
-    return getCurrentDepth();
+    return uxQueueMessagesWaiting(this->handle);
   }
 
   uint32_t itemsLeft() const override {
-    // return uxQueueSpacesAvailable(this->handle);
-    return N - getCurrentDepth();
+    return uxQueueSpacesAvailable(this->handle);
   }
 
   PipeMetrics getMetrics() const override {
     return {.drops = this->getDrops(),
             .maxDepth = this->getMaxDepth(),
-            .currentDepth = this->getCurrentDepth()};
+            .currentDepth = this->itemsFilled()};
   }
 
 private:
@@ -99,10 +99,8 @@ private:
 
   std::atomic<uint32_t> drops;
   std::atomic<uint32_t> maxDepth;
-  std::atomic<uint32_t> currentDepth;
 
-  QueuePipe(LoggerPort *logger)
-      : logger(logger), drops(0), maxDepth(0), currentDepth(0) {}
+  QueuePipe(LoggerPort *logger) : logger(logger), drops(0), maxDepth(0) {}
 
   // Atomic operation to capture transient max values
   static inline void updateMax(std::atomic<uint32_t> &maxValue,
@@ -114,23 +112,12 @@ private:
     }
   }
 
-  uint32_t inline getCurrentDepth() const {
-    return currentDepth.load(std::memory_order_relaxed);
-  }
-  uint32_t inline incrementCurrentDepth() {
-    return this->currentDepth.fetch_add(1, std::memory_order_relaxed) + 1;
-  }
-  uint32_t inline decrementCurrentDepth() {
-    return this->currentDepth.fetch_sub(1, std::memory_order_relaxed) - 1;
-  }
-
   uint32_t inline getDrops() const {
     return drops.load(std::memory_order_relaxed);
   }
   uint32_t inline incrementDrops() {
     return this->drops.fetch_add(1, std::memory_order_relaxed) + 1;
   }
-
   uint32_t inline getMaxDepth() const {
     return maxDepth.load(std::memory_order_relaxed);
   }

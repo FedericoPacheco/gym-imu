@@ -45,7 +45,7 @@ Refer to main.cpp
 
 Notes:
 Notifications, not allowing reads from the client, and only allowing a single
-connection were chosen to reduce radio strain, reduce latency, and maximize data
+connection were chosen to reduce radio strain and latency, and maximize data
 streaming capabilities.
 
 Definitions:
@@ -61,6 +61,12 @@ security, etc. Runs on the CPU and listens for events from the controller.
 
 template <typename TransmittedSample> class BLE {
 public:
+  enum class State { IDLE, TRANSMITTING, DRAINING };
+
+  // Bit mask indicating that the processor has stopped. Used to notify the
+  // coordinator task.
+  static constexpr uint32_t STOPPED_MASK = 1u << 2;
+
   static constexpr const char *DEVICE_NAME = "Gym-IMU";
   // Motion sensor. See BLE specification .pdf, section 2.6.3.:
   // https://www.bluetooth.com/specifications/assigned-numbers/
@@ -81,7 +87,7 @@ public:
   static BLE *getInstance(
       LoggerPort *logger,
       std::shared_ptr<Pipe<TransmittedSample, TRANSMISSION_PIPE_SIZE>> pipe,
-      std::unique_ptr<LoopRunner> transmitRunner);
+      std::unique_ptr<LoopRunner> transmitRunner, TaskHandle_t coordinator);
 
 #if defined(UNIT_TEST) && !defined(ESP_PLATFORM)
   static void resetInstanceForTests();
@@ -90,7 +96,7 @@ public:
   ~BLE();
   bool isConnected();
   void beginTransmission();
-  void stopTransmission();
+  void requestStopTransmission();
 
 private:
   static constexpr int PREFERRED_BATCH_SEND_SIZE = 6;
@@ -147,7 +153,8 @@ private:
 
   TaskHandle_t bleTaskHandle;
   std::unique_ptr<LoopRunner> transmitRunner;
-  std::atomic<bool> doTransmit;
+  std::atomic<State> state{State::IDLE};
+  TaskHandle_t coordinator;
   std::shared_ptr<Pipe<TransmittedSample, TRANSMISSION_PIPE_SIZE>> pipe;
 
   ble_hs_adv_fields primaryAdvertisingPacket;
@@ -156,11 +163,11 @@ private:
 
   BLE(LoggerPort *logger,
       std::shared_ptr<Pipe<TransmittedSample, TRANSMISSION_PIPE_SIZE>> pipe,
-      std::unique_ptr<LoopRunner> transmitRunner);
+      std::unique_ptr<LoopRunner> transmitRunner, TaskHandle_t coordinator);
   static std::unique_ptr<BLE>
   create(LoggerPort *logger,
          std::shared_ptr<Pipe<TransmittedSample, TRANSMISSION_PIPE_SIZE>> pipe,
-         std::unique_ptr<LoopRunner> transmitRunner);
+         std::unique_ptr<LoopRunner> transmitRunner, TaskHandle_t coordinator);
 
   inline bool initializeFlash();
 
@@ -180,8 +187,8 @@ private:
   inline bool initializeTasks();
   static void bleTask(void *arg);
   static void transmitLoopFunction(void *arg);
-  inline void setDoTransmit(bool value);
-  inline bool getDoTransmit();
+  inline void setState(State value);
+  inline State getState();
 
   inline bool initializeAdvertising();
   bool startAdvertising();

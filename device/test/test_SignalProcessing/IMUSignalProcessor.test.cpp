@@ -1,5 +1,5 @@
-#include "doubles/LoggerDouble.hpp"
 #include "doubles/FreeRTOSDouble.hpp"
+#include "doubles/LoggerDouble.hpp"
 #include "doubles/PipesDoubles.hpp"
 #include <DeterministicLoopRunner.hpp>
 #include <IMUGravityRemover.hpp>
@@ -28,6 +28,7 @@ public:
 class IMUNoiseReducerDouble : public IMUNoiseReducer {
 public:
   MOCK_METHOD(void, filter, (IMUSample & sample));
+  MOCK_METHOD(void, reset, ());
 };
 class IMUOrientationFinderDouble : public IMUOrientationFinder<Quaternion> {
 public:
@@ -84,6 +85,8 @@ IMUSignalProcessorDependencies buildDefaultDependencies() {
           std::move(velocityEstimator),
           initializationSamplesCount};
 }
+int coordinatorTaskToken;
+
 IMUSignalProcessor *getInstanceWith(IMUSignalProcessorDependencies &&deps) {
   IMUSignalProcessor::resetInstanceForTests();
   resetFreeRTOSPortFakes();
@@ -95,7 +98,8 @@ IMUSignalProcessor *getInstanceWith(IMUSignalProcessorDependencies &&deps) {
       deps.inputPipe, deps.outputPipe, std::move(deps.runner), &logger,
       std::move(deps.calibrator), std::move(deps.noiseReducer),
       std::move(deps.orientationFinder), std::move(deps.remover),
-      std::move(deps.velocityEstimator), deps.initializationSamplesCount);
+      std::move(deps.velocityEstimator), deps.initializationSamplesCount,
+      &coordinatorTaskToken);
 }
 
 TEST(IMUSignalProcessor_processingLoopFunction,
@@ -113,7 +117,7 @@ TEST(IMUSignalProcessor_processingLoopFunction,
   auto *processor = getInstanceWith(std::move(deps));
   processor->beginProcessing();
   runnerRaw->runOneStep();
-  processor->stopProcessing();
+  processor->requestStopProcessing();
 
   IMUSignalProcessor::resetInstanceForTests();
 }
@@ -135,7 +139,7 @@ TEST(IMUSignalProcessor_processingLoopFunction,
   auto *processor = getInstanceWith(std::move(deps));
   processor->beginProcessing();
   runnerRaw->runOneStep();
-  processor->stopProcessing();
+  processor->requestStopProcessing();
 
   IMUSignalProcessor::resetInstanceForTests();
 }
@@ -156,7 +160,7 @@ TEST(IMUSignalProcessor_processingLoopFunction,
   auto *processor = getInstanceWith(std::move(deps));
   processor->beginProcessing();
   runnerRaw->runOneStep();
-  processor->stopProcessing();
+  processor->requestStopProcessing();
 
   IMUSignalProcessor::resetInstanceForTests();
 }
@@ -165,14 +169,15 @@ TEST(IMUSignalProcessor_processingLoopFunction, ResetsAfterStoppingProcessing) {
   auto deps = buildDefaultDependencies();
   auto runnerRaw = static_cast<DeterministicLoopRunner *>(deps.runner.get());
 
-  EXPECT_CALL(*deps.inputPipe, itemsLeft()).Times(1).WillOnce(Return(0));
+  EXPECT_CALL(*deps.inputPipe, pop(false)).WillOnce(Return(std::nullopt));
   EXPECT_CALL(*deps.calibrator, reset()).Times(1);
+  EXPECT_CALL(*deps.noiseReducer, reset()).Times(1);
   EXPECT_CALL(*deps.orientationFinder, reset()).Times(1);
   EXPECT_CALL(*deps.velocityEstimator, reset()).Times(1);
 
   auto *processor = getInstanceWith(std::move(deps));
   processor->beginProcessing();
-  processor->stopProcessing();
+  processor->requestStopProcessing();
   runnerRaw->runOneStep();
 
   IMUSignalProcessor::resetInstanceForTests();
@@ -183,14 +188,16 @@ TEST(IMUSignalProcessor_processingLoopFunction,
   auto deps = buildDefaultDependencies();
   auto runnerRaw = static_cast<DeterministicLoopRunner *>(deps.runner.get());
 
-  EXPECT_CALL(*deps.inputPipe, itemsLeft()).Times(1).WillOnce(Return(1));
+  EXPECT_CALL(*deps.inputPipe, pop(false))
+      .WillOnce(Return(std::optional<IMUSample>(IMUSample{})));
   EXPECT_CALL(*deps.calibrator, reset()).Times(0);
+  EXPECT_CALL(*deps.noiseReducer, reset()).Times(0);
   EXPECT_CALL(*deps.orientationFinder, reset()).Times(0);
   EXPECT_CALL(*deps.velocityEstimator, reset()).Times(0);
 
   auto *processor = getInstanceWith(std::move(deps));
   processor->beginProcessing();
-  processor->stopProcessing();
+  processor->requestStopProcessing();
   runnerRaw->runOneStep();
 
   IMUSignalProcessor::resetInstanceForTests();

@@ -1,4 +1,3 @@
-#include "include/IMUSignalProcessor.hpp"
 #include <IMUSignalProcessor.hpp>
 
 IMUSignalProcessor::InstanceState IMUSignalProcessor::instanceState{};
@@ -12,7 +11,7 @@ IMUSignalProcessor *IMUSignalProcessor::getInstance(
     std::unique_ptr<IMUOrientationFinder<Quaternion>> orientationFinder,
     std::unique_ptr<IMUGravityRemover<Quaternion>> gravityRemover,
     std::unique_ptr<IMUVelocityEstimator> velocityEstimator,
-    uint32_t initializationSamplesCount) {
+    uint32_t initializationSamplesCount, TaskHandle_t coordinator) {
   if (IMUSignalProcessor::instanceState.semaphoreHandle == nullptr) {
     rtosTaskEnterCritical(&IMUSignalProcessor::instanceState.mux);
     IMUSignalProcessor::instanceState.semaphoreHandle = rtosCreateMutexStatic(
@@ -32,7 +31,8 @@ IMUSignalProcessor *IMUSignalProcessor::getInstance(
           inputPipe, outputPipe, std::move(runner), logger,
           std::move(calibrator), std::move(noiseReducer),
           std::move(orientationFinder), std::move(gravityRemover),
-          std::move(velocityEstimator), initializationSamplesCount);
+          std::move(velocityEstimator), initializationSamplesCount,
+          coordinator);
     rtosSemaphoreGive(IMUSignalProcessor::instanceState.semaphoreHandle);
   }
   return IMUSignalProcessor::instanceState.instance.get();
@@ -50,7 +50,6 @@ void IMUSignalProcessor::resetInstanceForTests() {
 IMUSignalProcessor::~IMUSignalProcessor() {
   this->logger->info("Shutting down Signal processor");
 
-  this->setDoProcess(false);
   this->setState(IMUSignalProcessor::State::IDLE);
 
   if (this->runner) {
@@ -61,14 +60,11 @@ IMUSignalProcessor::~IMUSignalProcessor() {
 }
 
 void IMUSignalProcessor::beginProcessing() {
-  this->sampleCount = 0;
-  this->setDoProcess(true);
   this->setState(IMUSignalProcessor::State::INITIALIZING);
 }
 
-void IMUSignalProcessor::stopProcessing() {
-  this->setDoProcess(false);
-  this->setState(IMUSignalProcessor::State::IDLE);
+void IMUSignalProcessor::requestStopProcessing() {
+  this->setState(IMUSignalProcessor::State::DRAINING);
 }
 
 std::unique_ptr<IMUSignalProcessor> IMUSignalProcessor::create(
@@ -80,7 +76,7 @@ std::unique_ptr<IMUSignalProcessor> IMUSignalProcessor::create(
     std::unique_ptr<IMUOrientationFinder<Quaternion>> orientationFinder,
     std::unique_ptr<IMUGravityRemover<Quaternion>> gravityRemover,
     std::unique_ptr<IMUVelocityEstimator> velocityEstimator,
-    uint32_t initializationSamplesCount) {
+    uint32_t initializationSamplesCount, TaskHandle_t coordinator) {
   if (!logger)
     return nullptr;
   if (!inputPipe) {
@@ -115,13 +111,18 @@ std::unique_ptr<IMUSignalProcessor> IMUSignalProcessor::create(
     logger->error("Velocity estimator is null");
     return nullptr;
   }
+  if (!coordinator) {
+    logger->error("Coordinator task handle is null");
+    return nullptr;
+  }
 
   std::unique_ptr<IMUSignalProcessor> processor(
       new (std::nothrow) IMUSignalProcessor(
           inputPipe, outputPipe, std::move(runner), logger,
           std::move(calibrator), std::move(noiseReducer),
           std::move(orientationFinder), std::move(gravityRemover),
-          std::move(velocityEstimator), initializationSamplesCount));
+          std::move(velocityEstimator), initializationSamplesCount,
+          coordinator));
 
   if (!processor->runner->start(IMUSignalProcessor::processingLoopFunction,
                                 static_cast<void *>(processor.get()))) {
@@ -141,21 +142,16 @@ IMUSignalProcessor::IMUSignalProcessor(
     std::unique_ptr<IMUOrientationFinder<Quaternion>> orientationFinder,
     std::unique_ptr<IMUGravityRemover<Quaternion>> gravityRemover,
     std::unique_ptr<IMUVelocityEstimator> velocityEstimator,
-    uint32_t initializationSamplesCount)
+    uint32_t initializationSamplesCount, TaskHandle_t coordinator)
     : inputPipe(inputPipe), outputPipe(outputPipe), runner(std::move(runner)),
       logger(logger), calibrator(std::move(calibrator)),
       noiseReducer(std::move(noiseReducer)),
       orientationFinder(std::move(orientationFinder)),
       gravityRemover(std::move(gravityRemover)),
       velocityEstimator(std::move(velocityEstimator)),
-      initializationSamplesCount(initializationSamplesCount), sampleCount(0) {}
+      initializationSamplesCount(initializationSamplesCount), sampleCount(0),
+      coordinator(coordinator) {}
 
-void IMUSignalProcessor::setDoProcess(bool value) {
-  this->doProcess.store(value, std::memory_order_relaxed);
-}
-bool IMUSignalProcessor::getDoProcess() {
-  return this->doProcess.load(std::memory_order_relaxed);
-}
 void IMUSignalProcessor::setState(State state) {
   this->state.store(state, std::memory_order_relaxed);
 }
@@ -165,24 +161,34 @@ IMUSignalProcessor::State IMUSignalProcessor::getState() {
 
 void IMUSignalProcessor::processingLoopFunction(void *arg) {
   IMUSignalProcessor *self = static_cast<IMUSignalProcessor *>(arg);
-
   if (!self)
     return;
 
-  if (!self->getDoProcess() && self->inputPipe->itemsLeft() == 0) {
-    self->logger->debug(
-        "Processing loop: not processing and input pipe has no items left");
-    self->calibrator->reset();
-    self->orientationFinder->reset();
-    self->velocityEstimator->reset();
-    self->setState(IMUSignalProcessor::State::IDLE);
+  if (self->getState() == IMUSignalProcessor::State::IDLE)
     return;
-  }
 
-  std::optional<IMUSample> optSample = self->inputPipe->pop();
+  // Popping must be non-blocking to avoid blocking forever if the processor has
+  // transitioned to DRAINING but the input pipe is empty.
+  std::optional<IMUSample> optSample = self->inputPipe->pop(false);
   if (!optSample.has_value()) {
-    self->logger->warn(
-        "Processing loop: failed to read sample from input pipe");
+    if (self->getState() == IMUSignalProcessor::State::DRAINING) {
+      // Assumes the IMU task has already stopped by the coordinator task.
+      // Otherwise the pipe being instantaneously empty doesn't guarantee that
+      // all samples have been processed.
+      self->logger->debug(
+          "Processing loop: resetting and notifying the coordinator that "
+          "processing has finished");
+
+      self->sampleCount = 0;
+      self->calibrator->reset();
+      self->noiseReducer->reset();
+      self->orientationFinder->reset();
+      self->velocityEstimator->reset();
+
+      self->setState(IMUSignalProcessor::State::IDLE);
+      rtosTaskNotify(self->coordinator, IMUSignalProcessor::STOPPED_MASK,
+                     eSetBits);
+    }
     return;
   }
 
@@ -191,7 +197,7 @@ void IMUSignalProcessor::processingLoopFunction(void *arg) {
 
   if (self->sampleCount <= self->initializationSamplesCount) {
     self->logger->debug("Processing loop: still initializing, "
-                        "sampleCount = %u",
+                        "seq = %u",
                         self->sampleCount);
 
     self->calibrator->initialize(sample);
@@ -199,24 +205,24 @@ void IMUSignalProcessor::processingLoopFunction(void *arg) {
     return;
   }
 
-  if (self->getState() == IMUSignalProcessor::State::INITIALIZING) {
+  if (self->getState() == IMUSignalProcessor::State::INITIALIZING)
     self->setState(IMUSignalProcessor::State::PROCESSING);
-  }
 
   self->calibrator->calibrate(sample);
   self->noiseReducer->filter(sample);
   auto orientation = self->orientationFinder->find(sample);
   self->gravityRemover->remove(sample, orientation);
   auto velocitySample = self->velocityEstimator->estimate(sample, orientation);
-
-  self->logger->debug("Processing loop: velocity = <%.3f, %.3f, %.3f>",
-                      velocitySample.x, velocitySample.y, velocitySample.z);
-
   ProcessedSample processedSample = {
       .v = velocitySample,
       .w = sample.w,
       .seq = self->sampleCount,
   };
+
+  self->logger->debug("Processing loop: seq = %u, v = <%.3f, %.3f, %.3f>",
+                      processedSample.seq, processedSample.v.x,
+                      processedSample.v.y, processedSample.v.z);
+
   if (!self->outputPipe->push(processedSample))
     self->logger->warn("Processing loop: failed to push sample to output pipe");
 }

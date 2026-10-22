@@ -40,7 +40,7 @@ std::unique_ptr<LED> LED::create(std::unique_ptr<LoopRunner> runner,
   RETURN_NULL_ON_ESP_ERROR(gpio_set_level(led->pin, 0), logger,
                            "LED GPIO initial level set failed");
 
-  logger->debug("Starting LED task for instance %p", led.get());
+  logger->debug("Starting LED task");
   if (!led->runner->start(LED::loopFunction, static_cast<void *>(led.get()))) {
     logger->error("Failed to start LED task");
     return nullptr;

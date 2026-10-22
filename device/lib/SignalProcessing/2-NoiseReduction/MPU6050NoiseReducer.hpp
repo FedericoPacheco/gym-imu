@@ -63,4 +63,12 @@ public:
 
     windowIdx = (windowIdx + 1) % WINDOW_SUM_LENGTH;
   }
+
+  void reset() override {
+    windowSumGyro = {0.0f, 0.0f, 0.0f};
+    windowSumAccel = {0.0f, 0.0f, 0.0f};
+    windowLength = 0;
+    windowIdx = 0;
+    windowSamples.fill(IMUSample{});
+  }
 };

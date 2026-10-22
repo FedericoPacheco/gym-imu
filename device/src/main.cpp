@@ -20,9 +20,36 @@
 #include <MPU6050Sensor.hpp>
 #include <QueuePipe.hpp>
 #include <Types.hpp>
+#include <esp_system.h>
 #include <memory>
 
-// Configure project: pio run -t menuconfig
+// TODO: test changes on the pipeline on the device and write unit tests to
+// attempt to discover issues
+
+/*
+Configure firmware settings: pio run -t menuconfig
+
+Advanced debugging guides:
+https://docs.espressif.com/projects/esp-techpedia/en/latest/esp-friends/advanced-development/debugging/panic-exception.html
+
+Watchdog:
+If the watchdog panics, enable CONFIG_ESP_SYSTEM_USE_FRAME_POINTER (Component
+Config > ESP System Settings > Backtrace Behavior) in the menuconfig. Then use:
+riscv32-esp-elf-addr2line -pfiaC -e .pio/build/device/firmware.elf \
+  <hexAddresses>
+This maps addresses in flash to their corresponding source code lines and
+functions. This only works well for the same build that produced the error.
+Otherwise it may be misleading.
+
+Ticks conversion:
+configTICK_RATE_HZ defines the number of ticks per second. It
+can be changed in the menuconfig: Component config > FreeRTOS > Kernel.
+pdMS_TO_TICKS(x) can effectively output zero for short wall time intervals if
+the tick rate is low (with x < 10 for configTICK_RATE_HZ = 100). BE CAREFUL
+WITH THIS!
+Tradeoff: increasing the tick rate improves resolution but also tick interrupts,
+CPU load and potentially timing.
+*/
 
 #ifdef PROCESS_SIGNAL
 using TransmittedSample = ProcessedSample;
@@ -43,9 +70,11 @@ extern "C" void app_main() {
   */
   gpio_install_isr_service(0);
 
+  TaskHandle_t coordinator = xTaskGetCurrentTaskHandle();
+
   auto ledRunner = std::make_unique<FreeRTOSLoopRunner>(
       "ledTask", LED_TASK_STACK_SIZE, LED_TASK_PRIORITY, pdMS_TO_TICKS(100));
-  UARTLogger ledLogger("LED", LogLevel::DEBUG);
+  UARTLogger ledLogger("LED", LogLevel::WARN);
   std::unique_ptr<LED> led = LED::create(std::move(ledRunner), &ledLogger);
   if (led == nullptr) {
     ledLogger.error("Failed to initialize LED");
@@ -67,7 +96,7 @@ extern "C" void app_main() {
     return;
   }
 
-  UARTLogger imuLogger("IMU", LogLevel::INFO);
+  UARTLogger imuLogger("IMU", LogLevel::DEBUG);
   auto imuMPUPort = std::make_unique<MPUReal>();
   auto imuI2CPort = std::make_unique<I2CReal>();
   auto imuRunner = std::make_unique<FreeRTOSNotificationRunner>(
@@ -78,8 +107,9 @@ extern "C" void app_main() {
   const bool useHWLowPassFilter = false;
 #endif
   IMUSensorPort *imu = MPU6050Sensor::getInstance(
-      &imuLogger, samplingPipe, SAMPLING_FREQUENCY_HZ, useHWLowPassFilter,
-      std::move(imuMPUPort), std::move(imuI2CPort), std::move(imuRunner));
+      &imuLogger, samplingPipe, coordinator, SAMPLING_FREQUENCY_HZ,
+      useHWLowPassFilter, std::move(imuMPUPort), std::move(imuI2CPort),
+      std::move(imuRunner));
   if (imu == nullptr) {
     imuLogger.error("Failed to initialize MPU6050 sensor");
     return;
@@ -99,7 +129,7 @@ extern "C" void app_main() {
   UARTLogger processorLogger("Processor", LogLevel::DEBUG);
   auto processorRunner = std::make_unique<FreeRTOSLoopRunner>(
       "processTask", PROCESS_TASK_STACK_SIZE, PROCESS_TASK_PRIORITY,
-      pdMS_TO_TICKS(5));
+      pdMS_TO_TICKS(10)); // 5));
   std::unique_ptr<IMUCalibrator> calibrator =
       std::make_unique<MPU6050AccelAffineCalibrator>();
   std::unique_ptr<IMUNoiseReducer> noiseReducer =
@@ -110,39 +140,81 @@ extern "C" void app_main() {
       std::make_unique<IMUQuaternionGravityRemover>();
   std::unique_ptr<IMUVelocityEstimator> velocityEstimator =
       std::make_unique<IMUIntegrationVelocityEstimator>(dt);
-
   IMUSignalProcessor *processor = IMUSignalProcessor::getInstance(
       samplingPipe, transmissionPipe, std::move(processorRunner),
       &processorLogger, std::move(calibrator), std::move(noiseReducer),
       std::move(orientationFinder), std::move(gravityRemover),
-      std::move(velocityEstimator), INITIALIZATION_SAMPLES_COUNT);
+      std::move(velocityEstimator), INITIALIZATION_SAMPLES_COUNT, coordinator);
   if (processor == nullptr) {
     processorLogger.error("Failed to initialize IMU signal processor");
     return;
   }
 
-  UARTLogger bleLogger("BLE", LogLevel::WARN);
+  UARTLogger bleLogger("BLE", LogLevel::DEBUG);
   auto bleLoopRunner = std::make_unique<FreeRTOSLoopRunner>(
       "transmitTask", TRANSMIT_TASK_STACK_SIZE, TRANSMIT_TASK_PRIORITY,
       pdMS_TO_TICKS(50));
   BLE<ProcessedSample> *ble = BLE<ProcessedSample>::getInstance(
-      &bleLogger, transmissionPipe, std::move(bleLoopRunner));
+      &bleLogger, transmissionPipe, std::move(bleLoopRunner), coordinator);
   if (ble == nullptr) {
     bleLogger.error("Failed to initialize BLE");
     return;
   }
 #else
-  UARTLogger bleLogger("BLE", LogLevel::INFO);
+  UARTLogger bleLogger("BLE", LogLevel::DEBUG);
   auto bleLoopRunner = std::make_unique<FreeRTOSLoopRunner>(
       "transmitTask", TRANSMIT_TASK_STACK_SIZE, TRANSMIT_TASK_PRIORITY,
       pdMS_TO_TICKS(50));
   BLE<TransmittedSample> *ble = BLE<TransmittedSample>::getInstance(
-      &bleLogger, samplingPipe, std::move(bleLoopRunner));
+      &bleLogger, samplingPipe, std::move(bleLoopRunner), coordinator);
   if (ble == nullptr) {
     bleLogger.error("Failed to initialize BLE");
     return;
   }
 #endif
+
+  // -------------------------------------------------------------------------
+
+  auto stopPipeline = [&] -> void {
+    imu->requestStopAsync();
+    uint32_t maskValue = 0;
+    BaseType_t wasNotified =
+        xTaskNotifyWait(0, IMUSensorPort::STOPPED_MASK, &maskValue,
+                        MAX_BLOCKING_TIME_AFTER_STOP_TICKS);
+    if (wasNotified != pdTRUE ||
+        (maskValue & IMUSensorPort::STOPPED_MASK) == 0) {
+      imuLogger.error("Failed to stop IMU properly. Rebooting...");
+      vTaskDelay(pdMS_TO_TICKS(100));
+      esp_restart(); // Simplest recovery strategy: restart the device
+    }
+
+#ifdef PROCESS_SIGNAL
+    processor->requestStopProcessing();
+    maskValue = 0;
+    wasNotified =
+        xTaskNotifyWait(0, IMUSignalProcessor::STOPPED_MASK, &maskValue,
+                        MAX_BLOCKING_TIME_AFTER_STOP_TICKS);
+    if (wasNotified != pdTRUE ||
+        (maskValue & IMUSignalProcessor::STOPPED_MASK) == 0) {
+      processorLogger.error(
+          "Failed to stop SignalProcessor properly. Rebooting...");
+      vTaskDelay(pdMS_TO_TICKS(100));
+      esp_restart();
+    }
+#endif
+
+    ble->requestStopTransmission();
+    maskValue = 0;
+    wasNotified =
+        xTaskNotifyWait(0, BLE<TransmittedSample>::STOPPED_MASK, &maskValue,
+                        MAX_BLOCKING_TIME_AFTER_STOP_TICKS);
+    if (wasNotified != pdTRUE ||
+        (maskValue & BLE<TransmittedSample>::STOPPED_MASK) == 0) {
+      bleLogger.error("Failed to stop BLE properly. Rebooting...");
+      vTaskDelay(pdMS_TO_TICKS(100));
+      esp_restart();
+    }
+  };
 
   bool doSample = false;
   button->enableAsync();
@@ -155,17 +227,14 @@ extern "C" void app_main() {
     if (button->wasPressedAsync() && ble->isConnected()) {
       doSample = !doSample;
       if (doSample) {
-        imu->beginAsync();
+        ble->beginTransmission();
 #ifdef PROCESS_SIGNAL
         processor->beginProcessing();
 #endif
-        ble->beginTransmission();
+        imu->beginAsync();
       } else {
-        imu->stopAsync();
-#ifdef PROCESS_SIGNAL
-        processor->stopProcessing();
-#endif
-        ble->stopTransmission();
+        stopPipeline();
+
         PipeMetrics samplingMetrics = samplingPipe->getMetrics();
         samplingPipeLogger.info(
             "Sampling pipe metrics: drops=%u, maxDepth=%u, currentDepth=%u",
@@ -173,10 +242,11 @@ extern "C" void app_main() {
             samplingMetrics.currentDepth);
 #ifdef PROCESS_SIGNAL
         PipeMetrics transmissionMetrics = transmissionPipe->getMetrics();
-        transmissionPipeLogger.info(
-            "Transmission pipe metrics: drops=%u, maxDepth=%u, currentDepth=%u",
-            transmissionMetrics.drops, transmissionMetrics.maxDepth,
-            transmissionMetrics.currentDepth);
+        transmissionPipeLogger.info("Transmission pipe metrics: drops=%u, "
+                                    "maxDepth=%u, currentDepth=%u",
+                                    transmissionMetrics.drops,
+                                    transmissionMetrics.maxDepth,
+                                    transmissionMetrics.currentDepth);
 #endif
       }
     }
@@ -184,11 +254,7 @@ extern "C" void app_main() {
     // Stop sampling if BLE gets disconnected
     if (doSample && !ble->isConnected()) {
       doSample = false;
-      imu->stopAsync();
-#ifdef PROCESS_SIGNAL
-      processor->stopProcessing();
-#endif
-      ble->stopTransmission();
+      stopPipeline();
     }
 
 // Provide visual feedback to the user
@@ -202,6 +268,7 @@ extern "C" void app_main() {
       led->blink();
       break;
     case IMUSignalProcessor::State::PROCESSING:
+    case IMUSignalProcessor::State::DRAINING:
       led->turnOn();
       break;
     }

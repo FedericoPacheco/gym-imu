@@ -16,15 +16,13 @@
 #include <memory>
 #include <ports/FreeRTOS/FreeRTOSPort.hpp>
 
-// TODO: make sampleCount atomic
-
 class IMUSignalProcessor {
 public:
-  enum class State {
-    IDLE,
-    INITIALIZING,
-    PROCESSING,
-  };
+  enum class State { IDLE, INITIALIZING, PROCESSING, DRAINING };
+
+  // Bit mask indicating that the processor has stopped. Used to notify the
+  // coordinator task.
+  static constexpr uint32_t STOPPED_MASK = 1u << 1;
 
   static IMUSignalProcessor *getInstance(
       std::shared_ptr<Pipe<IMUSample, SAMPLING_PIPE_SIZE>> inputPipe,
@@ -35,7 +33,7 @@ public:
       std::unique_ptr<IMUOrientationFinder<Quaternion>> orientationFinder,
       std::unique_ptr<IMUGravityRemover<Quaternion>> gravityRemover,
       std::unique_ptr<IMUVelocityEstimator> velocityEstimator,
-      uint32_t initializationSamplesCount);
+      uint32_t initializationSamplesCount, TaskHandle_t coordinator);
 
 #if defined(UNIT_TEST) && !defined(ESP_PLATFORM)
   static void resetInstanceForTests();
@@ -44,7 +42,7 @@ public:
   ~IMUSignalProcessor();
 
   void beginProcessing();
-  void stopProcessing();
+  void requestStopProcessing();
   State getState();
 
 private:
@@ -68,8 +66,8 @@ private:
   };
   static InstanceState instanceState;
 
-  std::atomic<bool> doProcess{false};
   std::atomic<State> state{State::IDLE};
+  TaskHandle_t coordinator;
 
   static std::unique_ptr<IMUSignalProcessor> create(
       std::shared_ptr<Pipe<IMUSample, SAMPLING_PIPE_SIZE>> inputPipe,
@@ -80,7 +78,7 @@ private:
       std::unique_ptr<IMUOrientationFinder<Quaternion>> orientationFinder,
       std::unique_ptr<IMUGravityRemover<Quaternion>> gravityRemover,
       std::unique_ptr<IMUVelocityEstimator> velocityEstimator,
-      uint32_t initializationSamplesCount);
+      uint32_t initializationSamplesCount, TaskHandle_t coordinator);
 
   IMUSignalProcessor(
       std::shared_ptr<Pipe<IMUSample, SAMPLING_PIPE_SIZE>> inputPipe,
@@ -91,10 +89,8 @@ private:
       std::unique_ptr<IMUOrientationFinder<Quaternion>> orientationFinder,
       std::unique_ptr<IMUGravityRemover<Quaternion>> gravityRemover,
       std::unique_ptr<IMUVelocityEstimator> velocityEstimator,
-      uint32_t initializationSamplesCount);
+      uint32_t initializationSamplesCount, TaskHandle_t coordinator);
 
-  void setDoProcess(bool value);
-  bool getDoProcess();
   void setState(State state);
   static void processingLoopFunction(void *arg);
 };

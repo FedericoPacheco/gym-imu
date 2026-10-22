@@ -14,6 +14,7 @@ public:
 
   virtual bool push(const T &item) = 0;
   virtual std::optional<T> pop(bool blockWhenEmpty = true) = 0;
+  virtual void empty() = 0;
   virtual uint32_t itemsFilled() const = 0;
   virtual uint32_t itemsLeft() const = 0;
   virtual PipeMetrics getMetrics() const = 0;

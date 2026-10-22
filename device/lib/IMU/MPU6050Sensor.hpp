@@ -46,7 +46,8 @@ public:
   static MPU6050Sensor *
   getInstance(LoggerPort *logger,
               std::shared_ptr<Pipe<IMUSample, SAMPLING_PIPE_SIZE>> pipe,
-              int samplingFrequencyHz, bool useHWLowPassFilter = false,
+              TaskHandle_t coordinator, int samplingFrequencyHz,
+              bool useHWLowPassFilter = false,
               std::unique_ptr<MPUPort> sensor = nullptr,
               std::unique_ptr<I2CPort> i2c = nullptr,
               std::unique_ptr<NotificationRunner> runner = nullptr,
@@ -62,7 +63,7 @@ public:
   std::optional<IMUSample> readSync() override;
   std::optional<IMUSample> readAsync() override;
   void beginAsync() override;
-  void stopAsync() override;
+  void requestStopAsync() override;
 
 private:
   static constexpr mpud::types::accel_fs_t ACCELEROMETER_SCALE =
@@ -91,21 +92,24 @@ private:
     portMUX_TYPE mux;
   } static instanceState;
 
-  std::atomic<bool> doRead{false};
+  std::atomic<State> state{State::IDLE};
+  TaskHandle_t coordinator;
   std::atomic<uint32_t> nextSeq{0};
 
   MPU6050Sensor(LoggerPort *logger,
                 std::shared_ptr<Pipe<IMUSample, SAMPLING_PIPE_SIZE>> pipe,
-                int samplingFrequencyHz, bool useHWLowPassFilter,
-                std::unique_ptr<MPUPort> sensor, std::unique_ptr<I2CPort> i2c,
+                TaskHandle_t coordinator, int samplingFrequencyHz,
+                bool useHWLowPassFilter, std::unique_ptr<MPUPort> sensor,
+                std::unique_ptr<I2CPort> i2c,
                 std::unique_ptr<NotificationRunner> runner, gpio_num_t INTPin,
                 gpio_num_t SDAPin, gpio_num_t SCLPin);
 
   static std::unique_ptr<MPU6050Sensor>
   create(LoggerPort *logger,
          std::shared_ptr<Pipe<IMUSample, SAMPLING_PIPE_SIZE>> pipe,
-         int samplingFrequencyHz, bool useHWLowPassFilter,
-         std::unique_ptr<MPUPort> sensor, std::unique_ptr<I2CPort> i2c,
+         TaskHandle_t coordinator, int samplingFrequencyHz,
+         bool useHWLowPassFilter, std::unique_ptr<MPUPort> sensor,
+         std::unique_ptr<I2CPort> i2c,
          std::unique_ptr<NotificationRunner> runner, gpio_num_t INTPin,
          gpio_num_t SDAPin, gpio_num_t SCLPin);
   bool initializeI2CBus();
@@ -120,8 +124,8 @@ private:
 
   static IRAM_ATTR void isrHandler(void *arg);
   static void onReadTaskNotification(void *arg, uint32_t notificationValue);
-  void setDoRead(bool value);
-  bool getDoRead();
+  void setState(State state);
+  State getState();
   void batchReadDMPQueue(uint16_t initialFifoCount);
   std::tuple<mpud::raw_axes_t, mpud::raw_axes_t>
   parseSensorData(const uint8_t *data);

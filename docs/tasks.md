@@ -23,8 +23,6 @@ Other rules:
 
 ### In Progress
 
-- Update readme stating the current state of signal processing on the firmware and merge branch.
-
 ### Next
 
 ### Backlog
@@ -143,3 +141,4 @@ they are more prone to become outdated/stale.
 - Add visual indicative of the device status (initializing, recording, etc.) using the LED mounted on the device.
 - Make the device transmit remaining samples after stopping correctly instead of discarding them. Allow for multiple recording rounds safely.
 - Extract control logic from `src/main.cpp` to separate class.
+- Update readme stating the current state of signal processing on the firmware and merge branch.

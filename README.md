@@ -68,7 +68,7 @@ The device is tested at multiple levels:
 
 #### Unit
 
-Most relevant classes (e.g. `MPU6050Sensor`, `BLE`) are tested in isolation on the host machine, using dependency injection and test seams to replace device dependencies (FreeRTOS, ESP-IDF, NimBLE, I2C, MPU). Test seams consist of:
+Most relevant classes (e.g. `MPU6050Sensor`, `BLE`, `IMUSignalProcessor`) are tested in isolation on the host machine, using dependency injection and test seams to replace device dependencies (FreeRTOS, ESP-IDF, NimBLE, I2C, MPU). Test seams consist of:
 
 - **Ports**: classes/C-interfaces that wrap device dependencies, exposing only the necessary functionality to the rest of the codebase and allowing implementations to be swapped.
 - **Compatibility layers**: using macros, they define structs, types and constants used by the client code but missing on the host. In production, they import device headers directly.
@@ -95,7 +95,7 @@ Currently done manually by compiling, flashing the device and:
 
 - Reviewing logs on serial.
 - Measuring continuity or tension with the multimeter.
-- Pressing the record button and physically moving the IMU (rotating it with respect to one axis or moving along it, real gym exercises).
+- Pressing the record button and physically moving the IMU.
 - Performing BLE operations (e.g. connect, subscribe) with either the [*nRF Connect* mobile app](https://play.google.com/store/apps/details?id=no.nordicsemi.android.mcp&pcampaignid=web_share) or with the `IMUSampleReceiver` Python class.
 
 Might consider doing hardware-in-the-loop automated tests in the future.
@@ -131,7 +131,14 @@ Validation was performed by:
 
 Definitions, conventions and equations used, as well as experiments and implementation details are available in the referenced notebooks.
 
-The pipeline has been partially implemented on the firmware with a TDD approach against offline processing outputs, but due to problems/errors found on online processing, it has been stopped for now in favor of further offline development and validation.
+Later, each step of the above pipeline was implemented on the firmware with a TDD approach:
+
+1. Read offline processing outputs with a simple C++ parser.
+2. Write the test case performing per sample "equality" assertions (values within a tight tolerance).
+3. Implement the [step](device/lib/SignalProcessing/) as a concrete class that implements a Strategy interface.
+4. Assert that the [`IMUSignalProcessor`](device/lib/SignalProcessing/IMUSignalProcessor.cpp) class calls the step.
+5. Wire the step into the class and the program's entry point (`main`).
+6. Test it live on the actual hardware with real sensor data.
 
 ## Mobile App
 

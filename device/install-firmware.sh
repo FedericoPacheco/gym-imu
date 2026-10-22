@@ -120,6 +120,7 @@ clone_component() {
 
 clone_component https://github.com/FedericoPacheco/esp32-MPU-driver components/MPU
 clone_component https://github.com/FedericoPacheco/esp32-I2Cbus components/I2Cbus
+clone_component https://github.com/espressif/esp-dsp.git components/ESP-DSP
 
 chmod +x gen-lcov-report.sh
 

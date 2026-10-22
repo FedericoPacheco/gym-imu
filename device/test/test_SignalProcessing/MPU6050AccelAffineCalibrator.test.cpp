@@ -1,7 +1,7 @@
 #include "IMUSampleCsv.hpp"
-#include "IMUSensorPort.hpp"
+#include "Types.hpp"
+#include <1-Calibration/MPU6050AccelAffineCalibrator.hpp>
 #include <Constants.hpp>
-#include <MPU6050AffineCalibrator.hpp>
 #include <array>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -16,26 +16,25 @@ const std::array<testsupport::SeriesCase, 3> testCases = {{
      .inputPath =
          "../signal/0-capture/real-exercises/apr-28-2026/mpu6050-dips-1.csv",
      .expectedPath = "../signal/1-calibration/output/"
-                     "mpu6050-dips-1-calib-affine-sixf-tilted-a-online-w.csv"},
+                     "mpu6050-dips-1-calib-affine-sixf-tilted-a.csv"},
     {.name = "pull-ups-1",
      .inputPath = "../signal/0-capture/real-exercises/apr-28-2026/"
                   "mpu6050-pull-ups-1.csv",
-     .expectedPath =
-         "../signal/1-calibration/output/"
-         "mpu6050-pull-ups-1-calib-affine-sixf-tilted-a-online-w.csv"},
+     .expectedPath = "../signal/1-calibration/output/"
+                     "mpu6050-pull-ups-1-calib-affine-sixf-tilted-a.csv"},
     {.name = "90-deg-push-ups-1",
      .inputPath = "../signal/0-capture/real-exercises/apr-28-2026/"
                   "mpu6050-90-deg-push-ups-1.csv",
      .expectedPath =
          "../signal/1-calibration/output/"
-         "mpu6050-90-deg-push-ups-1-calib-affine-sixf-tilted-a-online-w.csv"},
+         "mpu6050-90-deg-push-ups-1-calib-affine-sixf-tilted-a.csv"},
 }};
 
-TEST(MPU6050AffineCalibrator_calibrate, CalibratesSeriesCorrectly) {
+TEST(MPU6050AccelAffineCalibrator_calibrate, CalibratesSeriesCorrectly) {
   for (const testsupport::SeriesCase &series : testCases) {
     SCOPED_TRACE(series.name);
 
-    MPU6050AffineCalibrator calibrator;
+    MPU6050AccelAffineCalibrator calibrator;
     std::vector<IMUSample> rawSamples =
         testsupport::readIMUSamplesFromCSV(series.inputPath);
     const std::vector<IMUSample> expectedSamples =

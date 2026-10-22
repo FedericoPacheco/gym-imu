@@ -31,11 +31,23 @@ uint32_t rtosTaskNotifyTake(BaseType_t clearCountOnExit,
                             TickType_t ticksToWait) {
   return ulTaskNotifyTake(clearCountOnExit, ticksToWait);
 }
-
+BaseType_t rtosTaskNotify(TaskHandle_t taskHandle, uint32_t ulValue,
+                          eNotifyAction eAction) {
+  return xTaskNotify(taskHandle, ulValue, eAction);
+}
+BaseType_t rtosTaskNotifyWait(uint32_t ulBitsToClearOnEntry,
+                              uint32_t ulBitsToClearOnExit,
+                              uint32_t *pulNotificationValue,
+                              TickType_t xTicksToWait) {
+  return xTaskNotifyWait(ulBitsToClearOnEntry, ulBitsToClearOnExit,
+                         pulNotificationValue, xTicksToWait);
+}
+TickType_t rtosMillisecondsToTicks(uint32_t milliseconds) {
+  return pdMS_TO_TICKS(milliseconds);
+}
 void rtosTaskNotifyGive(TaskHandle_t taskHandle) {
   xTaskNotifyGive(taskHandle);
 }
-
 void rtosTaskNotifyGiveFromISR(TaskHandle_t taskHandle,
                                BaseType_t *highPriorityTaskWoken) {
   vTaskNotifyGiveFromISR(taskHandle, highPriorityTaskWoken);

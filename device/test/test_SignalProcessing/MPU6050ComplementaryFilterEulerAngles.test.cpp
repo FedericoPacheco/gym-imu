@@ -1,7 +1,7 @@
 #include "IMUSampleCsv.hpp"
-#include "IMUSensorPort.hpp"
+#include "Types.hpp"
+#include <3-Orientation/MPU6050ComplementaryOrientationFinder.hpp>
 #include <Constants.hpp>
-#include <MPU6050ComplementaryOrientationFinder.hpp>
 #include <array>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -37,7 +37,8 @@ TEST(DISABLED_MPU6050ComplementaryOrientationFinder_find,
   for (const testsupport::SeriesCase &series : testCases) {
     SCOPED_TRACE(series.name);
 
-    MPU6050ComplementaryOrientationFinder orientator;
+    const float dt = 1.0f / 30.0f;
+    MPU6050ComplementaryOrientationFinder orientator(dt);
     const std::vector<IMUSample> noiseFreeSamples =
         testsupport::readIMUSamplesFromCSV(series.inputPath);
     const std::vector<std::tuple<IMUSample, EulerOrientationSample>>

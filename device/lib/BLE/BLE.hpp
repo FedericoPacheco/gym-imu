@@ -1,15 +1,16 @@
 #pragma once
 #include <Constants.hpp>
 #include <ErrorMacros.hpp>
-#include <IMUSensorPort.hpp>
 #include <LoggerPort.hpp>
 #include <LoopRunner.hpp>
 #include <Pipe.hpp>
+#include <Types.hpp>
 #include <algorithm>
 #include <atomic>
 #include <cstdint>
 #include <cstring>
 #include <memory>
+#include <ports/BLE/BLETransmitterPort.hpp>
 #include <ports/ESP-IDF/ESPIDFPort.hpp>
 #include <ports/FreeRTOS/FreeRTOSPort.hpp>
 #include <ports/NimBLE/NimBLEPort.hpp>
@@ -45,7 +46,7 @@ Refer to main.cpp
 
 Notes:
 Notifications, not allowing reads from the client, and only allowing a single
-connection were chosen to reduce radio strain, reduce latency, and maximize data
+connection were chosen to reduce radio strain and latency, and maximize data
 streaming capabilities.
 
 Definitions:
@@ -59,8 +60,16 @@ the controller, exposing a high-level API to the application. Handles GAP, GATT,
 security, etc. Runs on the CPU and listens for events from the controller.
 */
 
-class BLE {
+// TODO: improve isConnected()
+
+template <typename TransmittedSample> class BLE : public BLETransmitterPort {
 public:
+  enum class State { IDLE, TRANSMITTING, DRAINING };
+
+  // Bit mask indicating that the processor has stopped. Used to notify the
+  // coordinator task.
+  static constexpr uint32_t STOPPED_MASK = 1u << 2;
+
   static constexpr const char *DEVICE_NAME = "Gym-IMU";
   // Motion sensor. See BLE specification .pdf, section 2.6.3.:
   // https://www.bluetooth.com/specifications/assigned-numbers/
@@ -78,19 +87,19 @@ public:
       BLE_UUID128_INIT(0x3a, 0x7c, 0xd6, 0x9e, 0x6f, 0x71, 0x20, 0xab, 0xa2,
                        0x4d, 0x31, 0xf2, 0x0b, 0x34, 0x1c, 0xc2);
 
-  static BLE *
-  getInstance(LoggerPort *logger,
-              std::shared_ptr<Pipe<IMUSample, TRANSMISSION_PIPE_SIZE>> pipe,
-              std::unique_ptr<LoopRunner> transmitRunner);
+  static BLE *getInstance(
+      LoggerPort *logger,
+      std::shared_ptr<Pipe<TransmittedSample, TRANSMISSION_PIPE_SIZE>> pipe,
+      std::unique_ptr<LoopRunner> transmitRunner, TaskHandle_t coordinator);
 
 #if defined(UNIT_TEST) && !defined(ESP_PLATFORM)
   static void resetInstanceForTests();
 #endif
 
   ~BLE();
-  bool isConnected();
-  void beginTransmission();
-  void stopTransmission();
+  bool isConnected() override;
+  void beginTransmission() override;
+  void requestStopTransmission() override;
 
 private:
   static constexpr int PREFERRED_BATCH_SEND_SIZE = 6;
@@ -100,8 +109,10 @@ private:
   static constexpr int DEFAULT_MTU = 23;
   // Effective payload = MTU (maximum transmission unit) - 3 bytes for ATT
   // header
-  static constexpr int PREFERRED_MTU = std::min(
-      static_cast<int>(sizeof(IMUSample) * PREFERRED_BATCH_SEND_SIZE + 3), 512);
+  static constexpr int PREFERRED_MTU =
+      std::min(static_cast<int>(
+                   sizeof(TransmittedSample) * PREFERRED_BATCH_SEND_SIZE + 3),
+               512);
   // Time between data exchanges when connected, between 7.5ms and 4s
   static constexpr int CONNECTION_INTERVAL_MIN_MS = 15;
   static constexpr int CONNECTION_INTERVAL_MAX_MS = 30;
@@ -133,8 +144,8 @@ private:
     uint16_t connectionHandle;
     uint16_t mtu;
     uint16_t currentBatchSize;
-    bool isSubscribedToImuSampleCharacteristic;
-    uint16_t imuSampleCharacteristicHandle;
+    bool isSubscribedToTransmittedSampleCharacteristic;
+    uint16_t transmittedSampleCharacteristicHandle;
     BLEAddress address;
   } communicationState;
 
@@ -145,20 +156,21 @@ private:
 
   TaskHandle_t bleTaskHandle;
   std::unique_ptr<LoopRunner> transmitRunner;
-  std::atomic<bool> doTransmit;
-  std::shared_ptr<Pipe<IMUSample, TRANSMISSION_PIPE_SIZE>> pipe;
+  std::atomic<State> state{State::IDLE};
+  TaskHandle_t coordinator;
+  std::shared_ptr<Pipe<TransmittedSample, TRANSMISSION_PIPE_SIZE>> pipe;
 
   ble_hs_adv_fields primaryAdvertisingPacket;
   ble_hs_adv_fields scanResponsePacket;
   ble_gap_adv_params advertisingConfig;
 
   BLE(LoggerPort *logger,
-      std::shared_ptr<Pipe<IMUSample, TRANSMISSION_PIPE_SIZE>> pipe,
-      std::unique_ptr<LoopRunner> transmitRunner);
+      std::shared_ptr<Pipe<TransmittedSample, TRANSMISSION_PIPE_SIZE>> pipe,
+      std::unique_ptr<LoopRunner> transmitRunner, TaskHandle_t coordinator);
   static std::unique_ptr<BLE>
   create(LoggerPort *logger,
-         std::shared_ptr<Pipe<IMUSample, TRANSMISSION_PIPE_SIZE>> pipe,
-         std::unique_ptr<LoopRunner> transmitRunner);
+         std::shared_ptr<Pipe<TransmittedSample, TRANSMISSION_PIPE_SIZE>> pipe,
+         std::unique_ptr<LoopRunner> transmitRunner, TaskHandle_t coordinator);
 
   inline bool initializeFlash();
 
@@ -171,16 +183,15 @@ private:
   static int handleGAPEvent(ble_gap_event *event, void *arg);
 
   inline bool initializeGATT();
-  static int accessImuSampleCharacteristic(uint16_t connectionHandle,
-                                           uint16_t attributeHandle,
-                                           struct ble_gatt_access_ctxt *context,
-                                           void *arg);
+  static int accessTransmittedSampleCharacteristic(
+      uint16_t connectionHandle, uint16_t attributeHandle,
+      struct ble_gatt_access_ctxt *context, void *arg);
 
   inline bool initializeTasks();
   static void bleTask(void *arg);
   static void transmitLoopFunction(void *arg);
-  inline void setDoTransmit(bool value);
-  inline bool getDoTransmit();
+  inline void setState(State value);
+  inline State getState();
 
   inline bool initializeAdvertising();
   bool startAdvertising();

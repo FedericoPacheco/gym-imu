@@ -11,9 +11,14 @@ esp_err_t gpioAddISRHandler(gpio_num_t pin, gpio_isr_t handler, void *arg) {
 esp_err_t gpioRemoveISRHandler(gpio_num_t pin) {
   return gpio_isr_handler_remove(pin);
 }
+esp_err_t gpioIntrDisable(gpio_num_t pin) { return gpio_intr_disable(pin); }
+
+esp_err_t gpioIntrEnable(gpio_num_t pin) { return gpio_intr_enable(pin); }
 
 esp_err_t nvsFlashInit() { return nvs_flash_init(); }
 
 esp_err_t nvsFlashErase() { return nvs_flash_erase(); }
 
 int64_t getTimeUs() { return esp_timer_get_time(); }
+
+void restartDevice() { esp_restart(); }

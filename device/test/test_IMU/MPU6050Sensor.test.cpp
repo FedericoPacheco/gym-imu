@@ -13,7 +13,7 @@ DEFINE_FFF_GLOBALS;
 #include "doubles/I2CDouble.hpp"
 #include "doubles/LoggerDouble.hpp"
 #include "doubles/MPUDouble.hpp"
-#include "doubles/PipeDouble.hpp"
+#include "doubles/PipesDoubles.hpp"
 #include <DeterministicNotificationRunner.hpp>
 #include <MPU6050Sensor.hpp>
 
@@ -42,6 +42,9 @@ struct MPU6050SensorDependencies {
   std::unique_ptr<testing::NiceMock<MPUDouble>> sensor;
   std::unique_ptr<testing::NiceMock<I2CDouble>> i2c;
   std::unique_ptr<NotificationRunner> runner;
+  bool useHWLowPassFilter;
+  int samplingFrequencyHz;
+  int coordinatorTaskToken;
 };
 MPU6050SensorDependencies buildDefaultDependencies() {
   MPU6050Sensor::resetInstanceForTests();
@@ -62,6 +65,8 @@ MPU6050SensorDependencies buildDefaultDependencies() {
   deps.sensor = std::make_unique<testing::NiceMock<MPUDouble>>();
   deps.i2c = std::make_unique<testing::NiceMock<I2CDouble>>();
   deps.runner = std::make_unique<DeterministicNotificationRunner>();
+  deps.useHWLowPassFilter = true;
+  deps.samplingFrequencyHz = 30;
 
   ON_CALL(*deps.i2c, begin(_, _, _, _, _)).WillByDefault(Return(ESP_OK));
 
@@ -91,10 +96,12 @@ MPU6050SensorDependencies buildDefaultDependencies() {
 
   return deps;
 }
+
 MPU6050Sensor *getInstanceWith(MPU6050SensorDependencies &&deps) {
-  return MPU6050Sensor::getInstance(&logger, deps.pipe, std::move(deps.sensor),
-                                    std::move(deps.i2c),
-                                    std::move(deps.runner));
+  return MPU6050Sensor::getInstance(
+      &logger, deps.pipe, &deps.coordinatorTaskToken, deps.samplingFrequencyHz,
+      deps.useHWLowPassFilter, std::move(deps.sensor), std::move(deps.i2c),
+      std::move(deps.runner));
 }
 
 esp_err_t fillDeterministicFIFOPacket(size_t length, uint8_t *data) {
@@ -175,7 +182,6 @@ TEST(MPU6050Sensor_getInstance, ReturnsNullWhenSettingGyroscopeScaleFails) {
   EXPECT_EQ(getInstanceWith(std::move(deps)), nullptr);
 }
 
-#ifdef PROCESS_SIGNAL
 TEST(MPU6050Sensor_getInstance, ReturnsNullWhenSettingLowPassFilterFails) {
   auto deps = buildDefaultDependencies();
   EXPECT_CALL(*deps.sensor, setDigitalLowPassFilter(mpud::DLPF_42HZ))
@@ -190,7 +196,6 @@ TEST(MPU6050Sensor_getInstance, ReturnsNullWhenConfiguringFIFOFails) {
 
   EXPECT_EQ(getInstanceWith(std::move(deps)), nullptr);
 }
-#endif
 
 TEST(MPU6050Sensor_getInstance, ReturnsNullWhenEnablingFIFOFails) {
   auto deps = buildDefaultDependencies();
@@ -275,7 +280,7 @@ TEST(
   instance->beginAsync();
   runner->notify();
   runner->runOneStep();
-  instance->stopAsync();
+  instance->requestStopAsync();
 
   ASSERT_EQ(pushed.size(), 3u);
   for (size_t i = 1; i < pushed.size(); ++i) {
@@ -314,7 +319,7 @@ TEST(MPU6050Sensor_onReadTaskNotification,
   instance->beginAsync();
   runner->notify();
   runner->runOneStep();
-  instance->stopAsync();
+  instance->requestStopAsync();
 }
 
 TEST(MPU6050Sensor_onReadTaskNotification,
@@ -335,7 +340,7 @@ TEST(MPU6050Sensor_onReadTaskNotification,
   instance->beginAsync();
   runner->notify();
   runner->runOneStep();
-  instance->stopAsync();
+  instance->requestStopAsync();
 }
 
 TEST(MPU6050Sensor_onReadTaskNotification,
@@ -356,7 +361,7 @@ TEST(MPU6050Sensor_onReadTaskNotification,
   instance->beginAsync();
   runner->notify();
   runner->runOneStep();
-  instance->stopAsync();
+  instance->requestStopAsync();
 }
 
 TEST(MPU6050Sensor_onReadTaskNotification,
@@ -379,7 +384,7 @@ TEST(MPU6050Sensor_onReadTaskNotification,
   instance->beginAsync();
   runner->notify();
   runner->runOneStep();
-  instance->stopAsync();
+  instance->requestStopAsync();
 }
 
 TEST(MPU6050Sensor_onReadTaskNotification,
@@ -405,26 +410,61 @@ TEST(MPU6050Sensor_onReadTaskNotification,
   instance->beginAsync();
   runner->notify();
   runner->runOneStep();
-  instance->stopAsync();
+  instance->requestStopAsync();
 }
 
-TEST(MPU6050Sensor_onReadTaskNotification, ReturnsEarlyWhenDoReadFlagIsFalse) {
+TEST(MPU6050Sensor_onReadTaskNotification, ShouldntStopWithoutBeginningFirst) {
+  auto deps = buildDefaultDependencies();
+  auto *runner =
+      static_cast<DeterministicNotificationRunner *>(deps.runner.get());
+  MPU6050Sensor *instance = getInstanceWith(std::move(deps));
+
+  instance->requestStopAsync();
+  runner->notify();
+  runner->runOneStep();
+
+  ASSERT_EQ(rtosTaskNotify_fake.call_count, 0u);
+}
+
+TEST(MPU6050Sensor_onReadTaskNotification,
+     AcknowledgesStopAfterCheckingRemainingFifoData) {
   auto deps = buildDefaultDependencies();
   auto *runner =
       static_cast<DeterministicNotificationRunner *>(deps.runner.get());
   auto *sensor = deps.sensor.get();
-  auto *pipe = deps.pipe.get();
   MPU6050Sensor *instance = getInstanceWith(std::move(deps));
 
-  EXPECT_CALL(*sensor, getFIFOCount()).Times(0);
-  EXPECT_CALL(*sensor, lastError()).Times(0);
+  EXPECT_CALL(*sensor, getFIFOCount()).WillOnce(Return(0));
+  EXPECT_CALL(*sensor, lastError()).WillOnce(Return(ESP_OK));
   EXPECT_CALL(*sensor, readFIFO(_, _)).Times(0);
-  EXPECT_CALL(*sensor, resetFIFO()).Times(0);
-  EXPECT_CALL(*pipe, push(_)).Times(0);
 
-  instance->stopAsync();
+  instance->beginAsync();
+  instance->requestStopAsync();
   runner->notify();
   runner->runOneStep();
+
+  ASSERT_EQ(rtosTaskNotify_fake.call_count, 1u);
+}
+
+TEST(MPU6050Sensor_onReadTaskNotification,
+     AcknoledgesStopEvenAfterReadingError) {
+  auto deps = buildDefaultDependencies();
+  auto *runner =
+      static_cast<DeterministicNotificationRunner *>(deps.runner.get());
+  auto *sensor = deps.sensor.get();
+  MPU6050Sensor *instance = getInstanceWith(std::move(deps));
+
+  EXPECT_CALL(*sensor, getFIFOCount()).WillOnce(Return(1 * FIFO_PACKET_SIZE));
+  EXPECT_CALL(*sensor, lastError()).WillRepeatedly(Return(ESP_OK));
+  EXPECT_CALL(*sensor, readFIFO(FIFO_PACKET_SIZE, _))
+      .WillOnce(Return(ESP_FAIL));
+
+  instance->beginAsync();
+  instance->requestStopAsync();
+  runner->notify();
+  runner->runOneStep();
+
+  ASSERT_EQ(rtosTaskNotify_fake.call_count, 1u);
 }
 
 } // namespace

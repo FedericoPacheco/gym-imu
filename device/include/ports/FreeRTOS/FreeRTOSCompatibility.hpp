@@ -25,6 +25,14 @@ struct portMUX_TYPE {
   uint8_t storage;
 };
 
+typedef enum {
+  eNoAction = 0,
+  eSetBits,
+  eIncrement,
+  eSetValueWithOverwrite,
+  eSetValueWithoutOverwrite
+} eNotifyAction;
+
 #ifndef portMUX_INITIALIZER_UNLOCKED
 #define portMUX_INITIALIZER_UNLOCKED                                           \
   {}

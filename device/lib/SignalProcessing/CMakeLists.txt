@@ -1,1 +1,1 @@
-idf_component_register(SRCS "IMUSignalProcessor.cpp" "IMUCalibrator.cpp" INCLUDE_DIRS ".")
+idf_component_register(SRCS "IMUSignalProcessor.cpp" INCLUDE_DIRS "." "include")

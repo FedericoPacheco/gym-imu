@@ -5,26 +5,33 @@ MPU6050Sensor::InstanceState MPU6050Sensor::instanceState = {};
 MPU6050Sensor::MPU6050Sensor(
     LoggerPort *logger,
     std::shared_ptr<Pipe<IMUSample, SAMPLING_PIPE_SIZE>> pipe,
+    TaskHandle_t coordinator, int samplingFrequencyHz, bool useHWLowPassFilter,
     std::unique_ptr<MPUPort> sensor, std::unique_ptr<I2CPort> i2c,
     std::unique_ptr<NotificationRunner> runner, gpio_num_t INTPin,
-    gpio_num_t SDAPin, gpio_num_t SCLPin, int samplingFrequencyHz)
+    gpio_num_t SDAPin, gpio_num_t SCLPin)
     : logger(logger), pipe(pipe), sensor(std::move(sensor)),
       bus(std::move(i2c)), runner(std::move(runner)), INTPin(INTPin),
-      SDAPin(SDAPin), SCLPin(SCLPin), samplingFrequencyHz(samplingFrequencyHz) {
-}
+      SDAPin(SDAPin), SCLPin(SCLPin), samplingFrequencyHz(samplingFrequencyHz),
+      useHWLowPassFilter(useHWLowPassFilter), coordinator(coordinator) {}
 
-std::unique_ptr<MPU6050Sensor> MPU6050Sensor::create(
-    LoggerPort *logger,
-    std::shared_ptr<Pipe<IMUSample, SAMPLING_PIPE_SIZE>> pipe,
-    std::unique_ptr<MPUPort> sensor, std::unique_ptr<I2CPort> i2c,
-    std::unique_ptr<NotificationRunner> runner, gpio_num_t INTPin,
-    gpio_num_t SDAPin, gpio_num_t SCLPin, int samplingFrequencyHz) {
+std::unique_ptr<MPU6050Sensor>
+MPU6050Sensor::create(LoggerPort *logger,
+                      std::shared_ptr<Pipe<IMUSample, SAMPLING_PIPE_SIZE>> pipe,
+                      TaskHandle_t coordinator, int samplingFrequencyHz,
+                      bool useHWLowPassFilter, std::unique_ptr<MPUPort> sensor,
+                      std::unique_ptr<I2CPort> i2c,
+                      std::unique_ptr<NotificationRunner> runner,
+                      gpio_num_t INTPin, gpio_num_t SDAPin, gpio_num_t SCLPin) {
 
   if (!logger)
     return nullptr;
 
   if (!pipe) {
     logger->error("Pipe pointer is null");
+    return nullptr;
+  }
+  if (!coordinator) {
+    logger->error("Coordinator task handle is null");
     return nullptr;
   }
   if (!sensor) {
@@ -42,8 +49,9 @@ std::unique_ptr<MPU6050Sensor> MPU6050Sensor::create(
 
   // nothrow: in case of failure, return nullptr instead of throwing
   std::unique_ptr<MPU6050Sensor> imu(new (std::nothrow) MPU6050Sensor(
-      logger, pipe, std::move(sensor), std::move(i2c), std::move(runner),
-      INTPin, SDAPin, SCLPin, samplingFrequencyHz));
+      logger, pipe, coordinator, samplingFrequencyHz, useHWLowPassFilter,
+      std::move(sensor), std::move(i2c), std::move(runner), INTPin, SDAPin,
+      SCLPin));
 
   if (!imu) {
     logger->error("Failed to allocate MPU6050Sensor");
@@ -78,9 +86,10 @@ std::unique_ptr<MPU6050Sensor> MPU6050Sensor::create(
 MPU6050Sensor *MPU6050Sensor::getInstance(
     LoggerPort *logger,
     std::shared_ptr<Pipe<IMUSample, SAMPLING_PIPE_SIZE>> pipe,
+    TaskHandle_t coordinator, int samplingFrequencyHz, bool useHWLowPassFilter,
     std::unique_ptr<MPUPort> sensor, std::unique_ptr<I2CPort> i2c,
     std::unique_ptr<NotificationRunner> runner, gpio_num_t INTPin,
-    gpio_num_t SDAPin, gpio_num_t SCLPin, int samplingFrequencyHz) {
+    gpio_num_t SDAPin, gpio_num_t SCLPin) {
 
   // Protect instance creation with a mutex to ensure thread safety
   if (MPU6050Sensor::instanceState.semaphoreHandle == nullptr) {
@@ -99,8 +108,9 @@ MPU6050Sensor *MPU6050Sensor::getInstance(
                         portMAX_DELAY) == pdTRUE) {
     if (!MPU6050Sensor::instanceState.instance)
       MPU6050Sensor::instanceState.instance = MPU6050Sensor::create(
-          logger, pipe, std::move(sensor), std::move(i2c), std::move(runner),
-          INTPin, SDAPin, SCLPin, samplingFrequencyHz);
+          logger, pipe, coordinator, samplingFrequencyHz, useHWLowPassFilter,
+          std::move(sensor), std::move(i2c), std::move(runner), INTPin, SDAPin,
+          SCLPin);
     rtosSemaphoreGive(MPU6050Sensor::instanceState.semaphoreHandle);
   }
   return MPU6050Sensor::instanceState.instance.get();
@@ -205,11 +215,11 @@ bool MPU6050Sensor::configureSettings() {
       this->sensor->setGyroFullScale(MPU6050Sensor::GYROSCOPE_SCALE),
       this->logger, "Failed to set gyroscope scale");
 
-#ifdef PROCESS_SIGNAL
-  RETURN_FALSE_ON_ESP_ERROR(
-      this->sensor->setDigitalLowPassFilter(MPU6050Sensor::DLPF_CONFIG),
-      this->logger, "Failed to set digital low pass filter");
-#endif
+  if (this->useHWLowPassFilter) {
+    RETURN_FALSE_ON_ESP_ERROR(
+        this->sensor->setDigitalLowPassFilter(MPU6050Sensor::DLPF_CONFIG),
+        this->logger, "Failed to set digital low pass filter");
+  }
 
   return true;
 }
@@ -230,7 +240,6 @@ bool MPU6050Sensor::setupDMPQueue() {
 bool MPU6050Sensor::setupTask() {
   this->logger->debug("Setting up runner for async reading");
 
-  this->setDoRead(false);
   bool didStart = this->runner->start(MPU6050Sensor::onReadTaskNotification,
                                       static_cast<void *>(this));
   if (!didStart) {
@@ -273,7 +282,8 @@ bool MPU6050Sensor::configureInterrupts() {
 MPU6050Sensor::~MPU6050Sensor() {
   this->logger->info("Shutting down MPU6050 sensor");
 
-  this->setDoRead(false);
+  gpioIntrDisable(this->INTPin);
+  this->setState(IMUSensorPort::State::IDLE);
 
   this->logger->debug("Stopping async runner");
   if (this->runner) {
@@ -286,11 +296,11 @@ MPU6050Sensor::~MPU6050Sensor() {
   this->logger->info("MPU6050 sensor shut down successfully");
 }
 
-inline void MPU6050Sensor::setDoRead(bool value) {
-  this->doRead.store(value, std::memory_order_relaxed);
+inline void MPU6050Sensor::setState(State state) {
+  this->state.store(state, std::memory_order_relaxed);
 }
-inline bool MPU6050Sensor::getDoRead() {
-  return this->doRead.load(std::memory_order_relaxed);
+inline MPU6050Sensor::State MPU6050Sensor::getState() {
+  return this->state.load(std::memory_order_relaxed);
 }
 
 std::optional<IMUSample> MPU6050Sensor::readAsync() {
@@ -318,7 +328,7 @@ void MPU6050Sensor::onReadTaskNotification(void *arg,
   if (!self)
     return;
 
-  if (!self->getDoRead()) {
+  if (self->getState() == IMUSensorPort::State::IDLE) {
     return;
   }
 
@@ -330,22 +340,31 @@ void MPU6050Sensor::onReadTaskNotification(void *arg,
 
   uint16_t initialFifoCount = self->sensor->getFIFOCount();
   bool wasCountReadError = self->sensor->lastError() != ESP_OK;
+  bool isFifoMisaligned = false;
   if (wasCountReadError) {
     self->logger->warn("Read task: FIFO count read error");
     self->sensor->resetFIFO();
-    return;
+  } else {
+    isFifoMisaligned = initialFifoCount % MPU6050Sensor::FIFO_PACKET_SIZE != 0;
+    if (isFifoMisaligned) {
+      self->logger->warn("Read task: FIFO misaligned (count=%d)",
+                         initialFifoCount);
+      self->sensor->resetFIFO();
+    }
   }
 
-  bool isFifoMisaligned =
-      initialFifoCount % MPU6050Sensor::FIFO_PACKET_SIZE != 0;
-  if (isFifoMisaligned) {
-    self->logger->warn("Read task: FIFO misaligned (count=%d)",
-                       initialFifoCount);
-    self->sensor->resetFIFO();
-    return;
-  }
+  if (!wasCountReadError && !isFifoMisaligned)
+    self->batchReadDMPQueue(initialFifoCount);
 
-  self->batchReadDMPQueue(initialFifoCount);
+  // Allow remaining packets to be processed before notifying that sampling
+  // finished. Assumes the coordinator calls requestStopAsync() once per
+  // sampling cycle.
+  if (self->getState() == IMUSensorPort::State::STOPPING) {
+    self->logger->debug("Notifying coordinator that sampling has finished");
+    self->setState(IMUSensorPort::State::IDLE);
+    self->resetNextSeq();
+    rtosTaskNotify(self->coordinator, MPU6050Sensor::STOPPED_MASK, eSetBits);
+  }
 }
 
 void MPU6050Sensor::batchReadDMPQueue(uint16_t initialFifoCount) {
@@ -443,6 +462,9 @@ inline void MPU6050Sensor::setNextSeq() {
 inline uint32_t MPU6050Sensor::getNextSeq() {
   return this->nextSeq.load(std::memory_order_relaxed);
 }
+inline void MPU6050Sensor::resetNextSeq() {
+  this->nextSeq.store(0, std::memory_order_relaxed);
+}
 
 std::optional<IMUSample> MPU6050Sensor::readSync() {
   mpud::raw_axes_t aRaw, wRaw;
@@ -458,13 +480,17 @@ std::optional<IMUSample> MPU6050Sensor::readSync() {
 
 void MPU6050Sensor::beginAsync() {
   this->logger->info("Starting async reading");
-  sensor->resetFIFO();
-  while (this->pipe->pop(false) != std::nullopt) {
-    // Empty pipe if any samples are left WITHOUT blocking
+  if (this->getState() == IMUSensorPort::State::IDLE) {
+    sensor->resetFIFO();
+    gpioIntrEnable(this->INTPin);
+    this->setState(IMUSensorPort::State::READING);
   }
-  this->setDoRead(true);
 }
-void MPU6050Sensor::stopAsync() {
+void MPU6050Sensor::requestStopAsync() {
   this->logger->info("Stopping async reading");
-  this->setDoRead(false);
+  if (this->getState() == IMUSensorPort::State::READING) {
+    this->setState(IMUSensorPort::State::STOPPING);
+    gpioIntrDisable(this->INTPin);
+    this->runner->notify();
+  }
 }

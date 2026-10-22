@@ -23,6 +23,11 @@ DEFINE_FAKE_VALUE_FUNC(BaseType_t, rtosTaskCreate, TaskFunction_t, const char *,
                        configSTACK_DEPTH_TYPE, void *, UBaseType_t,
                        TaskHandle_t *);
 DEFINE_FAKE_VALUE_FUNC(uint32_t, rtosTaskNotifyTake, BaseType_t, TickType_t);
+DEFINE_FAKE_VALUE_FUNC(BaseType_t, rtosTaskNotify, TaskHandle_t, uint32_t,
+                       eNotifyAction);
+DEFINE_FAKE_VALUE_FUNC(BaseType_t, rtosTaskNotifyWait, uint32_t, uint32_t,
+                       uint32_t *, TickType_t);
+DEFINE_FAKE_VALUE_FUNC(TickType_t, rtosMillisecondsToTicks, uint32_t);
 DEFINE_FAKE_VOID_FUNC(rtosTaskNotifyGive, TaskHandle_t);
 DEFINE_FAKE_VOID_FUNC(rtosTaskNotifyGiveFromISR, TaskHandle_t, BaseType_t *);
 

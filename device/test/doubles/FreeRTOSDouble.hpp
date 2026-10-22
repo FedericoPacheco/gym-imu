@@ -23,6 +23,11 @@ DECLARE_FAKE_VALUE_FUNC(BaseType_t, rtosTaskCreate, TaskFunction_t,
 DECLARE_FAKE_VALUE_FUNC(uint32_t, rtosTaskNotifyTake, BaseType_t, TickType_t);
 DECLARE_FAKE_VOID_FUNC(rtosTaskNotifyGive, TaskHandle_t);
 DECLARE_FAKE_VOID_FUNC(rtosTaskNotifyGiveFromISR, TaskHandle_t, BaseType_t *);
+DECLARE_FAKE_VALUE_FUNC(BaseType_t, rtosTaskNotify, TaskHandle_t, uint32_t,
+                        eNotifyAction);
+DECLARE_FAKE_VALUE_FUNC(BaseType_t, rtosTaskNotifyWait, uint32_t, uint32_t,
+                        uint32_t *, TickType_t);
+DECLARE_FAKE_VALUE_FUNC(TickType_t, rtosMillisecondsToTicks, uint32_t);
 
 DECLARE_FAKE_VOID_FUNC(rtosTaskDelay, TickType_t);
 DECLARE_FAKE_VOID_FUNC(rtosTaskDelete, TaskHandle_t);
@@ -40,6 +45,9 @@ inline void resetFreeRTOSPortFakes() {
   RESET_FAKE(rtosTaskNotifyTake);
   RESET_FAKE(rtosTaskNotifyGive);
   RESET_FAKE(rtosTaskNotifyGiveFromISR);
+  RESET_FAKE(rtosTaskNotify);
+  RESET_FAKE(rtosTaskNotifyWait);
+  RESET_FAKE(rtosMillisecondsToTicks);
   RESET_FAKE(rtosTaskDelay);
   RESET_FAKE(rtosTaskDelete);
   RESET_FAKE(rtosYieldFromISR);

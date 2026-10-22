@@ -16,6 +16,13 @@ BaseType_t rtosTaskCreate(TaskFunction_t taskFn, const char *taskName,
                           UBaseType_t priority, TaskHandle_t *taskHandle);
 uint32_t rtosTaskNotifyTake(BaseType_t clearCountOnExit,
                             TickType_t ticksToWait);
+BaseType_t rtosTaskNotify(TaskHandle_t taskHandle, uint32_t ulValue,
+                          eNotifyAction eAction);
+BaseType_t rtosTaskNotifyWait(uint32_t ulBitsToClearOnEntry,
+                              uint32_t ulBitsToClearOnExit,
+                              uint32_t *pulNotificationValue,
+                              TickType_t xTicksToWait);
+TickType_t rtosMillisecondsToTicks(uint32_t milliseconds);
 void rtosTaskNotifyGive(TaskHandle_t taskHandle);
 void rtosTaskNotifyGiveFromISR(TaskHandle_t taskHandle,
                                BaseType_t *highPriorityTaskWoken);

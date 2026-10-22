@@ -11,4 +11,5 @@ public:
 
   // Edit sample in place to reduce memory usage
   virtual void filter(IMUSample &sample) = 0;
+  virtual void reset() = 0;
 };

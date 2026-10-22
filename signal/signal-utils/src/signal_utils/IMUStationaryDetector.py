@@ -199,6 +199,7 @@ class WindowedIMUStationaryDetector(IMUStationaryDetector):
     ):
         super().__init__(reader=reader, kAccel=kAccel, kGyro=kGyro)
         self.windowSize = math.floor(self.WINDOW_TIME_SECONDS * samplingFrequency)
+        print(f"Window size = {self.windowSize} samples")
 
     def computeTolerances(self, capturePaths: list[str], doPrintResults=True):
         if not capturePaths or len(capturePaths) == 0:
@@ -226,13 +227,13 @@ class WindowedIMUStationaryDetector(IMUStationaryDetector):
             print(
                 f"Acceleration norms:"
                 f"\n\tMedian = {self.accelCenter:.6f} m/s²"
-                f"\n\tMAD = {accelMad:.6f} (tol = {self.accelTol:.6f}) m/s²"
+                f"\n\tMAD = {accelMad:.6f} (tol = {self.accelTol:.6f} with k = {self.kAccel}) m/s²"
                 f"\n\tStationary interval = [{self.accelCenter - self.accelTol:.6f}, {self.accelCenter + self.accelTol:.6f}] m/s²"
             )
             print(
                 f"Gyroscope norms:"
                 f"\n\tMedian = {self.gyroCenter:.6f} deg/s"
-                f"\n\tMAD = {gyroMad:.6f} (tol = {self.gyroTol:.6f}) deg/s"
+                f"\n\tMAD = {gyroMad:.6f} (tol = {self.gyroTol:.6f} with k = {self.kGyro}) deg/s"
                 f"\n\tStationary interval = [{self.gyroCenter - self.gyroTol:.6f}, {self.gyroCenter + self.gyroTol:.6f}] deg/s"
             )
             print()

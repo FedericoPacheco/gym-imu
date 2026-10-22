@@ -58,6 +58,7 @@ static constexpr esp_err_t ESP_ERR_NVS_NEW_VERSION_FOUND = 0x1110;
 #include "driver/gpio.h"
 #include "esp_attr.h"
 #include "esp_err.h"
+#include "esp_system.h"
 #include "esp_timer.h"
 #include "nvs_flash.h"
 

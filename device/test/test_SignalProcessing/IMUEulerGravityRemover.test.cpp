@@ -1,6 +1,8 @@
+// #include
+// "../lib/SignalProcessing/4-GravityRemoval/IMUEulerGravityRemover.hpp"
+#include "4-GravityRemoval/IMUEulerGravityRemover.hpp"
 #include "IMUSampleCsv.hpp"
-#include "IMUSensorPort.hpp"
-#include <MPU6050EulerGravityRemover.hpp>
+#include "Types.hpp"
 #include <array>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -34,11 +36,11 @@ const std::array<testsupport::SeriesCase, 3> testCases = {{
                      "compl-g-free-rot-mat.csv"},
 }};
 
-TEST(DISABLED_MPU6050EulerGravityRemover_find, RemovesGravityCorrectly) {
+TEST(DISABLED_IMUEulerGravityRemover_remove, RemovesGravityCorrectly) {
   for (const testsupport::SeriesCase &series : testCases) {
     SCOPED_TRACE(series.name);
 
-    MPU6050EulerGravityRemover remover;
+    IMUEulerGravityRemover remover;
     std::vector<std::tuple<IMUSample, EulerOrientationSample>>
         orientatedSamples =
             testsupport::readIMUSampleWithAnglesFromCSV(series.inputPath);

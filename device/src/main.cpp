@@ -20,6 +20,7 @@
 #include <MPU6050Sensor.hpp>
 #include <QueuePipe.hpp>
 #include <Types.hpp>
+#include <VBTSystem.hpp>
 #include <esp_system.h>
 #include <memory>
 
@@ -126,7 +127,7 @@ extern "C" void app_main() {
   UARTLogger processorLogger("Processor", LogLevel::DEBUG);
   auto processorRunner = std::make_unique<FreeRTOSLoopRunner>(
       "processTask", PROCESS_TASK_STACK_SIZE, PROCESS_TASK_PRIORITY,
-      pdMS_TO_TICKS(10)); // 5));
+      pdMS_TO_TICKS(10));
   std::unique_ptr<IMUCalibrator> calibrator =
       std::make_unique<MPU6050AccelAffineCalibrator>();
   std::unique_ptr<IMUNoiseReducer> noiseReducer =
@@ -170,112 +171,40 @@ extern "C" void app_main() {
   }
 #endif
 
-  // -------------------------------------------------------------------------
-
-  auto stopPipeline = [&] -> void {
-    imu->requestStopAsync();
-    uint32_t maskValue = 0;
-    BaseType_t wasNotified =
-        xTaskNotifyWait(0, IMUSensorPort::STOPPED_MASK, &maskValue,
-                        MAX_BLOCKING_TIME_AFTER_STOP_TICKS);
-    if (wasNotified != pdTRUE ||
-        (maskValue & IMUSensorPort::STOPPED_MASK) == 0) {
-      imuLogger.error("Failed to stop IMU properly. Rebooting...");
-      vTaskDelay(pdMS_TO_TICKS(100));
-      esp_restart(); // Simplest recovery strategy: restart the device
-    }
-
+  UARTLogger systemLogger("VBTSystem", LogLevel::INFO);
+  VBTSystem::Dependencies dependencies{
+      .imu = imu,
+      .ble = ble,
 #ifdef PROCESS_SIGNAL
-    processor->requestStopProcessing();
-    maskValue = 0;
-    wasNotified =
-        xTaskNotifyWait(0, IMUSignalProcessor::STOPPED_MASK, &maskValue,
-                        MAX_BLOCKING_TIME_AFTER_STOP_TICKS);
-    if (wasNotified != pdTRUE ||
-        (maskValue & IMUSignalProcessor::STOPPED_MASK) == 0) {
-      processorLogger.error(
-          "Failed to stop SignalProcessor properly. Rebooting...");
-      vTaskDelay(pdMS_TO_TICKS(100));
-      esp_restart();
-    }
-#endif
-
-    ble->requestStopTransmission();
-    maskValue = 0;
-    wasNotified =
-        xTaskNotifyWait(0, BLE<TransmittedSample>::STOPPED_MASK, &maskValue,
-                        MAX_BLOCKING_TIME_AFTER_STOP_TICKS);
-    if (wasNotified != pdTRUE ||
-        (maskValue & BLE<TransmittedSample>::STOPPED_MASK) == 0) {
-      bleLogger.error("Failed to stop BLE properly. Rebooting...");
-      vTaskDelay(pdMS_TO_TICKS(100));
-      esp_restart();
-    }
-  };
-
-  bool doSample = false;
-  button->enableAsync();
-  while (true) {
-    vTaskDelay(pdMS_TO_TICKS(250));
-
-    // Toggle sampling when user presses button, but only if a client is
-    // connected
-    // TODO: improve isConnected()
-    if (button->wasPressedAsync() && ble->isConnected()) {
-      doSample = !doSample;
-      if (doSample) {
-        ble->beginTransmission();
-#ifdef PROCESS_SIGNAL
-        processor->beginProcessing();
-#endif
-        imu->beginAsync();
-      } else {
-        stopPipeline();
-
-        PipeMetrics samplingMetrics = samplingPipe->getMetrics();
-        samplingPipeLogger.info(
-            "Sampling pipe metrics: drops=%u, maxDepth=%u, currentDepth=%u",
-            samplingMetrics.drops, samplingMetrics.maxDepth,
-            samplingMetrics.currentDepth);
-#ifdef PROCESS_SIGNAL
-        PipeMetrics transmissionMetrics = transmissionPipe->getMetrics();
-        transmissionPipeLogger.info("Transmission pipe metrics: drops=%u, "
-                                    "maxDepth=%u, currentDepth=%u",
-                                    transmissionMetrics.drops,
-                                    transmissionMetrics.maxDepth,
-                                    transmissionMetrics.currentDepth);
-#endif
-      }
-    }
-
-    // Stop sampling if BLE gets disconnected
-    if (doSample && !ble->isConnected()) {
-      doSample = false;
-      stopPipeline();
-    }
-
-// Provide visual feedback to the user
-#ifdef PROCESS_SIGNAL
-    // Callbacks or events weren't used for simplicity
-    switch (processor->getState()) {
-    case IMUSignalProcessor::State::IDLE:
-      led->turnOff();
-      break;
-    case IMUSignalProcessor::State::INITIALIZING:
-      led->blink();
-      break;
-    case IMUSignalProcessor::State::PROCESSING:
-    case IMUSignalProcessor::State::DRAINING:
-      led->turnOn();
-      break;
-    }
+      .processor = processor,
 #else
-    if (doSample) {
-      led->turnOn();
-    } else {
-      led->turnOff();
-    }
+      .processor = nullptr,
 #endif
+      .button = button.get(),
+      .led = led.get(),
+      .samplingPipe = samplingPipe.get(),
+#ifdef PROCESS_SIGNAL
+      .transmissionPipe = transmissionPipe.get(),
+#else
+      .transmissionPipe = nullptr,
+#endif
+      .logger = &systemLogger,
+      .samplingPipeLogger = &samplingPipeLogger,
+#ifdef PROCESS_SIGNAL
+      .transmissionPipeLogger = &transmissionPipeLogger,
+#else
+      .transmissionPipeLogger = nullptr,
+#endif
+#ifdef PROCESS_SIGNAL
+      .signalProcessingEnabled = true,
+#else
+      .signalProcessingEnabled = false,
+#endif
+  };
+  VBTSystem *system = VBTSystem::getInstance(dependencies);
+  if (system == nullptr) {
+    imuLogger.error("Failed to create VBTSystem");
+    return;
   }
-  button->disableAsync();
+  system->run();
 }

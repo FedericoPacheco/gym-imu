@@ -10,3 +10,4 @@ esp_err_t gpioIntrEnable(gpio_num_t pin);
 esp_err_t nvsFlashInit();
 esp_err_t nvsFlashErase();
 int64_t getTimeUs();
+void restartDevice();

@@ -10,6 +10,7 @@
 #include <cstdint>
 #include <cstring>
 #include <memory>
+#include <ports/BLE/BLETransmitterPort.hpp>
 #include <ports/ESP-IDF/ESPIDFPort.hpp>
 #include <ports/FreeRTOS/FreeRTOSPort.hpp>
 #include <ports/NimBLE/NimBLEPort.hpp>
@@ -59,7 +60,9 @@ the controller, exposing a high-level API to the application. Handles GAP, GATT,
 security, etc. Runs on the CPU and listens for events from the controller.
 */
 
-template <typename TransmittedSample> class BLE {
+// TODO: improve isConnected()
+
+template <typename TransmittedSample> class BLE : public BLETransmitterPort {
 public:
   enum class State { IDLE, TRANSMITTING, DRAINING };
 
@@ -94,9 +97,9 @@ public:
 #endif
 
   ~BLE();
-  bool isConnected();
-  void beginTransmission();
-  void requestStopTransmission();
+  bool isConnected() override;
+  void beginTransmission() override;
+  void requestStopTransmission() override;
 
 private:
   static constexpr int PREFERRED_BATCH_SEND_SIZE = 6;

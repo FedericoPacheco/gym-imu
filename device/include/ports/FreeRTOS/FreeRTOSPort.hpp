@@ -22,6 +22,7 @@ BaseType_t rtosTaskNotifyWait(uint32_t ulBitsToClearOnEntry,
                               uint32_t ulBitsToClearOnExit,
                               uint32_t *pulNotificationValue,
                               TickType_t xTicksToWait);
+TickType_t rtosMillisecondsToTicks(uint32_t milliseconds);
 void rtosTaskNotifyGive(TaskHandle_t taskHandle);
 void rtosTaskNotifyGiveFromISR(TaskHandle_t taskHandle,
                                BaseType_t *highPriorityTaskWoken);

@@ -15,6 +15,7 @@ DECLARE_FAKE_VALUE_FUNC(esp_err_t, gpioIntrEnable, gpio_num_t);
 DECLARE_FAKE_VALUE_FUNC(esp_err_t, nvsFlashInit);
 DECLARE_FAKE_VALUE_FUNC(esp_err_t, nvsFlashErase);
 DECLARE_FAKE_VALUE_FUNC(int64_t, getTimeUs);
+DECLARE_FAKE_VOID_FUNC(restartDevice);
 
 inline void resetESPIDFPortFakes() {
   RESET_FAKE(gpioSetConfig);
@@ -25,5 +26,6 @@ inline void resetESPIDFPortFakes() {
   RESET_FAKE(nvsFlashInit);
   RESET_FAKE(nvsFlashErase);
   RESET_FAKE(getTimeUs);
+  RESET_FAKE(restartDevice);
   FFF_RESET_HISTORY();
 }

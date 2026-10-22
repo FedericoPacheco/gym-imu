@@ -20,3 +20,5 @@ esp_err_t nvsFlashInit() { return nvs_flash_init(); }
 esp_err_t nvsFlashErase() { return nvs_flash_erase(); }
 
 int64_t getTimeUs() { return esp_timer_get_time(); }
+
+void restartDevice() { esp_restart(); }

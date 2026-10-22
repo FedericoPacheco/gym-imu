@@ -8,7 +8,13 @@ struct PipeMetrics {
   uint32_t currentDepth;
 };
 
-template <typename T, uint32_t N> class Pipe {
+class PipeMetricsSource {
+public:
+  virtual ~PipeMetricsSource() = default;
+  virtual PipeMetrics getMetrics() const = 0;
+};
+
+template <typename T, uint32_t N> class Pipe : public PipeMetricsSource {
 public:
   virtual ~Pipe() = default;
 
@@ -17,7 +23,7 @@ public:
   virtual void empty() = 0;
   virtual uint32_t itemsFilled() const = 0;
   virtual uint32_t itemsLeft() const = 0;
-  virtual PipeMetrics getMetrics() const = 0;
+  PipeMetrics getMetrics() const override = 0;
 
 protected:
   Pipe() = default;

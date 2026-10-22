@@ -42,6 +42,9 @@ BaseType_t rtosTaskNotifyWait(uint32_t ulBitsToClearOnEntry,
   return xTaskNotifyWait(ulBitsToClearOnEntry, ulBitsToClearOnExit,
                          pulNotificationValue, xTicksToWait);
 }
+TickType_t rtosMillisecondsToTicks(uint32_t milliseconds) {
+  return pdMS_TO_TICKS(milliseconds);
+}
 void rtosTaskNotifyGive(TaskHandle_t taskHandle) {
   xTaskNotifyGive(taskHandle);
 }

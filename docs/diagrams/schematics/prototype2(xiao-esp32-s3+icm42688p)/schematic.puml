@@ -1,0 +1,65 @@
+' Install PlantUML extension for VSCode to preview this diagram
+
+@startuml Prototype v2
+' Smaller arrow labels to reduce collisions
+skinparam ArrowFontSize 8
+
+left to right direction
+' Rectangular lines with 90 degree corners
+skinparam linetype ortho
+' Space between components
+skinparam nodesep 75 
+skinparam ranksep 75
+
+
+package "Enclosure" {
+    package "Internal (protoboard)" {
+        component "RF antenna" as antenna
+        component "800mAh 3.7V LiPo Battery" as battery
+        component "\nXIAO ESP32 S3 Plus\n" as microcontroller
+        component "\nICM-42688-P\n" as sensor
+    }
+    package "Surface-visible" {
+        component "On/Off Switch" as switch 
+        component "Recording button" as button
+        component "Recording LED" as led
+    }
+}
+
+' Power
+battery "(+)" -- switch
+switch -- "BAT+" microcontroller
+battery "(-)" -left- "BAT-" microcontroller
+
+note left of microcontroller
+  - Integrated LiPo charging circuit
+  - Integrated 3.3V regulator
+end note
+
+' Microcontroller + IMU
+microcontroller "D4" -- "INT1" sensor 
+microcontroller "D5" -- "CS" sensor
+microcontroller "D9 (MISO)" -- "SDO" sensor
+microcontroller "D10 (MOSI)" -- "SDI" sensor
+microcontroller "D8 (SCK)" -- "SCLK" sensor
+microcontroller "3V3" -- "VCC" sensor
+microcontroller "GND" -- "GND" sensor
+' INT2 not used for now
+
+"Flashing/charging USB C" -down-> microcontroller
+
+' Movement recording
+button "(+)" -right- "3V3" microcontroller
+button "(-)" -right- "D0" microcontroller
+microcontroller "D0" -right- "GND" microcontroller: 10kΩ resistor
+led "(+)" -right- "D2" microcontroller: 220Ω resistor
+led "(-)" -right- "GND" microcontroller
+
+' BLE 
+microcontroller "U.FL" -left- antenna
+
+' Diagram formatting
+antenna -[hidden]up- battery
+led -[hidden]down- button
+
+@enduml

@@ -23,14 +23,19 @@ Other rules:
 
 ### In Progress
 
+- Test ESP32-S3 in isolation (log output through serial, without anything else connected).
+
 ### Next
+
+- Address how to wire ICM-42688-P sensor over SPI to ESP32-S3 and create new schematic.
+- Research how to use and wire logic analyzer between ESP32-S3 and the ICM-42688-P sensor, assemble everything on breadboard and attempt a WHOAMI (or similar) register read.
+- Read ICM-42688-P datasheet and review existing driver code referenced in ADR-11.
 
 ### Backlog
 
 - Implement a Kalman filter variant (classic, extended, unscented, etc.) on a jupyter notebook to compute orientation. Compare it against the Mahony Filter and complementary filter.
 - Implement a repetition detection algorithm on a jupyter notebook and evaluate it on real captures, comparing it against video references.
 - Fine tune BLE transmission parameters, pipe sizes, and task priorities/ISR behaviors, and other relevant system parameters to optimize for throughput after completing basic signal processing pipeline on device. Consider low passing + decimation in case the radio can't keep up.
-
 - Define BLE packet format explicitly to support multiple types. Write some form of encoder on the device and a decoder on the ble python client.
 - Perform spectral analysis to diagnose aliasing. Provide a recommendation of minimum sampling frequency.
 - Read EPS-IDF docs (<https://docs.espressif.com/projects/esp-idf/en/stable/esp32/api-guides/ble/index.html#security>) and add basic security to BLE class.

@@ -120,7 +120,13 @@ Note: script generated with AI.
         git clone https://github.com/espressif/esp-dsp.git ESP-DSP
     ```
 
-5. Flash device with firmware: open PlatformIO > device > General:
+5. Install PulseView logic analyzer software for Saleae 24Mhz 8 channel clone:
+
+    ```bash
+    sudo apt install sigrok
+    ```
+
+6. Flash device with firmware: open PlatformIO > device > General:
      - Build
      - Upload / Upload and Monitor
 

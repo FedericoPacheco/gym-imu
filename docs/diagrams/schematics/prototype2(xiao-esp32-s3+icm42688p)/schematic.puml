@@ -39,9 +39,9 @@ end note
 ' Microcontroller + IMU
 microcontroller "D4" -- "INT1" sensor 
 microcontroller "D5" -- "CS" sensor
-microcontroller "D9 (MISO)" -- "SDO" sensor
-microcontroller "D10 (MOSI)" -- "SDI" sensor
-microcontroller "D8 (SCK)" -- "SCLK" sensor
+microcontroller "D9 (MISO)" -- "SAO/SDO" sensor
+microcontroller "D10 (MOSI)" -- "SDA/SDI" sensor
+microcontroller "D8 (SCK)" -- "SCL/SCLK" sensor
 microcontroller "3V3" -- "VCC" sensor
 microcontroller "GND" -- "GND" sensor
 ' INT2 not used for now

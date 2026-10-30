@@ -23,12 +23,9 @@ Other rules:
 
 ### In Progress
 
-- Address how to wire ICM-42688-P sensor over SPI to ESP32-S3 and create new schematic.
+- Read ICM-42688-P datasheet and review existing driver code referenced in ADR-11.
 
 ### Next
-
-- Research how to use and wire logic analyzer between ESP32-S3 and the ICM-42688-P sensor, assemble everything on breadboard and attempt a WHOAMI (or similar) register read.
-- Read ICM-42688-P datasheet and review existing driver code referenced in ADR-11.
 
 ### Backlog
 
@@ -148,3 +145,5 @@ they are more prone to become outdated/stale.
 - Extract control logic from `src/main.cpp` to separate class.
 - Update readme stating the current state of signal processing on the firmware and merge branch.
 - Setup relevant configuration and test ESP32-S3 in isolation (log output through serial, without anything else connected).
+- Address how to wire ICM-42688-P sensor over SPI to ESP32-S3 and create new schematic.
+- Research how to use and wire logic analyzer between ESP32-S3 and the ICM-42688-P sensor, assemble everything on breadboard and attempt to use it either with a WHOAMI (or similar) register read or UART log read.

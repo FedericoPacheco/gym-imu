@@ -138,6 +138,18 @@
 - [Arduino INPUT_PULLUP Explained (pinMode) - The Robotics Back-End](https://roboticsbackend.com/arduino-input_pullup-pinmode/)
 - [ESP-IDF: ESP32 GPIO – Read Digital Inputs - Random Nerd Tutorials](https://randomnerdtutorials.com/esp-idf-esp32-gpio-inputs/)
 
+#### Logic Analyzer
+
+- [Instrument Basics: Logic Analyzer - Workbench Wednesdays](https://www.youtube.com/watch?v=u1DYs2I-_lU)
+- [Cheap logic analyzer SPI i2c UART](https://www.youtube.com/watch?v=rR5cEFRO9_s)
+- [How to Use Sigrok PulseView Software | Logic Analyzer Tutorial](https://www.youtube.com/watch?v=lEUMJb0xpVU)
+
+#### SPI
+
+- [SPI Master Driver](https://docs.espressif.com/projects/esp-idf/en/stable/esp32/api-reference/peripherals/spi_master.html#spi-master-driver)
+- [SPI Master Driver: examples](https://github.com/espressif/esp-idf/tree/v6.1/examples/peripherals/spi_master)
+- [esp32-SPIbus - natanaeljr (SPI Master Driver wrapper)](https://github.com/natanaeljr/esp32-SPIbus)
+
 ## Signal processing
 
 Mainly referenced on Jupyter Notebooks. The remaining ones are left here.

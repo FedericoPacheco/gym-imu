@@ -25,9 +25,11 @@ Other rules:
 
 ### Next
 
+- Implement a Kalman filter variant (classic, extended, unscented, etc.) on a jupyter notebook to compute orientation. Compare it against the Mahony Filter and complementary filter.
+
 ### Backlog
 
-- Implement a Kalman filter variant (classic, extended, unscented, etc.) on a jupyter notebook to compute orientation. Compare it against the Mahony Filter and complementary filter.
+- Resume ICM42688P driver implementation when I have the necessary hardware available.
 - Implement a repetition detection algorithm on a jupyter notebook and evaluate it on real captures, comparing it against video references.
 - Fine tune BLE transmission parameters, pipe sizes, and task priorities/ISR behaviors, and other relevant system parameters to optimize for throughput after completing basic signal processing pipeline on device. Consider low passing + decimation in case the radio can't keep up.
 - Define BLE packet format explicitly to support multiple types. Write some form of encoder on the device and a decoder on the ble python client.

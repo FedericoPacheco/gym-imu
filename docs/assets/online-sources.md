@@ -55,6 +55,8 @@
 
 - [How To Use A Multimeter: The VERY Basics! - Simple Electronics](https://www.youtube.com/watch?v=EvAq9zqRB5I)
 - [How to use a multimeter like a pro! The Ultimate guide - The Engineering Mindset](https://www.youtube.com/watch?v=4lAyzRxsbDc)
+- [Reparar puntas de multímetro - LAGOM](https://www.youtube.com/watch?v=roWrRY2vj-M)
+- [Cómo reparar cables de multímetros (puntas) - Reciclaje y Proyectos Electrónicos](https://www.youtube.com/watch?v=diNk2dgDd_I)
 
 #### Protoboards
 

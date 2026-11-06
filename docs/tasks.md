@@ -23,8 +23,6 @@ Other rules:
 
 ### In Progress
 
-- Read ICM-42688-P datasheet and review existing driver code referenced in ADR-11.
-
 ### Next
 
 ### Backlog
@@ -147,3 +145,5 @@ they are more prone to become outdated/stale.
 - Setup relevant configuration and test ESP32-S3 in isolation (log output through serial, without anything else connected).
 - Address how to wire ICM-42688-P sensor over SPI to ESP32-S3 and create new schematic.
 - Research how to use and wire logic analyzer between ESP32-S3 and the ICM-42688-P sensor, assemble everything on breadboard and attempt to use it either with a WHOAMI (or similar) register read or UART log read.
+- Read ICM-42688-P datasheet and review existing driver code referenced in ADR-11.
+- Perform tests to verify that the received sensor works and corresponds with the behavior documented in the datasheet. Result: it doesn't. I received an BMI323 instead of an ICM42688P. Purchased two another sensors from another vendor on Mercado Libre Internacional.

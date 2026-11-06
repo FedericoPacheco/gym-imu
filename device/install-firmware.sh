@@ -122,6 +122,8 @@ clone_component https://github.com/FedericoPacheco/esp32-MPU-driver components/M
 clone_component https://github.com/FedericoPacheco/esp32-I2Cbus components/I2Cbus
 clone_component https://github.com/espressif/esp-dsp.git components/ESP-DSP
 
+sudo apt-get install -y sigrok
+
 chmod +x gen-lcov-report.sh
 
 sudo usermod -a -G dialout "$(id -un)"

@@ -31,11 +31,16 @@ struct gpio_config_t {
   gpio_pulldown_t pull_down_en;
   gpio_int_type_t intr_type;
 };
+static constexpr gpio_num_t GPIO_NUM_1 = 1;
 static constexpr gpio_num_t GPIO_NUM_2 = 2;
+static constexpr gpio_num_t GPIO_NUM_3 = 3;
+static constexpr gpio_num_t GPIO_NUM_4 = 4;
 static constexpr gpio_num_t GPIO_NUM_5 = 5;
 static constexpr gpio_num_t GPIO_NUM_6 = 6;
 static constexpr gpio_num_t GPIO_NUM_7 = 7;
-static constexpr gpio_pullup_t GPIO_PULLUP_DISABLE = 0;
+static constexpr gpio_num_t GPIO_NUM_8 = 8;
+static constexpr gpio_num_t GPIO_NUM_9 = 9;
+static constexpr gpio_num_t GPIO_NUM_10 = 10;
 static constexpr gpio_pullup_t GPIO_PULLUP_ENABLE = 1;
 static constexpr gpio_pulldown_t GPIO_PULLDOWN_DISABLE = 0;
 static constexpr gpio_pulldown_t GPIO_PULLDOWN_ENABLE = 1;

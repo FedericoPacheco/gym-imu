@@ -1,6 +1,6 @@
 ' Install PlantUML extension for VSCode to preview this diagram
 
-@startuml New Schematic
+@startuml Prototype v1
 ' Smaller arrow labels to reduce collisions
 skinparam ArrowFontSize 8 
 

@@ -5,3 +5,5 @@
 .vscode/ipch
 .cache
 coverage_report
+components/
+# *.old

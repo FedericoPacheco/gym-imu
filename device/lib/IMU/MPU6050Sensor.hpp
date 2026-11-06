@@ -89,7 +89,7 @@ private:
     std::unique_ptr<MPU6050Sensor> instance;
     SemaphoreHandle_t semaphoreHandle;
     StaticSemaphore_t semaphoreControlBlock;
-    portMUX_TYPE mux;
+    portMUX_TYPE mux = portMUX_INITIALIZER_UNLOCKED;
   } static instanceState;
 
   std::atomic<State> state{State::IDLE};

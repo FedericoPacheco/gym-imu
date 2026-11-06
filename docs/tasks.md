@@ -25,12 +25,13 @@ Other rules:
 
 ### Next
 
+- Implement a Kalman filter variant (classic, extended, unscented, etc.) on a jupyter notebook to compute orientation. Compare it against the Mahony Filter and complementary filter.
+
 ### Backlog
 
-- Implement a Kalman filter variant (classic, extended, unscented, etc.) on a jupyter notebook to compute orientation. Compare it against the Mahony Filter and complementary filter.
+- Resume ICM42688P driver implementation when I have the necessary hardware available.
 - Implement a repetition detection algorithm on a jupyter notebook and evaluate it on real captures, comparing it against video references.
 - Fine tune BLE transmission parameters, pipe sizes, and task priorities/ISR behaviors, and other relevant system parameters to optimize for throughput after completing basic signal processing pipeline on device. Consider low passing + decimation in case the radio can't keep up.
-
 - Define BLE packet format explicitly to support multiple types. Write some form of encoder on the device and a decoder on the ble python client.
 - Perform spectral analysis to diagnose aliasing. Provide a recommendation of minimum sampling frequency.
 - Read EPS-IDF docs (<https://docs.espressif.com/projects/esp-idf/en/stable/esp32/api-guides/ble/index.html#security>) and add basic security to BLE class.
@@ -38,6 +39,7 @@ Other rules:
 - Avoid dynamic memory allocation to better address memory usage on the device.
 - Generate linker map file to address ways to reduce code size on the device.
 - Try out ways to reduce power comsumption on the device: microcontroller sleep, turning off IMU sensor, reducing processor frequency, configure unused IO lines, etc.
+- Address whether I could store samples on unused flash memory on the device.
 - Review if error macros work with variable arguments.
 
 ### Done
@@ -142,3 +144,8 @@ they are more prone to become outdated/stale.
 - Make the device transmit remaining samples after stopping correctly instead of discarding them. Allow for multiple recording rounds safely.
 - Extract control logic from `src/main.cpp` to separate class.
 - Update readme stating the current state of signal processing on the firmware and merge branch.
+- Setup relevant configuration and test ESP32-S3 in isolation (log output through serial, without anything else connected).
+- Address how to wire ICM-42688-P sensor over SPI to ESP32-S3 and create new schematic.
+- Research how to use and wire logic analyzer between ESP32-S3 and the ICM-42688-P sensor, assemble everything on breadboard and attempt to use it either with a WHOAMI (or similar) register read or UART log read.
+- Read ICM-42688-P datasheet and review existing driver code referenced in ADR-11.
+- Perform tests to verify that the received sensor works and corresponds with the behavior documented in the datasheet. Result: it doesn't. I received an BMI323 instead of an ICM42688P. Purchased two another sensors from another vendor on Mercado Libre Internacional.

@@ -23,9 +23,9 @@ Other rules:
 
 ### In Progress
 
-### Next
-
 - Implement a Kalman filter variant (classic, extended, unscented, etc.) on a jupyter notebook to compute orientation. Compare it against the Mahony Filter and complementary filter.
+
+### Next
 
 ### Backlog
 

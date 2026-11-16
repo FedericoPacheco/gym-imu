@@ -30,6 +30,14 @@ class Quaternion:
             self.v + other.v,
         )
 
+    def __sub__(self, other):
+        if not isinstance(other, Quaternion):
+            return NotImplemented
+        return Quaternion(
+            self.s - other.s,
+            self.v - other.v,
+        )
+
     def __mul__(self, other):
         if isinstance(other, Quaternion):
             return Quaternion(

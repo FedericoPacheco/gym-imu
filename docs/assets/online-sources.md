@@ -161,6 +161,8 @@ Mainly referenced on Jupyter Notebooks. The remaining ones are left here.
 - [Asyncio in Python - Full Tutorial](https://www.youtube.com/watch?v=Qb9s3UiMSTA)
 - [asyncio - Asynchronous I/O](https://docs.python.org/3/library/asyncio.html)
 - [Bleak BLE client](https://bleak.readthedocs.io/en/latest/usage.html)
+- [Numpy docs: Broadcasting](https://numpy.org/doc/2.5/user/basics.broadcasting.html)
+- [NumPy Broadcasting Rules: Why `(3,)` and `(3,1)` Behave Differently — and When It Silently Gives Wrong Answers](https://www.simplico.net/2026/04/18/numpy-broadcasting-rules-why-3-and-31-behave-differently-and-when-it-silently-gives-wrong-answers/)
 
 ### Calibration
 

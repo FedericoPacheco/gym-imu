@@ -10,9 +10,20 @@ class Quaternion:
     ABS_TOL = 1e-8
     REL_TOL = 1e-5
 
-    def __init__(self, s: float = 0.0, v: np.ndarray = np.zeros(3, dtype=np.float32)):
-        self.s = s
-        self.v = np.array(v, dtype=np.float32)
+    def __init__(
+        self,
+        s: int | float | np.number = np.float32(0.0),
+        v: np.ndarray = np.zeros(3, dtype=np.float32),
+    ):
+        if not isinstance(s, (float, int, np.number)):
+            raise ValueError("Scalar part of quaternion must be a number.")
+        self.s = np.float32(s)
+
+        if not isinstance(v, np.ndarray) or v.shape != (3,):
+            raise ValueError(
+                "Vector part of quaternion must be a numpy array with shape (3,)"
+            )
+        self.v = v.astype(np.float32).copy()
 
     def __str__(self):
         return f"Quaternion(s={self.s}, v={self.v})"

@@ -1,5 +1,6 @@
 -e ./signal-utils
 AHRS==0.4.0
+arch==9.0.0
 asttokens==3.0.1
 attrs==26.1.0
 bleak==3.0.1
@@ -13,6 +14,8 @@ docutils==0.23
 executing==2.2.1
 fastjsonschema==2.21.2
 fonttools==4.62.1
+formulaic==1.2.2
+interface_meta==2.0.1
 ipykernel==7.2.0
 ipympl==0.10.0
 ipython==9.13.0
@@ -33,7 +36,9 @@ nbformat==5.10.4
 nest-asyncio==1.6.0
 numpy==2.4.4
 packaging==26.1
+pandas==3.1.1
 parso==0.8.6
+patsy==1.0.3
 pexpect==4.9.0
 pillow==12.2.0
 platformdirs==4.9.6
@@ -50,8 +55,10 @@ rpds-py==2026.5.1
 scipy==1.17.1
 six==1.17.0
 stack-data==0.6.3
+statsmodels==0.15.0
 tornado==6.5.5
 traitlets==5.14.3
 typing_extensions==4.15.0
 wcwidth==0.6.0
 widgetsnbextension==4.0.15
+wrapt==2.5.2

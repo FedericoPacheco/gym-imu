@@ -155,7 +155,7 @@ class Quaternion:
         c32 = 2 * (self.v[1] * self.v[2] - self.s * self.v[0])
         c33 = self.s**2 - self.v[0] ** 2 - self.v[1] ** 2 + self.v[2] ** 2
 
-        return np.array([[c11, c12, c13], [c21, c22, c23], [c31, c32, c33]])
+        return np.array([[c11, c12, c13], [c21, c22, c23], [c31, c32, c33]]).T
 
     @staticmethod
     def fromDCM(C: np.ndarray):
